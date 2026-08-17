@@ -1377,6 +1377,30 @@ git commit -m "feat: auth gates — requireUser/requireRole with tested decision
 
 ---
 
+## Final fix wave (post-review amendments, commit c23810e)
+
+- `validate_deal_insert()` additionally resets ALL client-suppliable privileged columns at creation (status, revision_count, requested_at:=now(), lifecycle timestamps, marked_paid_at, live_url, preview_url).
+- `creator_profiles`/`brand_profiles` insert policies role-gated (profiles.role must match).
+- Seed-drift test added: checked-in 0005 must byte-match `generateSeedSql()` (CRLF-normalized); generator carries a warning that post-hosted-deploy transition changes need a NEW timestamped migration.
+- machine.test.ts happy-path typed with `DealStatus` (lint clean).
+
+## Carry-forward items (final-review triage — owner phase in parentheses)
+
+- Move citext to `extensions` schema + decide 0005 regeneration workflow — BEFORE first hosted `db push`
+- pgTAP / JWT-session RLS integration tests — early Phase 2 (recommended over waiting; this phase needed 3 privilege-escalation fix rounds)
+- portfolio_items visibility for draft/suspended creators — Phase 2 storefront decision
+- admin RLS policy on creator_profiles for suspension via admin session — Phase 6
+- FK indexes on payments/payouts/reviews/reports.deal_id; amount_cents > 0 checks — Phase 4
+- validate_deal_insert also fires for service_role — Phase 4 seed/admin tooling must satisfy invariants
+- messages policy has no deal-status restriction — Phase 4 decision
+- reports insert grant allows client-set resolution fields — Phase 6 (column-limit or trigger)
+- signup redirect assumes immediate session; breaks if hosted project enables email confirmation — hosted-deploy checklist
+- Landing page `/` + layout metadata still create-next-app boilerplate; `/` is the role-mismatch redirect target — Phase 2
+- a11y: label/id association on auth form inputs; raw Supabase error text in URL — Phase 6 polish
+- config.toml: minimum_password_length 6 vs form minLength 8 — hosted-deploy checklist
+- profiles table has no INSERT policy (works via security-definer trigger only) — awareness note
+- Vitest CJS config-loader warning (`"type": "module"` candidate) — anytime
+
 ## Phase 1 exit criteria
 
 - `npm test` green (state machine, generator, auth gates)
