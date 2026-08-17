@@ -34,6 +34,13 @@ export async function searchCreators(filters: DiscoveryFilters): Promise<{
     if (filters.maxPriceCents !== null) oq = oq.lte("price_cents", filters.maxPriceCents);
     const { data, error } = await oq;
     if (error) throw new Error("discovery offerings query failed: " + error.message);
+    // 2026-08-17: unpaginated allowlist truncates silently at PostgREST max-rows
+    // (default 1000). Fine at MVP scale; revisit with the dedicated-search work
+    // (spec ADR-006, ~100k creators) before type/price filters can match >1000
+    // active offerings.
+    if ((data ?? []).length >= 1000) {
+      throw new Error("discovery allowlist hit the max-rows cap; results would be silently truncated");
+    }
     creatorIdAllowlist = [...new Set((data ?? []).map((r) => r.creator_id as string))];
     if (creatorIdAllowlist.length === 0) {
       return { creators: [], total: 0, page, pageSize: PAGE_SIZE };
@@ -49,14 +56,14 @@ export async function searchCreators(filters: DiscoveryFilters): Promise<{
   if (filters.country) {
     // filters.country is interpolated into an ilike pattern; escape LIKE
     // wildcard characters so user-supplied % or _ can't match everything.
-    const country = filters.country.replace(/[%_\\]/g, "\\$&");
-    cq = cq.ilike("country", country);
+    const country = filters.country.replace(/[%_\\]/g, "\\$&").replace(/\*/g, " ").trim();
+    if (country) cq = cq.ilike("country", country);
   }
   if (filters.q) {
     // filters.q is interpolated into a PostgREST .or() filter string.
     // parseDiscoveryFilters caps its length but does not strip PostgREST
     // syntax characters, so strip them here before building the filter.
-    const q = filters.q.replace(/[,().]/g, " ").trim();
+    const q = filters.q.replace(/[,().*]/g, " ").trim();
     if (q) cq = cq.or(`handle.ilike.%${q}%,bio.ilike.%${q}%`);
   }
 
