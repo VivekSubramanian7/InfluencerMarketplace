@@ -25,8 +25,9 @@ export async function login(formData: FormData) {
   });
   if (error) redirect(`/auth/error?message=${encodeURIComponent(error.message)}`);
   const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/login");
   const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", data.user!.id).single();
+    .from("profiles").select("role").eq("id", data.user.id).single();
   revalidatePath("/", "layout");
   redirect(profile?.role === "creator" ? "/dashboard" : "/discover");
 }

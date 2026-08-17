@@ -6,8 +6,17 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   if (code) {
     const supabase = await createServerSupabase();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}/dashboard`);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+      return NextResponse.redirect(
+        `${origin}${profile?.role === "creator" ? "/dashboard" : "/discover"}`
+      );
+    }
   }
   return NextResponse.redirect(`${origin}/auth/error?message=Could+not+sign+in`);
 }
