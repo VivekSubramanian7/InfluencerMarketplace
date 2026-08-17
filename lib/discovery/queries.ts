@@ -46,7 +46,12 @@ export async function searchCreators(filters: DiscoveryFilters): Promise<{
     .eq("status", "live");
   if (creatorIdAllowlist) cq = cq.in("user_id", creatorIdAllowlist);
   if (filters.niche) cq = cq.contains("niches", [filters.niche]);
-  if (filters.country) cq = cq.ilike("country", filters.country);
+  if (filters.country) {
+    // filters.country is interpolated into an ilike pattern; escape LIKE
+    // wildcard characters so user-supplied % or _ can't match everything.
+    const country = filters.country.replace(/[%_\\]/g, "\\$&");
+    cq = cq.ilike("country", country);
+  }
   if (filters.q) {
     // filters.q is interpolated into a PostgREST .or() filter string.
     // parseDiscoveryFilters caps its length but does not strip PostgREST
