@@ -66,6 +66,11 @@ create policy "creators manage own connected accounts"
   using ((select auth.uid()) = creator_id)
   with check ((select auth.uid()) = creator_id);
 
+-- privileged-column lockdown (human-approved precedent from 0001):
+-- only service-role sync jobs may create/update connected accounts;
+-- owners retain select (RLS) and delete (disconnect)
+revoke insert, update on table public.connected_accounts from anon, authenticated;
+
 -- public stats surface WITHOUT token_ref (definer view bypasses base RLS deliberately)
 create view public.public_creator_stats
   with (security_invoker = off) as
