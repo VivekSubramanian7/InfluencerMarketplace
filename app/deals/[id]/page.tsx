@@ -122,8 +122,10 @@ export default async function DealPage({
         </section>
       )}
 
-      {myRole === "brand" && deal.payment_mode === "off_platform" && !deal.marked_paid_at &&
-        !["requested", "cancelled"].includes(deal.status) && (
+      {role !== "admin" && myRole === "brand" && deal.payment_mode === "off_platform" &&
+        !deal.marked_paid_at &&
+        ["accepted", "in_production", "submitted", "revision_requested", "published", "completed"]
+          .includes(deal.status) && (
         <form action={markPaid} className="mb-6">
           <input type="hidden" name="deal_id" value={deal.id} />
           <button className="border rounded px-4 py-2 text-sm">Mark as paid</button>
