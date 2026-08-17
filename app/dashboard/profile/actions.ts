@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { parseHandle, parseTags, parseText } from "@/lib/storefront/validation";
+import { parseHandle, parseTags, parseOptionalText } from "@/lib/storefront/validation";
 
 export async function saveCreatorProfile(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -13,8 +13,12 @@ export async function saveCreatorProfile(formData: FormData) {
   const handle = parseHandle(String(formData.get("handle") ?? ""));
   if (!handle) redirect("/dashboard/profile?error=" + encodeURIComponent("Handle must be 3-30 chars: a-z, 0-9, _"));
 
-  const bio = parseText(String(formData.get("bio") ?? ""), 1000);
-  const country = parseText(String(formData.get("country") ?? ""), 60);
+  const bioResult = parseOptionalText(String(formData.get("bio") ?? ""), 1000);
+  if (!bioResult.ok) redirect("/dashboard/profile?error=" + encodeURIComponent("Bio is too long (max 1000 characters)"));
+  const countryResult = parseOptionalText(String(formData.get("country") ?? ""), 60);
+  if (!countryResult.ok) redirect("/dashboard/profile?error=" + encodeURIComponent("Country is too long (max 60 characters)"));
+  const bio = bioResult.ok ? bioResult.value : null;
+  const country = countryResult.ok ? countryResult.value : null;
   const niches = parseTags(String(formData.get("niches") ?? ""));
   const languages = parseTags(String(formData.get("languages") ?? ""), 5);
 

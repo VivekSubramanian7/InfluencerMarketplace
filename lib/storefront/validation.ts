@@ -44,3 +44,12 @@ export function parseText(raw: string, maxLen: number): string | null {
   const t = raw.trim();
   return t.length >= 1 && t.length <= maxLen ? t : null;
 }
+
+export type OptionalTextResult = { ok: true; value: string | null } | { ok: false };
+
+export function parseOptionalText(raw: string, maxLen: number): OptionalTextResult {
+  const t = raw.trim();
+  if (t.length === 0) return { ok: true, value: null };
+  if (t.length > maxLen) return { ok: false };
+  return { ok: true, value: t };
+}

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getStorefront } from "@/lib/storefront/queries";
 
 export const revalidate = 300;
@@ -29,6 +29,7 @@ export default async function StorefrontPage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
+  if (handle !== handle.toLowerCase()) redirect(`/c/${handle.toLowerCase()}`);
   const storefront = await getStorefront(handle.toLowerCase());
   if (!storefront) notFound();
   const { profile, offerings, portfolio, stats } = storefront;

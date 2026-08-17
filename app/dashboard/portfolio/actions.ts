@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { parseMediaUrl, parseText } from "@/lib/storefront/validation";
+import { parseMediaUrl, parseOptionalText } from "@/lib/storefront/validation";
 
 export async function addPortfolioItem(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -12,7 +12,9 @@ export async function addPortfolioItem(formData: FormData) {
 
   const mediaUrl = parseMediaUrl(String(formData.get("media_url") ?? ""));
   if (!mediaUrl) redirect("/dashboard/portfolio?error=" + encodeURIComponent("Enter a valid http(s) link to your video"));
-  const caption = parseText(String(formData.get("caption") ?? ""), 200);
+  const captionResult = parseOptionalText(String(formData.get("caption") ?? ""), 200);
+  if (!captionResult.ok) redirect("/dashboard/portfolio?error=" + encodeURIComponent("Caption is too long (max 200 characters)"));
+  const caption = captionResult.ok ? captionResult.value : null;
 
   const { error } = await supabase
     .from("portfolio_items")

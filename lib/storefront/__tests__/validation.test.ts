@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   parseHandle, parsePriceCents, parseTags,
-  parseIntInRange, parseMediaUrl, parseText,
+  parseIntInRange, parseMediaUrl, parseText, parseOptionalText,
 } from "@/lib/storefront/validation";
 
 describe("parseHandle", () => {
@@ -76,5 +76,17 @@ describe("parseText", () => {
     expect(parseText("  hi  ", 10)).toBe("hi");
     expect(parseText("", 10)).toBeNull();
     expect(parseText("x".repeat(11), 10)).toBeNull();
+  });
+});
+
+describe("parseOptionalText", () => {
+  it("empty means intentionally cleared", () => {
+    expect(parseOptionalText("   ", 10)).toEqual({ ok: true, value: null });
+  });
+  it("valid text passes trimmed", () => {
+    expect(parseOptionalText(" hi ", 10)).toEqual({ ok: true, value: "hi" });
+  });
+  it("over-length is an error, never silent null", () => {
+    expect(parseOptionalText("x".repeat(11), 10)).toEqual({ ok: false });
   });
 });

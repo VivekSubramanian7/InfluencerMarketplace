@@ -21,27 +21,36 @@ export interface Storefront {
 export async function getStorefront(handle: string): Promise<Storefront | null> {
   const supabase = createPublicClient();
 
-  const { data: cp } = await supabase
+  const { data: cp, error: cpError } = await supabase
     .from("creator_profiles")
     .select("user_id, handle, bio, niches, country, languages, status")
     .eq("handle", handle)
     .eq("status", "live")
     .maybeSingle();
+  if (cpError) throw new Error("storefront query failed: " + cpError.message);
   if (!cp) return null;
 
-  const [{ data: prof }, { data: offerings }, { data: portfolio }, { data: stats }] =
-    await Promise.all([
-      supabase.from("profiles").select("display_name, avatar_url").eq("id", cp.user_id).maybeSingle(),
-      supabase.from("offerings")
-        .select("id, type, title, description, price_cents, currency, turnaround_days, revision_limit")
-        .eq("creator_id", cp.user_id).eq("active", true).order("price_cents"),
-      supabase.from("portfolio_items")
-        .select("id, media_url, caption")
-        .eq("creator_id", cp.user_id).order("created_at", { ascending: false }),
-      supabase.from("public_creator_stats")
-        .select("platform, platform_handle, follower_count, avg_views, engagement_rate, verification_status, last_synced_at")
-        .eq("creator_id", cp.user_id),
-    ]);
+  const [
+    { data: prof, error: profError },
+    { data: offerings, error: offeringsError },
+    { data: portfolio, error: portfolioError },
+    { data: stats, error: statsError },
+  ] = await Promise.all([
+    supabase.from("profiles").select("display_name, avatar_url").eq("id", cp.user_id).maybeSingle(),
+    supabase.from("offerings")
+      .select("id, type, title, description, price_cents, currency, turnaround_days, revision_limit")
+      .eq("creator_id", cp.user_id).eq("active", true).order("price_cents"),
+    supabase.from("portfolio_items")
+      .select("id, media_url, caption")
+      .eq("creator_id", cp.user_id).order("created_at", { ascending: false }),
+    supabase.from("public_creator_stats")
+      .select("platform, platform_handle, follower_count, avg_views, engagement_rate, verification_status, last_synced_at")
+      .eq("creator_id", cp.user_id),
+  ]);
+  if (profError) throw new Error("storefront query failed: " + profError.message);
+  if (offeringsError) throw new Error("storefront query failed: " + offeringsError.message);
+  if (portfolioError) throw new Error("storefront query failed: " + portfolioError.message);
+  if (statsError) throw new Error("storefront query failed: " + statsError.message);
 
   return {
     profile: {
