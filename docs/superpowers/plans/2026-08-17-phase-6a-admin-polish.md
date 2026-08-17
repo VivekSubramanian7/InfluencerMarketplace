@@ -665,6 +665,16 @@ git commit -m "feat: admin panel — disputes, reports, suspension"
 
 ---
 
+## Final fix wave (post-review, commit 13f6d80)
+
+safeNext rejects backslashes (open-redirect bypass closed, tested); admin review-form guard; encoded dealId redirects in report actions; strict resolution validation in resolveDispute.
+
+## Carry-forward (final-review triage, 2026-08-17)
+
+- One hardening migration, later: consolidate the 7 double-permissive policy pairs from 0013, wrap `is_admin()` calls as `(select public.is_admin())` (definer functions aren't inlined), column-limit the reports UPDATE grant to (resolution, resolved_at)
+- Next error-copy touch: extend friendlyDbError to profile/offerings/portfolio actions; encode dealId in resolveDispute's RPC-error redirect
+- fileReport loses return-to context on session expiry (cosmetic)
+
 ### Task 6: Phase 6a verification sweep
 
 - [ ] **Step 1: Gates** — test/lint/build; route table: `/`, `/c/[handle]` still static/ISR; admin routes dynamic.
