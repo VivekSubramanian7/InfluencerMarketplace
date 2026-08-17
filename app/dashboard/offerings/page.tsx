@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { deleteOffering, saveOffering, toggleOffering } from "./actions";
+import { SiteNav } from "@/components/site-nav";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -14,7 +15,7 @@ export default async function OfferingsPage({
 }: {
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  const { user } = await requireRole("creator");
+  const { user, role } = await requireRole("creator", "/dashboard/offerings");
   const { error, saved } = await searchParams;
   const supabase = await createServerSupabase();
   const { data: offerings } = await supabase
@@ -24,7 +25,9 @@ export default async function OfferingsPage({
     .order("created_at", { ascending: false });
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-2xl p-8">
       <h1 className="text-2xl font-semibold mb-4">Your offerings</h1>
       {error && <p className="mb-4 text-red-600">{error}</p>}
       {saved && <p className="mb-4 text-green-700">Saved.</p>}
@@ -90,6 +93,7 @@ export default async function OfferingsPage({
         </label>
         <button className="bg-black text-white rounded p-2">Save offering</button>
       </form>
-    </main>
+      </main>
+    </>
   );
 }

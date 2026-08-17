@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createBooking } from "./actions";
+import { SiteNav } from "@/components/site-nav";
 
 export default async function BookOfferingPage({
   params, searchParams,
@@ -9,8 +10,8 @@ export default async function BookOfferingPage({
   params: Promise<{ offeringId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireRole("brand");
   const { offeringId } = await params;
+  const { role } = await requireRole("brand", `/book/${offeringId}`);
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
@@ -28,7 +29,9 @@ export default async function BookOfferingPage({
     .maybeSingle();
 
   return (
-    <main className="mx-auto max-w-xl p-8">
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-xl p-8">
       <h1 className="text-2xl font-semibold mb-1">Book: {offering.title}</h1>
       <p className="text-gray-600 mb-6">
         {creator ? <>by @{creator.handle} · </> : null}
@@ -57,6 +60,7 @@ export default async function BookOfferingPage({
         </label>
         <button className="bg-black text-white rounded p-2">Send booking request</button>
       </form>
-    </main>
+      </main>
+    </>
   );
 }

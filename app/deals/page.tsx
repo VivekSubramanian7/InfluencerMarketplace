@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
+import { SiteNav } from "@/components/site-nav";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator", funded: "Funded",
@@ -15,7 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
 const DONE: DealStatus[] = ["completed", "cancelled"];
 
 export default async function DealsPage() {
-  const { user, role } = await requireUser();
+  const { user, role } = await requireUser("/deals");
   const supabase = await createServerSupabase();
 
   const { data: deals, error } = await supabase
@@ -65,17 +66,14 @@ export default async function DealsPage() {
   );
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Your deals</h1>
-        <Link className="text-sm underline"
-          href={role === "creator" ? "/dashboard" : "/discover"}>
-          {role === "creator" ? "Dashboard" : "Find creators"}
-        </Link>
-      </div>
-      {section("Action needed", needsMe)}
-      {section("In progress", inFlight)}
-      {section("Done", done)}
-    </main>
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-3xl p-8">
+        <h1 className="text-2xl font-semibold mb-6">Your deals</h1>
+        {section("Action needed", needsMe)}
+        {section("In progress", inFlight)}
+        {section("Done", done)}
+      </main>
+    </>
   );
 }

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { logout } from "@/app/(auth)/actions";
+import { SiteNav } from "@/components/site-nav";
 
 export default async function DashboardPage() {
-  const { user } = await requireRole("creator");
+  const { user, role } = await requireRole("creator", "/dashboard");
   const supabase = await createServerSupabase();
 
   const [{ data: profile }, { count: offeringCount }, { count: portfolioCount }] =
@@ -22,29 +22,29 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <main className="mx-auto max-w-xl p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Creator dashboard</h1>
-        <form action={logout}><button className="text-sm underline">Log out</button></form>
-      </div>
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-xl p-8">
+        <h1 className="text-2xl font-semibold mb-6">Creator dashboard</h1>
 
-      {profile?.status === "live" ? (
-        <p className="mb-6">
-          Your storefront is live:{" "}
-          <a className="underline font-medium" href={`/c/${profile.handle}`}>/c/{profile.handle}</a>
-        </p>
-      ) : (
-        <p className="mb-6 text-gray-600">Complete these steps to go live:</p>
-      )}
+        {profile?.status === "live" ? (
+          <p className="mb-6">
+            Your storefront is live:{" "}
+            <a className="underline font-medium" href={`/c/${profile.handle}`}>/c/{profile.handle}</a>
+          </p>
+        ) : (
+          <p className="mb-6 text-gray-600">Complete these steps to go live:</p>
+        )}
 
-      <ol className="flex flex-col gap-3">
-        {steps.map((s) => (
-          <li key={s.label} className="border rounded p-4 flex items-center gap-3">
-            <span aria-hidden>{s.done ? "✅" : "⬜"}</span>
-            <Link className="underline" href={s.href}>{s.label}</Link>
-          </li>
-        ))}
-      </ol>
-    </main>
+        <ol className="flex flex-col gap-3">
+          {steps.map((s) => (
+            <li key={s.label} className="border rounded p-4 flex items-center gap-3">
+              <span aria-hidden>{s.done ? "✅" : "⬜"}</span>
+              <Link className="underline" href={s.href}>{s.label}</Link>
+            </li>
+          ))}
+        </ol>
+      </main>
+    </>
   );
 }

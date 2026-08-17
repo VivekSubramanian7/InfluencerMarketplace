@@ -1,13 +1,14 @@
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { addPortfolioItem, deletePortfolioItem } from "./actions";
+import { SiteNav } from "@/components/site-nav";
 
 export default async function PortfolioPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  const { user } = await requireRole("creator");
+  const { user, role } = await requireRole("creator", "/dashboard/portfolio");
   const { error, saved } = await searchParams;
   const supabase = await createServerSupabase();
   const { data: items } = await supabase
@@ -17,7 +18,9 @@ export default async function PortfolioPage({
     .order("created_at", { ascending: false });
 
   return (
-    <main className="mx-auto max-w-xl p-8">
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-xl p-8">
       <h1 className="text-2xl font-semibold mb-4">Your portfolio</h1>
       <p className="text-sm text-gray-600 mb-4">
         Link your best videos (YouTube, TikTok, Instagram). Brands see these on your storefront.
@@ -54,6 +57,7 @@ export default async function PortfolioPage({
         </label>
         <button className="bg-black text-white rounded p-2">Add to portfolio</button>
       </form>
-    </main>
+      </main>
+    </>
   );
 }

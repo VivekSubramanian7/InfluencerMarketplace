@@ -22,17 +22,31 @@ async function getUserAndRole() {
   return { user: data.user, role: (profile?.role ?? null) as Role | null };
 }
 
-export async function requireUser() {
+export function safeNext(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
+export async function requireUser(currentPath?: string) {
   const { user, role } = await getUserAndRole();
   const d = gateDecision(user, role, null);
-  if ("redirect" in d) redirect(d.redirect);
+  if ("redirect" in d) {
+    redirect(d.redirect === "/login" && currentPath
+      ? `/login?next=${encodeURIComponent(currentPath)}`
+      : d.redirect);
+  }
   if (!role) redirect("/");
   return { user: user!, role };
 }
 
-export async function requireRole(required: Role) {
+export async function requireRole(required: Role, currentPath?: string) {
   const { user, role } = await getUserAndRole();
   const d = gateDecision(user, role, required);
-  if ("redirect" in d) redirect(d.redirect);
+  if ("redirect" in d) {
+    redirect(d.redirect === "/login" && currentPath
+      ? `/login?next=${encodeURIComponent(currentPath)}`
+      : d.redirect);
+  }
   return { user: user!, role: role! };
 }

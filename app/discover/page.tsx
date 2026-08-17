@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters } from "@/lib/discovery/filters";
 import { searchCreators } from "@/lib/discovery/queries";
+import { SiteNav } from "@/components/site-nav";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -22,7 +23,7 @@ export default async function DiscoverPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireUser();
+  const { role } = await requireUser("/discover");
   const params = await searchParams;
   const filters = parseDiscoveryFilters(params);
   const { creators, total, page, pageSize } = await searchCreators(filters);
@@ -39,7 +40,9 @@ export default async function DiscoverPage({
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-5xl p-8">
       <h1 className="text-2xl font-semibold mb-6">Find video creators</h1>
 
       <form method="get" className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-8">
@@ -113,6 +116,7 @@ export default async function DiscoverPage({
           )}
         </nav>
       )}
-    </main>
+      </main>
+    </>
   );
 }

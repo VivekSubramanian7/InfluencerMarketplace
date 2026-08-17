@@ -7,6 +7,7 @@ import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { markPaid, performDealAction } from "./actions";
 import { submitReview } from "./review-actions";
 import { DealMessages } from "./messages";
+import { SiteNav } from "@/components/site-nav";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator response", funded: "Funded",
@@ -22,8 +23,8 @@ export default async function DealPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { user, role } = await requireUser();
   const { id } = await params;
+  const { user, role } = await requireUser(`/deals/${id}`);
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
@@ -47,7 +48,9 @@ export default async function DealPage({
     actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode);
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-2xl p-8">
       <Link href="/deals" className="text-sm underline">← All deals</Link>
       <h1 className="text-2xl font-semibold mt-2 mb-1">{deal.offering_title}</h1>
       <p className="text-gray-600 mb-1">
@@ -167,6 +170,7 @@ export default async function DealPage({
           {(events ?? []).length === 0 && <li>Requested {new Date(deal.requested_at).toLocaleString()}</li>}
         </ul>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

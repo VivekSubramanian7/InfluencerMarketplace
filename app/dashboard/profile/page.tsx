@@ -1,13 +1,14 @@
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { saveCreatorProfile, setProfileStatus } from "./actions";
+import { SiteNav } from "@/components/site-nav";
 
 export default async function CreatorProfilePage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  const { user } = await requireRole("creator");
+  const { user, role } = await requireRole("creator", "/dashboard/profile");
   const { error, saved } = await searchParams;
   const supabase = await createServerSupabase();
   const { data: p } = await supabase
@@ -17,7 +18,9 @@ export default async function CreatorProfilePage({
     .maybeSingle();
 
   return (
-    <main className="mx-auto max-w-xl p-8">
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto max-w-xl p-8">
       <h1 className="text-2xl font-semibold mb-2">Your creator profile</h1>
       {p && (
         <p className="mb-4 text-sm">
@@ -62,6 +65,7 @@ export default async function CreatorProfilePage({
           </button>
         </form>
       )}
-    </main>
+      </main>
+    </>
   );
 }

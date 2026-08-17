@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/require";
 
 export async function signup(formData: FormData) {
   const supabase = await createServerSupabase();
@@ -29,7 +30,9 @@ export async function login(formData: FormData) {
   const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", data.user.id).single();
   revalidatePath("/", "layout");
-  redirect(profile?.role === "creator" ? "/dashboard" : "/discover");
+  const target = safeNext(String(formData.get("next") ?? "")) ??
+    (profile?.role === "creator" ? "/dashboard" : profile?.role === "admin" ? "/admin" : "/discover");
+  redirect(target);
 }
 
 export async function logout() {
