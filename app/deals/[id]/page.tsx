@@ -5,6 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { markPaid, performDealAction } from "./actions";
+import { DealMessages } from "./messages";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator response", funded: "Funded",
@@ -96,6 +97,8 @@ export default async function DealPage({
           )}
         </section>
       )}
+
+      <DealMessages dealId={deal.id} userId={user.id} />
 
       {actions.length > 0 && (
         <section className="mb-6 border rounded p-4">
