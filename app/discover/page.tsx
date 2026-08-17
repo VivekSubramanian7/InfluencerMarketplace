@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters } from "@/lib/discovery/filters";
 import { searchCreators } from "@/lib/discovery/queries";
@@ -31,6 +32,10 @@ export default async function DiscoverPage({
   for (const [k, v] of Object.entries(params)) {
     const val = Array.isArray(v) ? v[0] : v;
     if (val) flatParams.set(k, val);
+  }
+
+  if (creators.length === 0 && total > 0 && page > totalPages) {
+    redirect(pageHref(flatParams, totalPages));
   }
 
   return (
