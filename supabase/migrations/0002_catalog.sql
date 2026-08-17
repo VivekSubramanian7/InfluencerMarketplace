@@ -81,3 +81,13 @@ create view public.public_creator_stats
   join public.creator_profiles cp on cp.user_id = ca.creator_id
   where cp.status = 'live';
 grant select on public.public_creator_stats to anon, authenticated;
+
+-- explicit app-role grants (see 0001 note): default ACL grants app roles no DML
+grant select on table public.offerings to anon, authenticated;
+grant insert, update, delete on table public.offerings to authenticated;
+grant select on table public.portfolio_items to anon, authenticated;
+grant insert, update, delete on table public.portfolio_items to authenticated;
+grant select, delete on table public.connected_accounts to authenticated;
+grant select, insert, update, delete on table public.offerings to service_role;
+grant select, insert, update, delete on table public.portfolio_items to service_role;
+grant select, insert, update, delete on table public.connected_accounts to service_role;

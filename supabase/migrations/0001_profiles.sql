@@ -101,3 +101,15 @@ $$;
 create trigger creator_status_guard
   before update on public.creator_profiles
   for each row execute function public.enforce_creator_status_rules();
+
+-- explicit app-role grants: this environment's default ACL gives app roles
+-- no DML on new tables, so each table states its access explicitly.
+-- RLS remains the row-level filter; these are operation-level gates.
+-- (profiles UPDATE stays column-limited via the earlier revoke+column grant.)
+grant select on table public.profiles to anon, authenticated;
+grant select on table public.creator_profiles to anon, authenticated;
+grant insert, update on table public.creator_profiles to authenticated;
+grant select, insert, update on table public.brand_profiles to authenticated;
+grant select, insert, update, delete on table public.profiles to service_role;
+grant select, insert, update, delete on table public.creator_profiles to service_role;
+grant select, insert, update, delete on table public.brand_profiles to service_role;
