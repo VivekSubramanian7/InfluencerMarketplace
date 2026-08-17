@@ -94,7 +94,7 @@ git commit -m "feat: scaffold Next.js app with Vitest toolchain"
 ### Task 2: Supabase project + client helpers
 
 **Files:**
-- Create: `supabase/` (via `supabase init`), `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`, `middleware.ts`
+- Create: `supabase/` (via `supabase init`), `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`, `proxy.ts` (Next.js 16 renamed root middleware.ts → proxy.ts; human-approved plan amendment)
 
 **Interfaces:**
 - Produces: `createClient()` (browser), `createServerSupabase()` (RSC/server actions, cookie-bound), used by every later task.
@@ -282,7 +282,12 @@ begin
   insert into public.profiles (id, role, display_name)
   values (
     new.id,
-    coalesce((new.raw_user_meta_data->>'role')::public.user_role, 'brand'),
+    -- SECURITY (human-approved amendment): only creator/brand accepted from
+    -- client metadata; 'admin' can never be self-assigned at signup
+    case new.raw_user_meta_data->>'role'
+      when 'creator' then 'creator'::public.user_role
+      else 'brand'::public.user_role
+    end,
     new.raw_user_meta_data->>'display_name'
   );
   return new;
@@ -292,6 +297,43 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- SECURITY (human-approved amendment): privileged-column lockdown —
+-- users cannot update their own role; suspension is admin-only territory
+revoke update on table public.profiles from anon, authenticated;
+grant update (display_name, avatar_url) on table public.profiles to authenticated;
+
+create function public.enforce_creator_status_rules()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  if new.status is distinct from old.status
+     and (old.status = 'suspended' or new.status = 'suspended')
+     and auth.uid() is not null
+     and not exists (
+       select 1 from public.profiles p
+       where p.id = auth.uid() and p.role = 'admin'
+     ) then
+    raise exception 'only admins can change suspension status';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger creator_status_guard
+  before update on public.creator_profiles
+  for each row execute function public.enforce_creator_status_rules();
+
+-- explicit app-role grants (environment amendment: this stack's default ACL
+-- gives app roles no DML on new tables; each table states its access).
+grant select on table public.profiles to anon, authenticated;
+grant select on table public.creator_profiles to anon, authenticated;
+grant insert, update on table public.creator_profiles to authenticated;
+grant select, insert, update on table public.brand_profiles to authenticated;
+grant select, insert, update, delete on table public.profiles to service_role;
+grant select, insert, update, delete on table public.creator_profiles to service_role;
+grant select, insert, update, delete on table public.brand_profiles to service_role;
 ```
 
 - [ ] **Step 2: Apply** — Run: `supabase db push`. Expected: migration applied, no errors.
@@ -391,6 +433,11 @@ create policy "creators manage own connected accounts"
   using ((select auth.uid()) = creator_id)
   with check ((select auth.uid()) = creator_id);
 
+-- privileged-column lockdown (human-approved amendment): only service-role
+-- sync jobs may create/update connected accounts; owners keep select (RLS)
+-- and delete (disconnect). Prevents self-certified "verified" badges/stats.
+revoke insert, update on table public.connected_accounts from anon, authenticated;
+
 -- public stats surface WITHOUT token_ref (definer view bypasses base RLS deliberately)
 create view public.public_creator_stats
   with (security_invoker = off) as
@@ -401,6 +448,16 @@ create view public.public_creator_stats
   join public.creator_profiles cp on cp.user_id = ca.creator_id
   where cp.status = 'live';
 grant select on public.public_creator_stats to anon, authenticated;
+
+-- explicit app-role grants (see 0001 note): default ACL grants app roles no DML
+grant select on table public.offerings to anon, authenticated;
+grant insert, update, delete on table public.offerings to authenticated;
+grant select on table public.portfolio_items to anon, authenticated;
+grant insert, update, delete on table public.portfolio_items to authenticated;
+grant select, delete on table public.connected_accounts to authenticated;
+grant select, insert, update, delete on table public.offerings to service_role;
+grant select, insert, update, delete on table public.portfolio_items to service_role;
+grant select, insert, update, delete on table public.connected_accounts to service_role;
 ```
 
 - [ ] **Step 2: Apply** — Run: `supabase db push`. Expected: applied cleanly.
@@ -477,6 +534,52 @@ create policy "brands create deals as requested"
   with check ((select auth.uid()) = brand_id and status = 'requested');
 -- NO update/delete policies: every mutation goes through security-definer RPCs.
 
+-- deal-creation integrity (human-approved amendment): snapshot is forced from
+-- the referenced offering, self-dealing is rejected, only brands can book
+create function public.validate_deal_insert()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_offering public.offerings;
+  v_brand_role public.user_role;
+begin
+  if new.brand_id = new.creator_id then
+    raise exception 'brand and creator cannot be the same user';
+  end if;
+
+  select role into v_brand_role from public.profiles where id = new.brand_id;
+  if v_brand_role is distinct from 'brand' then
+    raise exception 'deals can only be created by brand accounts';
+  end if;
+
+  if new.offering_id is null then
+    raise exception 'deals must reference an offering';
+  end if;
+
+  select * into v_offering from public.offerings o where o.id = new.offering_id;
+  if not found or not v_offering.active then
+    raise exception 'offering not found or inactive';
+  end if;
+  if v_offering.creator_id <> new.creator_id then
+    raise exception 'offering does not belong to this creator';
+  end if;
+
+  -- snapshot integrity: frozen values always come from the offering itself
+  new.offering_type := v_offering.type;
+  new.offering_title := v_offering.title;
+  new.price_cents := v_offering.price_cents;
+  new.currency := v_offering.currency;
+  new.revision_limit := v_offering.revision_limit;
+
+  return new;
+end;
+$$;
+
+create trigger deals_validate_insert
+  before insert on public.deals
+  for each row execute function public.validate_deal_insert();
+
 create table public.briefs (
   deal_id uuid primary key references public.deals(id) on delete cascade,
   goals text,
@@ -534,6 +637,7 @@ create table public.payments (
   deal_id uuid not null references public.deals(id),
   stripe_payment_intent_id text unique,
   amount_cents bigint not null,
+  currency text not null default 'usd',
   status text not null default 'pending'
     check (status in ('pending','succeeded','refunded','failed')),
   created_at timestamptz not null default now()
@@ -548,6 +652,7 @@ create table public.payouts (
   deal_id uuid not null references public.deals(id),
   stripe_transfer_id text unique,
   amount_cents bigint not null,
+  currency text not null default 'usd',
   status text not null default 'pending'
     check (status in ('pending','paid','failed')),
   created_at timestamptz not null default now()
@@ -597,6 +702,29 @@ create policy "reporter reads own reports" on public.reports for select
   using ((select auth.uid()) = reporter_id);
 create policy "authenticated users file reports" on public.reports for insert
   with check ((select auth.uid()) = reporter_id);
+
+-- explicit app-role grants (environment amendment: this stack's default ACL
+-- gives app roles no DML on new tables). RLS remains the row filter.
+-- No update grant on deals to authenticated: all status changes go through
+-- the security-definer transition_deal() RPC (Task 7).
+grant select, insert on table public.deals to authenticated;
+grant select, insert on table public.briefs to authenticated;
+grant select on table public.deal_events to authenticated;
+grant select, insert on table public.messages to authenticated;
+grant select on table public.payments to authenticated;
+grant select on table public.payouts to authenticated;
+grant select on table public.reviews to anon, authenticated;
+grant insert on table public.reviews to authenticated;
+grant select, insert on table public.reports to authenticated;
+grant select, insert, update, delete on table public.deals to service_role;
+grant select, insert, update, delete on table public.briefs to service_role;
+grant select, insert, update, delete on table public.deal_events to service_role;
+grant select, insert, update, delete on table public.messages to service_role;
+grant select, insert, update, delete on table public.payments to service_role;
+grant select, insert, update, delete on table public.payouts to service_role;
+grant select, insert, update, delete on table public.stripe_events to service_role;
+grant select, insert, update, delete on table public.reviews to service_role;
+grant select, insert, update, delete on table public.reports to service_role;
 ```
 
 - [ ] **Step 2: Apply** — Run: `supabase db push`. Expected: applied cleanly.
@@ -755,9 +883,13 @@ export const TRANSITIONS: Transition[] = [
   { from: "published", action: "auto_approve", to: "completed", actor: "system", mode: null },
 
   // cancellation before submission (either side; refund handled by payments layer)
+  // human ruling: brand may cancel through in_production; after submission, dispute-only
+  { from: "requested", action: "cancel", to: "cancelled", actor: "brand", mode: null },
+  { from: "funded", action: "cancel", to: "cancelled", actor: "brand", mode: "escrow" },
   { from: "accepted", action: "cancel", to: "cancelled", actor: "brand", mode: null },
   { from: "accepted", action: "cancel", to: "cancelled", actor: "creator", mode: null },
   { from: "in_production", action: "cancel", to: "cancelled", actor: "creator", mode: null },
+  { from: "in_production", action: "cancel", to: "cancelled", actor: "brand", mode: null },
 
   // disputes
   ...DISPUTABLE.flatMap((from): Transition[] => [
@@ -877,11 +1009,16 @@ create table public.deal_transitions (
   actor_role text not null check (actor_role in ('brand','creator','system','admin')),
   mode public.payment_mode -- null = both modes
 );
--- nullable mode can't sit in a PK; a unique expression index enforces the same thing
-create unique index deal_transitions_uniq on public.deal_transitions
-  (from_status, action, actor_role, coalesce(mode::text, 'both'));
+-- nullable mode can't sit in a PK, and enum->text casts aren't IMMUTABLE for
+-- expression indexes; a partial-index pair enforces the same uniqueness
+create unique index deal_transitions_uniq_moded on public.deal_transitions
+  (from_status, action, actor_role, mode) where mode is not null;
+create unique index deal_transitions_uniq_modeless on public.deal_transitions
+  (from_status, action, actor_role) where mode is null;
 alter table public.deal_transitions enable row level security;
 create policy "transitions readable" on public.deal_transitions for select using (true);
+-- environment amendment: explicit grant (default ACL gives app roles no DML)
+grant select on table public.deal_transitions to authenticated, service_role;
 
 create function public.transition_deal(
   p_deal_id uuid,

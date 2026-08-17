@@ -97,7 +97,7 @@ Mutations are Next.js Server Actions (typed, co-located); public/webhook surface
 
 ## Deal state machine (core domain)
 
-`requested → [funded] → accepted → in_production → submitted → (revision ⇄ submitted) → published → completed`, with `cancelled` and `disputed` reachable from pre-completed states.
+`requested → [funded] → accepted → in_production → submitted → (revision ⇄ submitted) → published → completed`, with `cancelled` and `disputed` reachable from pre-completed states. Cancellation policy (human ruling 2026-08-17): brand may cancel (refund in escrow mode) from requested/funded/accepted/in_production; creator may decline pre-accept and cancel through in_production; after preview submission, exit is dispute-only (admin resolves).
 
 **Payment mode per deal: `escrow` or `off_platform`.** Escrow is preferred but never a blocker (user decision: Stripe availability may be a problem for MVP). If the creator has a ready Connect account and Stripe is configured, booking goes through Stripe Checkout and the `funded` gate applies. Otherwise the deal is created in `off_platform` mode: `funded` is skipped (requested → accepted), the deal page shows a clear "payment handled outside the platform" banner to both sides, and refund/payout steps are no-ops. Brands can record "marked as paid" for tracking. All logic branches on `payment_mode`, so enabling escrow later requires no flow changes.
 
