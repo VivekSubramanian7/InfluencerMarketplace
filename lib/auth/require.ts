@@ -26,7 +26,8 @@ export async function requireUser() {
   const { user, role } = await getUserAndRole();
   const d = gateDecision(user, role, null);
   if ("redirect" in d) redirect(d.redirect);
-  return { user: user!, role: role! };
+  if (!role) redirect("/");
+  return { user: user!, role };
 }
 
 export async function requireRole(required: Role) {
