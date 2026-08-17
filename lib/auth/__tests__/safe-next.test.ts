@@ -14,5 +14,7 @@ describe("safeNext", () => {
     expect(safeNext("")).toBeNull();
     expect(safeNext(null)).toBeNull();
     expect(safeNext(undefined)).toBeNull();
+    expect(safeNext("/\\evil.com")).toBeNull();
+    expect(safeNext("/a\\b")).toBeNull();
   });
 });

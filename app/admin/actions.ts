@@ -11,7 +11,11 @@ export async function resolveDispute(formData: FormData) {
   await requireRole("admin");
   const supabase = await createServerSupabase();
   const dealId = String(formData.get("deal_id") ?? "");
-  const resolution = formData.get("resolution") === "release" ? "resolve_release" : "resolve_refund";
+  const raw = String(formData.get("resolution") ?? "");
+  if (raw !== "release" && raw !== "refund") {
+    redirect(`/admin/deals/${encodeURIComponent(dealId)}?error=` + encodeURIComponent("Unknown resolution"));
+  }
+  const resolution = raw === "release" ? "resolve_release" : "resolve_refund";
 
   const { error } = await supabase.rpc("transition_deal", {
     p_deal_id: dealId, p_action: resolution, p_actor_role: "admin", p_payload: {},

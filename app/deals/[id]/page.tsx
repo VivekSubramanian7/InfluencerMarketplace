@@ -141,7 +141,7 @@ export default async function DealPage({
         </form>
       )}
 
-      {deal.status === "completed" && !myReview && (
+      {role !== "admin" && deal.status === "completed" && !myReview && (
         <section className="mb-6 border rounded p-4">
           <h2 className="font-medium mb-3">Leave a review</h2>
           <form action={submitReview} className="flex flex-col gap-3">
