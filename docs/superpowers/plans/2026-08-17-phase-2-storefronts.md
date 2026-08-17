@@ -1155,6 +1155,18 @@ git commit -m "feat: product landing page replacing boilerplate"
 
 ---
 
+## Final fix wave (post-review, commit de4d927)
+
+- `getStorefront` throws on query errors (transient failures never ISR-cache as 404/empty)
+- `parseOptionalText` added: over-length optional text errors instead of silently wiping saved values (bio/country/description/caption)
+- Migration 0008: public SELECT on portfolio_items/offerings gated to live creators
+- `/c/[handle]` canonically redirects mixed-case URLs to lowercase
+
+## Carry-forward (final-review triage)
+
+- Deferred: WHATWG URL normalization in parseMediaUrl; suspended-owner toggle raw error; stale-id no-op shows "Saved"; currency display hardcoded $ (USD MVP); duplicate creatorHandle lookups (hoist to lib/storefront); proxy.ts could exclude /c/*; future display_name/avatar edit UI must revalidate storefronts
+- Phase 3 prep: add creator_profiles.status index + niches GIN index with the discovery migration
+
 ### Task 10: Phase 2 verification sweep
 
 **Files:**
