@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { canTransition, TRANSITIONS } from "@/lib/deals/machine";
+import { canTransition, TRANSITIONS, type DealStatus } from "@/lib/deals/machine";
 
 describe("deal state machine", () => {
   it("escrow: requested can only be funded (system), not accepted directly", () => {
@@ -22,15 +22,15 @@ describe("deal state machine", () => {
 
   it("happy path reaches completed in both modes", () => {
     for (const mode of ["escrow", "off_platform"] as const) {
-      let s: string =
+      let s: DealStatus =
         mode === "escrow"
           ? canTransition("requested", "fund", "system", mode)!.to
           : "requested";
-      s = canTransition(s as any, "accept", "creator", mode)!.to;
-      s = canTransition(s as any, "begin_production", "creator", mode)!.to;
-      s = canTransition(s as any, "submit_preview", "creator", mode)!.to;
-      s = canTransition(s as any, "mark_published", "creator", mode)!.to;
-      s = canTransition(s as any, "approve", "brand", mode)!.to;
+      s = canTransition(s, "accept", "creator", mode)!.to;
+      s = canTransition(s, "begin_production", "creator", mode)!.to;
+      s = canTransition(s, "submit_preview", "creator", mode)!.to;
+      s = canTransition(s, "mark_published", "creator", mode)!.to;
+      s = canTransition(s, "approve", "brand", mode)!.to;
       expect(s).toBe("completed");
     }
   });

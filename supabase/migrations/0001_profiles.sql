@@ -32,7 +32,12 @@ create policy "live creator profiles are public, owners see own"
   on public.creator_profiles for select
   using (status = 'live' or (select auth.uid()) = user_id);
 create policy "creators insert own"
-  on public.creator_profiles for insert with check ((select auth.uid()) = user_id);
+  on public.creator_profiles for insert
+  with check (
+    (select auth.uid()) = user_id
+    and exists (select 1 from public.profiles p
+                where p.id = (select auth.uid()) and p.role = 'creator')
+  );
 create policy "creators update own"
   on public.creator_profiles for update using ((select auth.uid()) = user_id);
 
@@ -48,7 +53,12 @@ alter table public.brand_profiles enable row level security;
 create policy "brand profiles readable by authenticated"
   on public.brand_profiles for select to authenticated using (true);
 create policy "brands insert own"
-  on public.brand_profiles for insert with check ((select auth.uid()) = user_id);
+  on public.brand_profiles for insert
+  with check (
+    (select auth.uid()) = user_id
+    and exists (select 1 from public.profiles p
+                where p.id = (select auth.uid()) and p.role = 'brand')
+  );
 create policy "brands update own"
   on public.brand_profiles for update using ((select auth.uid()) = user_id);
 

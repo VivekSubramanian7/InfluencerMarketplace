@@ -19,6 +19,10 @@ export function generateSeedSql(): string {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  // NOTE: once 0005 has been applied to a hosted project, editing it in place
+  // will NOT redeploy (the CLI records applied migrations by name). For any
+  // transition change after hosted deploy, emit a NEW timestamped migration
+  // instead of regenerating this file.
   writeFileSync("supabase/migrations/0005_transitions_seed.sql", generateSeedSql());
   console.log(`wrote ${TRANSITIONS.length} transitions`);
 }

@@ -81,6 +81,20 @@ begin
   new.currency := v_offering.currency;
   new.revision_limit := v_offering.revision_limit;
 
+  -- client-supplied privileged columns are always reset at creation
+  new.status := 'requested';
+  new.revision_count := 0;
+  new.requested_at := now();
+  new.funded_at := null;
+  new.accepted_at := null;
+  new.submitted_at := null;
+  new.published_at := null;
+  new.completed_at := null;
+  new.cancelled_at := null;
+  new.marked_paid_at := null;
+  new.live_url := null;
+  new.preview_url := null;
+
   return new;
 end;
 $$;
