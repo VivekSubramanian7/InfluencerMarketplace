@@ -18,6 +18,12 @@ export async function saveCreatorProfile(formData: FormData) {
   const niches = parseTags(String(formData.get("niches") ?? ""));
   const languages = parseTags(String(formData.get("languages") ?? ""), 5);
 
+  const { data: existing } = await supabase
+    .from("creator_profiles")
+    .select("handle")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const { error } = await supabase.from("creator_profiles").upsert({
     user_id: user.id, handle, bio, country, niches, languages,
   });
@@ -27,6 +33,9 @@ export async function saveCreatorProfile(formData: FormData) {
   }
 
   revalidatePath(`/c/${handle}`);
+  if (existing?.handle && existing.handle !== handle) {
+    revalidatePath(`/c/${existing.handle}`);
+  }
   redirect("/dashboard/profile?saved=1");
 }
 
