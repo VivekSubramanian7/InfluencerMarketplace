@@ -60,4 +60,20 @@ describe("deal state machine", () => {
     expect(TRANSITIONS.filter((t) => t.from === "completed" || t.from === "cancelled"))
       .toHaveLength(0);
   });
+
+  it("brand can cancel any state up through in_production, but not after submission", () => {
+    expect(canTransition("requested", "cancel", "brand", "escrow")).toBeTruthy();
+    expect(canTransition("requested", "cancel", "brand", "off_platform")).toBeTruthy();
+    expect(canTransition("funded", "cancel", "brand", "escrow")).toBeTruthy();
+    expect(canTransition("accepted", "cancel", "brand", "escrow")).toBeTruthy();
+    expect(canTransition("in_production", "cancel", "brand", "off_platform")).toBeTruthy();
+    expect(canTransition("submitted", "cancel", "brand", "escrow")).toBeUndefined();
+    expect(canTransition("revision_requested", "cancel", "brand", "escrow")).toBeUndefined();
+  });
+
+  it("creator declines from the mode-correct pre-accept state", () => {
+    expect(canTransition("funded", "decline", "creator", "escrow")!.to).toBe("cancelled");
+    expect(canTransition("requested", "decline", "creator", "off_platform")!.to).toBe("cancelled");
+    expect(canTransition("requested", "decline", "creator", "escrow")).toBeUndefined();
+  });
 });

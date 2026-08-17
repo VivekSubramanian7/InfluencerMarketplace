@@ -49,7 +49,10 @@ export const TRANSITIONS: Transition[] = [
   { from: "published", action: "auto_approve", to: "completed", actor: "system", mode: null },
 
   // cancellation before submission (either side; refund handled by payments layer)
+  { from: "requested", action: "cancel", to: "cancelled", actor: "brand", mode: null },
+  { from: "funded", action: "cancel", to: "cancelled", actor: "brand", mode: "escrow" },
   { from: "accepted", action: "cancel", to: "cancelled", actor: "brand", mode: null },
+  { from: "in_production", action: "cancel", to: "cancelled", actor: "brand", mode: null },
   { from: "accepted", action: "cancel", to: "cancelled", actor: "creator", mode: null },
   { from: "in_production", action: "cancel", to: "cancelled", actor: "creator", mode: null },
 
