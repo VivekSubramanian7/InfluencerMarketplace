@@ -38,6 +38,7 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
     { data: portfolio, error: portfolioError },
     { data: stats, error: statsError },
     { data: reviews, error: reviewsError },
+    { data: allRatings, error: allRatingsError },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url").eq("id", cp.user_id).maybeSingle(),
     supabase.from("offerings")
@@ -55,12 +56,17 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
       .eq("creator_id", cp.user_id)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("public_creator_reviews")
+      .select("rating")
+      .eq("creator_id", cp.user_id),
   ]);
   if (profError) throw new Error("storefront query failed: " + profError.message);
   if (offeringsError) throw new Error("storefront query failed: " + offeringsError.message);
   if (portfolioError) throw new Error("storefront query failed: " + portfolioError.message);
   if (statsError) throw new Error("storefront query failed: " + statsError.message);
   if (reviewsError) throw new Error("storefront query failed: " + reviewsError.message);
+  if (allRatingsError) throw new Error("storefront rating query failed: " + allRatingsError.message);
 
   return {
     profile: {
@@ -85,8 +91,8 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
     reviews: (reviews ?? []).map((r) => ({
       rating: r.rating, body: r.body, createdAt: r.created_at,
     })),
-    avgRating: (reviews ?? []).length > 0
-      ? Math.round(((reviews ?? []).reduce((sum, r) => sum + r.rating, 0) / (reviews ?? []).length) * 10) / 10
+    avgRating: (allRatings ?? []).length > 0
+      ? Math.round(((allRatings ?? []).reduce((sum, r) => sum + r.rating, 0) / (allRatings ?? []).length) * 10) / 10
       : null,
   };
 }
