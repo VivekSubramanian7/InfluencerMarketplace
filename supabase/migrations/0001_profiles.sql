@@ -61,7 +61,10 @@ begin
   insert into public.profiles (id, role, display_name)
   values (
     new.id,
-    coalesce((new.raw_user_meta_data->>'role')::public.user_role, 'brand'),
+    case new.raw_user_meta_data->>'role'
+      when 'creator' then 'creator'::public.user_role
+      else 'brand'::public.user_role
+    end,
     new.raw_user_meta_data->>'display_name'
   );
   return new;
@@ -71,3 +74,30 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- FIX 2: privileged-column lockdown: role changes are service-role/admin territory
+revoke update on table public.profiles from anon, authenticated;
+grant update (display_name, avatar_url) on table public.profiles to authenticated;
+
+-- FIX 3: suspension boundary: only admins/service role may move status into or out of 'suspended'
+create function public.enforce_creator_status_rules()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  if new.status is distinct from old.status
+     and (old.status = 'suspended' or new.status = 'suspended')
+     and auth.uid() is not null
+     and not exists (
+       select 1 from public.profiles p
+       where p.id = auth.uid() and p.role = 'admin'
+     ) then
+    raise exception 'only admins can change suspension status';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger creator_status_guard
+  before update on public.creator_profiles
+  for each row execute function public.enforce_creator_status_rules();
