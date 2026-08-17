@@ -21,11 +21,11 @@ export default async function DealPage({
   params, searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reported?: string }>;
 }) {
   const { id } = await params;
   const { user, role } = await requireUser(`/deals/${id}`);
-  const { error } = await searchParams;
+  const { error, reported } = await searchParams;
   const supabase = await createServerSupabase();
 
   const { data: deal } = await supabase
@@ -68,6 +68,7 @@ export default async function DealPage({
         </p>
       )}
       {error && <p className="mb-4 text-red-600">{error}</p>}
+      {reported && <p className="mb-4 text-green-700">Thanks — our team will take a look.</p>}
 
       {(deal.preview_url || deal.live_url) && (
         <section className="mb-6 border rounded p-4">
@@ -159,7 +160,12 @@ export default async function DealPage({
       )}
 
       <section className="mb-6">
-        <h2 className="font-medium mb-2">Timeline</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-medium">Timeline</h2>
+          <Link href={`/report?deal=${deal.id}`} className="text-xs underline text-gray-500">
+            Report a problem
+          </Link>
+        </div>
         <ul className="text-sm text-gray-600 flex flex-col gap-1">
           {(events ?? []).map((e, i) => (
             <li key={i}>
