@@ -16,6 +16,8 @@ export interface Storefront {
     avgViews: number | null; engagementRate: number | null;
     verificationStatus: string; lastSyncedAt: string | null;
   }>;
+  reviews: Array<{ rating: number; body: string | null; createdAt: string }>;
+  avgRating: number | null;
 }
 
 export async function getStorefront(handle: string): Promise<Storefront | null> {
@@ -35,6 +37,7 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
     { data: offerings, error: offeringsError },
     { data: portfolio, error: portfolioError },
     { data: stats, error: statsError },
+    { data: reviews, error: reviewsError },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url").eq("id", cp.user_id).maybeSingle(),
     supabase.from("offerings")
@@ -46,11 +49,18 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
     supabase.from("public_creator_stats")
       .select("platform, platform_handle, follower_count, avg_views, engagement_rate, verification_status, last_synced_at")
       .eq("creator_id", cp.user_id),
+    supabase
+      .from("public_creator_reviews")
+      .select("rating, body, created_at")
+      .eq("creator_id", cp.user_id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
   if (profError) throw new Error("storefront query failed: " + profError.message);
   if (offeringsError) throw new Error("storefront query failed: " + offeringsError.message);
   if (portfolioError) throw new Error("storefront query failed: " + portfolioError.message);
   if (statsError) throw new Error("storefront query failed: " + statsError.message);
+  if (reviewsError) throw new Error("storefront query failed: " + reviewsError.message);
 
   return {
     profile: {
@@ -72,5 +82,11 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
       engagementRate: s.engagement_rate, verificationStatus: s.verification_status,
       lastSyncedAt: s.last_synced_at,
     })),
+    reviews: (reviews ?? []).map((r) => ({
+      rating: r.rating, body: r.body, createdAt: r.created_at,
+    })),
+    avgRating: (reviews ?? []).length > 0
+      ? Math.round(((reviews ?? []).reduce((sum, r) => sum + r.rating, 0) / (reviews ?? []).length) * 10) / 10
+      : null,
   };
 }

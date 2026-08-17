@@ -32,7 +32,7 @@ export default async function StorefrontPage({
   if (handle !== handle.toLowerCase()) redirect(`/c/${handle.toLowerCase()}`);
   const storefront = await getStorefront(handle.toLowerCase());
   if (!storefront) notFound();
-  const { profile, offerings, portfolio, stats } = storefront;
+  const { profile, offerings, portfolio, stats, reviews, avgRating } = storefront;
 
   return (
     <main className="mx-auto max-w-3xl p-8">
@@ -110,6 +110,23 @@ export default async function StorefrontPage({
           </ul>
         )}
       </section>
+
+      {reviews.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-xl font-medium mb-3">
+            Brand reviews {avgRating !== null && <>· ★ {avgRating}</>}
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {reviews.map((r, i) => (
+              <li key={i} className="border rounded p-4">
+                <p className="text-sm font-medium">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</p>
+                {r.body && <p className="text-sm mt-1 whitespace-pre-line">{r.body}</p>}
+                <p className="text-xs text-gray-400 mt-1">{new Date(r.createdAt).toLocaleDateString()}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {portfolio.length > 0 && (
         <section>

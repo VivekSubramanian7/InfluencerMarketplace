@@ -5,6 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { markPaid, performDealAction } from "./actions";
+import { submitReview } from "./review-actions";
 import { DealMessages } from "./messages";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,11 +35,12 @@ export default async function DealPage({
   if (!deal) notFound(); // RLS hides other people's deals
 
   const myRole = deal.brand_id === user.id ? "brand" : "creator";
-  const [{ data: brief }, { data: events }, { data: counterpartProfile }] = await Promise.all([
+  const [{ data: brief }, { data: events }, { data: counterpartProfile }, { data: myReview }] = await Promise.all([
     supabase.from("briefs").select("goals, product_description, talking_points").eq("deal_id", id).maybeSingle(),
     supabase.from("deal_events").select("action, from_status, to_status, created_at").eq("deal_id", id).order("created_at"),
     supabase.from("profiles").select("display_name")
       .eq("id", myRole === "brand" ? deal.creator_id : deal.brand_id).maybeSingle(),
+    supabase.from("reviews").select("id").eq("deal_id", id).eq("author_id", user.id).maybeSingle(),
   ]);
 
   const actions = role === "admin" ? [] :
@@ -133,6 +135,24 @@ export default async function DealPage({
           <input type="hidden" name="deal_id" value={deal.id} />
           <button className="border rounded px-4 py-2 text-sm">Mark as paid</button>
         </form>
+      )}
+
+      {deal.status === "completed" && !myReview && (
+        <section className="mb-6 border rounded p-4">
+          <h2 className="font-medium mb-3">Leave a review</h2>
+          <form action={submitReview} className="flex flex-col gap-3">
+            <input type="hidden" name="deal_id" value={deal.id} />
+            <label className="flex items-center gap-2">
+              <span>Rating</span>
+              <select name="rating" className="border rounded p-2" defaultValue="5">
+                {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <textarea name="body" rows={3} placeholder="How was the collaboration?"
+              className="border rounded p-2" />
+            <button className="bg-black text-white rounded p-2 self-start px-6">Submit review</button>
+          </form>
+        </section>
       )}
 
       <section className="mb-6">
