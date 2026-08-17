@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseMediaUrl } from "@/lib/storefront/validation";
+import { friendlyDbError } from "@/lib/errors";
 
 const USER_ACTIONS = new Set([
   "accept", "decline", "begin_production", "submit_preview",
@@ -39,7 +40,7 @@ export async function performDealAction(formData: FormData) {
     p_payload: payload,
   });
   if (error) {
-    redirect(`/deals/${dealId}?error=` + encodeURIComponent(error.message));
+    redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
   revalidatePath(`/deals/${dealId}`);
   redirect(`/deals/${dealId}`);
@@ -52,7 +53,7 @@ export async function markPaid(formData: FormData) {
 
   const { error } = await supabase.rpc("mark_deal_paid", { p_deal_id: dealId });
   if (error) {
-    redirect(`/deals/${dealId}?error=` + encodeURIComponent(error.message));
+    redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
   revalidatePath(`/deals/${dealId}`);
   redirect(`/deals/${dealId}`);

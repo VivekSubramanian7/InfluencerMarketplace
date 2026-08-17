@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseIntInRange, parseOptionalText } from "@/lib/storefront/validation";
+import { friendlyDbError } from "@/lib/errors";
 
 export async function submitReview(formData: FormData) {
   const { user } = await requireUser();
@@ -24,7 +25,10 @@ export async function submitReview(formData: FormData) {
     .from("reviews")
     .insert({ deal_id: dealId, author_id: user.id, rating, body: body.value });
   if (error) {
-    const msg = error.code === "23505" ? "You already reviewed this deal" : error.message;
+    const msg = friendlyDbError(error, {
+      "23505": "You already reviewed this deal",
+      "42501": "You can only review completed deals you were part of",
+    });
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(msg));
   }
 

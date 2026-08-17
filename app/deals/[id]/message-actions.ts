@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseText } from "@/lib/storefront/validation";
+import { friendlyDbError } from "@/lib/errors";
 
 export async function sendMessage(formData: FormData) {
   const { user } = await requireUser();
@@ -19,7 +20,10 @@ export async function sendMessage(formData: FormData) {
     .from("messages")
     .insert({ deal_id: dealId, sender_id: user.id, body });
   if (error) {
-    redirect(`/deals/${dealId}?error=` + encodeURIComponent(error.message));
+    const msg = friendlyDbError(error, {
+      "42501": "You can only message on your own deals",
+    });
+    redirect(`/deals/${dealId}?error=` + encodeURIComponent(msg));
   }
   revalidatePath(`/deals/${dealId}`);
   redirect(`/deals/${dealId}`);

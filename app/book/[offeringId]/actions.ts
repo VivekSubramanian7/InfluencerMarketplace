@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseOptionalText, parseText } from "@/lib/storefront/validation";
+import { friendlyDbError } from "@/lib/errors";
 
 export async function createBooking(formData: FormData) {
   const { user } = await requireRole("brand");
@@ -48,7 +49,10 @@ export async function createBooking(formData: FormData) {
     .select("id")
     .single();
   if (dErr || !deal) {
-    redirect(`/book/${offeringId}?error=` + encodeURIComponent(dErr?.message ?? "Booking failed"));
+    const msg = friendlyDbError(dErr, {
+      "42501": "You can only book as a brand account",
+    });
+    redirect(`/book/${offeringId}?error=` + encodeURIComponent(msg));
   }
 
   const { error: bErr } = await supabase.from("briefs").insert({
@@ -59,7 +63,7 @@ export async function createBooking(formData: FormData) {
   });
   if (bErr) {
     redirect(`/deals/${deal.id}?error=` +
-      encodeURIComponent("Deal created but the brief failed to save: " + bErr.message));
+      encodeURIComponent("Deal created but the brief failed to save: " + friendlyDbError(bErr)));
   }
 
   redirect(`/deals/${deal.id}`);
