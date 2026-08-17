@@ -42,6 +42,53 @@ create policy "brands create deals as requested"
   with check ((select auth.uid()) = brand_id and status = 'requested');
 -- NO update/delete policies: every mutation goes through security-definer RPCs.
 
+-- deal-creation integrity (human-approved precedent: client-reachable writes
+-- must be validated): snapshot is forced from the referenced offering,
+-- self-dealing is rejected, and only brand accounts can book
+create function public.validate_deal_insert()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_offering public.offerings;
+  v_brand_role public.user_role;
+begin
+  if new.brand_id = new.creator_id then
+    raise exception 'brand and creator cannot be the same user';
+  end if;
+
+  select role into v_brand_role from public.profiles where id = new.brand_id;
+  if v_brand_role is distinct from 'brand' then
+    raise exception 'deals can only be created by brand accounts';
+  end if;
+
+  if new.offering_id is null then
+    raise exception 'deals must reference an offering';
+  end if;
+
+  select * into v_offering from public.offerings o where o.id = new.offering_id;
+  if not found or not v_offering.active then
+    raise exception 'offering not found or inactive';
+  end if;
+  if v_offering.creator_id <> new.creator_id then
+    raise exception 'offering does not belong to this creator';
+  end if;
+
+  -- snapshot integrity: frozen values always come from the offering itself
+  new.offering_type := v_offering.type;
+  new.offering_title := v_offering.title;
+  new.price_cents := v_offering.price_cents;
+  new.currency := v_offering.currency;
+  new.revision_limit := v_offering.revision_limit;
+
+  return new;
+end;
+$$;
+
+create trigger deals_validate_insert
+  before insert on public.deals
+  for each row execute function public.validate_deal_insert();
+
 create table public.briefs (
   deal_id uuid primary key references public.deals(id) on delete cascade,
   goals text,
@@ -99,6 +146,7 @@ create table public.payments (
   deal_id uuid not null references public.deals(id),
   stripe_payment_intent_id text unique,
   amount_cents bigint not null,
+  currency text not null default 'usd',
   status text not null default 'pending'
     check (status in ('pending','succeeded','refunded','failed')),
   created_at timestamptz not null default now()
@@ -113,6 +161,7 @@ create table public.payouts (
   deal_id uuid not null references public.deals(id),
   stripe_transfer_id text unique,
   amount_cents bigint not null,
+  currency text not null default 'usd',
   status text not null default 'pending'
     check (status in ('pending','paid','failed')),
   created_at timestamptz not null default now()
