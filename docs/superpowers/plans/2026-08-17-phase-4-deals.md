@@ -873,8 +873,10 @@ export default async function DealPage({
         </section>
       )}
 
-      {myRole === "brand" && deal.payment_mode === "off_platform" && !deal.marked_paid_at &&
-        !["requested", "cancelled"].includes(deal.status) && (
+      {role !== "admin" && myRole === "brand" && deal.payment_mode === "off_platform" &&
+        !deal.marked_paid_at &&
+        ["accepted", "in_production", "submitted", "revision_requested", "published", "completed"]
+          .includes(deal.status) && (
         <form action={markPaid} className="mb-6">
           <input type="hidden" name="deal_id" value={deal.id} />
           <button className="border rounded px-4 py-2 text-sm">Mark as paid</button>
@@ -1119,7 +1121,7 @@ supabase
   .order("created_at", { ascending: false })
   .limit(10),
 ```
-Throw on error like the others. Map to the interface and compute `avgRating` over the fetched rows (1 decimal via `Math.round(avg * 10) / 10`, null when empty).
+Throw on error like the others. Map to the interface. `avgRating` is computed over ALL the creator's reviews, not the display page — add a sixth parallel query fetching `rating` only (no limit) from the same view and average that result (1 decimal via `Math.round(avg * 10) / 10`, null when empty).
 
 In `app/c/[handle]/page.tsx`, after the Offerings section:
 ```tsx
@@ -1152,6 +1154,15 @@ git commit -m "feat: two-sided reviews with storefront ratings"
 ```
 
 ---
+
+## Carry-forward (final-review triage, 2026-08-17)
+
+**MANDATORY before the Stripe/escrow phase ships the fund webhook:**
+- Timer sweep clocks the 72h accept window from `requested_at` even for `funded` escrow deals — a deal funded >72h after request would be expire-cancelled post-payment. Fix as a new migration in the escrow phase: split into `(status='requested' and requested_at < …) or (status='funded' and funded_at < …)`. Dormant until then (all Phase-4 deals are off_platform).
+
+**When transition_deal is next touched (escrow phase):** whitelist payload keys (currently any participant can attach arbitrary jsonb to deal_events.metadata); tighten `reviews` base-table anon exposure (public SELECT + anon grant exposes author_id/deal_id; the 0012 view is the curated path).
+
+**Polish phase (error-copy pass):** dedupe raw error.message redirects across booking/deal/message/review actions; map 42501 alongside 23505 for duplicate reviews; return-to on /book login redirects; brand logout via shared nav (Phase 6); admin dispute-resolution UI (Phase 6 closes the disputed dead-end); sweep failure counting; avgRating → SQL aggregate at scale; booking atomicity folds into the escrow booking RPC.
 
 ### Task 9: Phase 4 verification sweep
 
