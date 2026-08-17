@@ -102,6 +102,9 @@ export default async function StorefrontPage({
                   {o.revisionLimit} revision{o.revisionLimit === 1 ? "" : "s"} included
                 </p>
                 {o.description && <p className="mt-2 text-sm">{o.description}</p>}
+                <a href={`/book/${o.id}`} className="inline-block border rounded px-4 py-2 mt-3 text-sm">
+                  Book this
+                </a>
               </li>
             ))}
           </ul>
