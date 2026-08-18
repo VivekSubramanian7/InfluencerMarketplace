@@ -1,60 +1,61 @@
-# Design
+# Design System — Clipline ("Booking Ledger")
 
-## Theme
+Approved 2026-08-18 via /design-consultation (variant B of three researched
+directions; Codex + independent Claude voices converged on the core).
+Supersedes the crimson/Bricolage system. Mockup evidence:
+`~/.gstack/projects/InfluencerMarketplace/designs/design-system-20260818/`.
 
-Light, committed-color. Pure white ground; a deep **crimson** (the "safelight" red) carries identity on brand surfaces (hero bands, primary CTAs, storefront accents), with **amber** as the second voice for ratings, badges, and highlights. App surfaces use the same tokens at low volume: white + ink + hairlines, crimson reserved for the primary action, amber for state.
+## Product Context
+- **What this is:** Two-sided marketplace — video micro-influencers publish bookable storefronts; brands book and track deals through an enforced state machine.
+- **Who it's for:** Creators (phones, between shoots) and brand managers (laptops, work hours).
+- **Memorable thing:** "Creators look like businesses here." The design's job is to make a 5k-follower creator read like a serious independent studio.
+- **Project type:** Web app with public brand surfaces (landing, storefronts).
 
-Color strategy: **Committed** on brand surfaces (crimson carries 30–60% of the hero/footer bands), **Restrained** on workflow surfaces.
-
-## Color Palette (OKLCH)
-
-| Token | Value | Role |
-|---|---|---|
-| `--bg` | `oklch(1 0 0)` | page ground (pure white, no hidden warmth) |
-| `--surface` | `oklch(0.965 0.006 27)` | cards, wells, section tints |
-| `--ink` | `oklch(0.205 0.02 27)` | body text (≥7:1 on bg) |
-| `--muted` | `oklch(0.49 0.015 27)` | secondary text (≥4.5:1 on bg) |
-| `--line` | `oklch(0.9 0.008 27)` | hairline borders |
-| `--primary` | `oklch(0.464 0.169 26.9)` | crimson — CTAs, brand bands; ALWAYS white text on fills |
-| `--primary-deep` | `oklch(0.36 0.14 27)` | hover/active, dark brand bands |
-| `--accent` | `oklch(0.86 0.12 85)` | amber — ratings, badges, highlights; ink text on fills |
-| `--ok` | `oklch(0.55 0.12 150)` | success states |
-| `--warn` | `oklch(0.62 0.14 60)` | attention states |
-
-Dark crimson band (`--primary-deep` or near-black `oklch(0.17 0.015 27)`) is the drench move for hero/footer on brand surfaces only.
+## Aesthetic Direction
+- **Direction:** Booking Ledger — warm editorial paper sharpened by one electric blue. Tactile, composed, quietly energetic. The platform is the paperwork of professional work: rate cards, tear sheets, ledgers.
+- **Decoration level:** intentional — rules (1.5px ink lines), paper/ink layering, and composition do the work; no blobs, no glass, no gradients in chrome.
+- **Mood:** A well-run studio's front office. Confident, warm, precise.
+- **Reference:** Contra's work-forward marketplace restraint; editorial rate-card formats. Anti-references remain: Heepsy green SaaS, purple-gradient startup, crypto-dark, enterprise gray — and the rejected loud-crimson-on-white.
 
 ## Typography
+- **Display/Hero:** Spectral (500/600 + italic) — serif gravitas for statements, creator names, and rates; the "business" register. (Deliberate swap from Instrument Serif — overused-font watchlist.)
+- **Body/UI:** Hanken Grotesk (400/500/600/700) — operational confidence for nav, forms, metadata, controls.
+- **Data:** Hanken Grotesk + `font-variant-numeric: tabular-nums` for every price, count, and countdown. No mono-as-costume.
+- **Loading:** Google Fonts via next/font (`Spectral`, `Hanken_Grotesk`).
+- **Scale:** display `clamp(2.2rem, 5vw, 3.5rem)` Spectral; h2 1.75rem; h3 1.25rem; body 1rem/1.6 (≤70ch); ui/labels 0.875rem 500-600. Headlines sentence case, tight-tracked, never quirky.
 
-Single family, committed contrast: **Bricolage Grotesque** (variable, via `next/font/google`) — characterful grotesque that reads creator-native without costume.
+## Color
+- **Approach:** restrained — paper, ink, one decisive blue. Blue means commercial intent: primary actions, links, active deal states, timers. No secondary rainbow of states — labels and line styles first.
+- **Background (paper):** `#F1EFE7`
+- **Surface (card stock):** `#FCFBF7`
+- **Ink (text):** `#171A18`
+- **Muted:** `#6F746E`
+- **Rule lines:** ink at 1.5px for structural rules; `#DDD8C9` hairlines for minor dividers
+- **Accent (booking blue):** `#315CFF` — white text on blue fills, always
+- **Semantic (muted, paper-compatible):** success `#2E7D4F`, warning `#B07C24`, error `#B3362B`
+- **Ratings:** ink stars (★ in `#171A18`), value in tabular nums — no amber, no gold
+- **Dark mode:** none — light-only is a committed decision.
 
-- Display: 800, `clamp(2.4rem, 6vw, 4.5rem)`, letter-spacing −0.03em, `text-wrap: balance`
-- H2/H3: 700, modular ×1.3 steps
-- Body: 400, 1rem/1.6, max 70ch
-- UI labels/buttons: 600
-- Metrics: `font-variant-numeric: tabular-nums`
-
-## Components
-
-Base: **shadcn/ui** primitives (button, card, input, select, textarea, badge, label, separator) restyled onto the tokens above — radius 0.75rem, hairline borders, no shadows except one soft elevation for popovers/dialogs.
-
-Signature pieces:
-- **Creator card** (discovery): avatar block (initial-letter on crimson if no image), name/@handle, niche pills, "From $X" price line, amber ★ rating when present
-- **Filter chip row** (discovery): pill-shaped selects, Heepsy-pattern UX with our skin
-- **Deal state banner**: full-width tinted strip naming the state + whose move it is
-- **Verification badge**: amber pill "Verified" / muted "Verification pending" — never fake numbers
-- **Off-platform payment banner**: amber-tinted, always visible on off-platform deals
+## Spacing
+- **Base unit:** 4px · **Density:** comfortable on app surfaces, generous on brand surfaces
+- **Scale:** 2xs(2) xs(4) sm(8) md(16) lg(24) xl(32) 2xl(48) 3xl(64)
 
 ## Layout
-
-- Brand pages: single-purpose folds, asymmetric hero (copy left, product-in-action panel right on a deep band), fluid `clamp()` spacing
-- App pages: centered column ≤ 72rem, page title + primary action on one row, generous section spacing (2.5rem+)
-- Responsive grids: `repeat(auto-fit, minmax(280px, 1fr))`
-- z-scale: dropdown 10 → sticky 20 → backdrop 30 → modal 40 → toast 50
+- **Approach:** hybrid — creative-editorial on brand surfaces (asymmetric 7/5 tear-sheet compositions, content deliberately crossing the grid, storefront-as-rate-card), grid-disciplined on workflow surfaces.
+- **Signature moves:** the storefront reads as an editorial tear sheet (big Spectral name, structured fact rows with prices right-aligned over ink rules); discovery is a talent index with generous rows, not a thumbnail mosaic; the deal timeline renders as a single horizontal ledger rule with stamped states (current = blue, done = ink, future = outlined) and plain-language timers ("Creator response due in 14h").
+- **Max content width:** 72rem brand, 56rem forms · **Border radius:** sm 4px, md 8px (buttons/inputs), lg 12px (cards) — editorial, never bubbly; no pills except nowhere.
+- **Buttons:** blue fill = the one advancing action; ink outline = secondary; ink text link = tertiary. Destructive-confirm = error-color outline.
 
 ## Motion
+- **Approach:** minimal-functional; the paper doesn't bounce. 150-250ms ease-out color/opacity transitions; the deal-ticker line may tick. `prefers-reduced-motion` fully honored.
 
-Ease-out-quart, 150–250ms micro-interactions (hover lifts ≤2px, color transitions). One orchestrated entrance on the landing hero only (staggered copy + panel fade-rise). Everything gated by `@media (prefers-reduced-motion: reduce)` → instant.
+## Accessibility
+WCAG AA. Ink on paper ≈ 15:1; muted on paper ≥ 4.6:1; white on booking blue passes large+normal; verify any new pair. Labels on every input; keyboard + visible focus (blue ring); 44px touch targets.
 
-## Imagery
-
-Product-in-action panels (real UI mockups) are the primary imagery on brand surfaces — the Heepsy pattern done in our skin. Creator-supplied portfolio links carry their own imagery. Avatar fallback: initial letter, white-on-crimson. No decorative stock filler.
+## Decisions Log
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-08-17 | Crimson/Bricolage "safelight" system | Initial impeccable pass |
+| 2026-08-18 | Replaced by Booking Ledger (variant B) | User rejected crimson as harsh/plain/wrong-mood; research + 3-voice convergence on paper/ink/one-blue; approved via comparison board |
+| 2026-08-18 | Spectral over Instrument Serif | Overused-font watchlist; same editorial energy |
+| 2026-08-18 | Ink ratings, no amber | One-accent discipline: blue = commercial intent only |
