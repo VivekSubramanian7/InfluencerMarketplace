@@ -7,6 +7,7 @@ export function SiteNav({ role }: { role: "creator" | "brand" | "admin" }) {
     role === "creator"
       ? [
           { href: "/dashboard", label: "Dashboard" },
+          { href: "/campaigns", label: "Campaigns" },
           { href: "/deals", label: "Deals" },
         ]
       : role === "admin"
@@ -16,6 +17,7 @@ export function SiteNav({ role }: { role: "creator" | "brand" | "admin" }) {
           ]
         : [
             { href: "/discover", label: "Discover" },
+            { href: "/campaigns", label: "Campaigns" },
             { href: "/deals", label: "Deals" },
           ];
   return (
