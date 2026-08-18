@@ -1,5 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { sendMessage } from "./message-actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export async function DealMessages({ dealId, userId }: { dealId: string; userId: string }) {
   const supabase = await createServerSupabase();
@@ -10,29 +12,35 @@ export async function DealMessages({ dealId, userId }: { dealId: string; userId:
     .order("created_at");
 
   return (
-    <section className="mb-6 border rounded p-4">
-      <h2 className="font-medium mb-3">Messages</h2>
-      <ul className="flex flex-col gap-2 mb-4">
+    <section className="mt-6 rounded-xl border p-5">
+      <h2 className="text-base font-bold">Messages</h2>
+      <ul className="mt-3 mb-4 flex flex-col gap-2">
         {(messages ?? []).map((m) => (
           <li key={m.id}
-            className={`rounded p-3 text-sm max-w-[85%] ${
-              m.sender_id === userId ? "bg-black text-white self-end" : "bg-gray-100 self-start"
+            className={`max-w-[85%] rounded-lg p-3 text-sm ${
+              m.sender_id === userId ? "self-end bg-primary text-primary-foreground" : "self-start bg-secondary"
             }`}>
             <p className="whitespace-pre-line break-words">{m.body}</p>
-            <p className={`text-xs mt-1 ${m.sender_id === userId ? "text-gray-300" : "text-gray-500"}`}>
+            <p className={`mt-1 text-xs ${m.sender_id === userId ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
               {new Date(m.created_at).toLocaleString()}
             </p>
           </li>
         ))}
         {(messages ?? []).length === 0 && (
-          <li className="text-sm text-gray-500">No messages yet — say hello.</li>
+          <li className="text-sm text-muted-foreground">No messages yet — say hello.</li>
         )}
       </ul>
       <form action={sendMessage} className="flex gap-2">
         <input type="hidden" name="deal_id" value={dealId} />
-        <input name="body" placeholder="Write a message" required maxLength={5000}
-          className="border rounded p-2 flex-1" />
-        <button className="bg-black text-white rounded px-4">Send</button>
+        <Input
+          name="body"
+          placeholder="Write a message"
+          aria-label="Write a message"
+          required
+          maxLength={5000}
+          className="flex-1"
+        />
+        <Button type="submit">Send</Button>
       </form>
     </section>
   );

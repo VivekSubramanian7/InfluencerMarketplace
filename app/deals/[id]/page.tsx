@@ -8,6 +8,10 @@ import { markPaid, performDealAction } from "./actions";
 import { submitReview } from "./review-actions";
 import { DealMessages } from "./messages";
 import { SiteNav } from "@/components/site-nav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator response", funded: "Funded",
@@ -47,58 +51,79 @@ export default async function DealPage({
   const actions = role === "admin" ? [] :
     actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode);
 
+  const statusIsAttention = deal.status === "disputed" || deal.status === "published";
+
   return (
     <>
       <SiteNav role={role} />
-      <main className="mx-auto max-w-2xl p-8">
-      <Link href="/deals" className="text-sm underline">← All deals</Link>
-      <h1 className="text-2xl font-semibold mt-2 mb-1">{deal.offering_title}</h1>
-      <p className="text-gray-600 mb-1">
+      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+      <Link href="/deals" className="text-sm text-muted-foreground hover:underline">← All deals</Link>
+      <h1 className="mt-2 text-3xl font-extrabold tracking-tight">{deal.offering_title}</h1>
+      <p className="mt-1 text-muted-foreground">
         {myRole === "brand" ? "You booked" : "Booked by"}{" "}
-        {counterpartProfile?.display_name ?? "counterpart"} · ${(deal.price_cents / 100).toFixed(2)}
+        {counterpartProfile?.display_name ?? "counterpart"} ·{" "}
+        <span className="font-extrabold tabular-nums text-primary">
+          ${(deal.price_cents / 100).toFixed(2)}
+        </span>
       </p>
-      <p className="mb-4 font-medium">{STATUS_LABELS[deal.status] ?? deal.status}</p>
+      <p
+        className={
+          statusIsAttention
+            ? "mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 font-semibold"
+            : "mt-4 rounded-lg bg-secondary px-4 py-3 font-semibold"
+        }
+      >
+        {STATUS_LABELS[deal.status] ?? deal.status}
+      </p>
 
       {deal.payment_mode === "off_platform" && (
-        <p className="mb-4 text-sm border rounded p-3 bg-amber-50">
+        <p className="mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 text-sm">
           Payment for this deal is handled outside the platform.
           {deal.marked_paid_at
             ? ` The brand marked it paid on ${new Date(deal.marked_paid_at).toLocaleDateString()}.`
             : " Agree on payment directly with your counterpart."}
         </p>
       )}
-      {error && <p className="mb-4 text-red-600">{error}</p>}
-      {reported && <p className="mb-4 text-green-700">Thanks — our team will take a look.</p>}
+      {error && (
+        <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      {reported && (
+        <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+          Thanks — our team will take a look.
+        </p>
+      )}
 
       {(deal.preview_url || deal.live_url) && (
-        <section className="mb-6 border rounded p-4">
-          <h2 className="font-medium mb-2">Deliverables</h2>
+        <section className="mt-6 rounded-xl border p-5">
+          <h2 className="text-base font-bold">Deliverables</h2>
           {deal.preview_url && (
-            <p className="text-sm">Preview:{" "}
-              <a className="underline break-all" href={deal.preview_url}
+            <p className="mt-2 text-sm">Preview:{" "}
+              <a className="break-all text-primary underline" href={deal.preview_url}
                 target="_blank" rel="noopener noreferrer">{deal.preview_url}</a></p>
           )}
           {deal.live_url && (
-            <p className="text-sm">Live post:{" "}
-              <a className="underline break-all" href={deal.live_url}
+            <p className="mt-1 text-sm">Live post:{" "}
+              <a className="break-all text-primary underline" href={deal.live_url}
                 target="_blank" rel="noopener noreferrer">{deal.live_url}</a></p>
           )}
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-2 text-xs text-muted-foreground">
             Revisions used: {deal.revision_count} of {deal.revision_limit}
           </p>
         </section>
       )}
 
       {brief && (
-        <section className="mb-6 border rounded p-4">
-          <h2 className="font-medium mb-2">Brief</h2>
-          <p className="text-sm whitespace-pre-line mb-2"><strong>Goals:</strong> {brief.goals}</p>
+        <section className="mt-6 rounded-xl border p-5">
+          <h2 className="text-base font-bold">Brief</h2>
+          <p className="mt-2 whitespace-pre-line text-sm"><strong>Goals:</strong> {brief.goals}</p>
           {brief.product_description && (
-            <p className="text-sm whitespace-pre-line mb-2">
+            <p className="mt-2 whitespace-pre-line text-sm">
               <strong>Product:</strong> {brief.product_description}</p>
           )}
           {brief.talking_points && (
-            <p className="text-sm whitespace-pre-line">
+            <p className="mt-2 whitespace-pre-line text-sm">
               <strong>Talking points:</strong> {brief.talking_points}</p>
           )}
         </section>
@@ -107,24 +132,30 @@ export default async function DealPage({
       <DealMessages dealId={deal.id} userId={user.id} />
 
       {actions.length > 0 && (
-        <section className="mb-6 border rounded p-4">
-          <h2 className="font-medium mb-3">Next steps</h2>
-          <div className="flex flex-col gap-3">
+        <section className="mt-6 rounded-xl border p-5">
+          <h2 className="text-base font-bold">Next steps</h2>
+          <div className="mt-3 flex flex-col gap-3">
             {actions.map((a) => (
-              <form key={a.action} action={performDealAction} className="flex gap-2 items-start">
+              <form key={a.action} action={performDealAction} className="flex items-start gap-2">
                 <input type="hidden" name="deal_id" value={deal.id} />
                 <input type="hidden" name="action" value={a.action} />
                 {a.needsUrl && (
-                  <input name="url" type="url" required
+                  <Input
+                    name="url"
+                    type="url"
+                    required
                     placeholder={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
-                    className="border rounded p-2 flex-1" />
+                    aria-label={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
+                    className="flex-1"
+                  />
                 )}
-                <button
-                  className={a.confirm
-                    ? "border border-red-300 text-red-700 rounded px-4 py-2"
-                    : "bg-black text-white rounded px-4 py-2"}>
+                <Button
+                  type="submit"
+                  variant={a.confirm ? "outline" : "default"}
+                  className={a.confirm ? "text-destructive border-destructive/40" : undefined}
+                >
                   {a.label}
-                </button>
+                </Button>
               </form>
             ))}
           </div>
@@ -135,38 +166,42 @@ export default async function DealPage({
         !deal.marked_paid_at &&
         ["accepted", "in_production", "submitted", "revision_requested", "published", "completed"]
           .includes(deal.status) && (
-        <form action={markPaid} className="mb-6">
+        <form action={markPaid} className="mt-6">
           <input type="hidden" name="deal_id" value={deal.id} />
-          <button className="border rounded px-4 py-2 text-sm">Mark as paid</button>
+          <Button type="submit" variant="outline" size="sm">Mark as paid</Button>
         </form>
       )}
 
       {role !== "admin" && deal.status === "completed" && !myReview && (
-        <section className="mb-6 border rounded p-4">
-          <h2 className="font-medium mb-3">Leave a review</h2>
-          <form action={submitReview} className="flex flex-col gap-3">
+        <section className="mt-6 rounded-xl border p-5">
+          <h2 className="text-base font-bold">Leave a review</h2>
+          <form action={submitReview} className="mt-3 flex flex-col gap-3">
             <input type="hidden" name="deal_id" value={deal.id} />
-            <label className="flex items-center gap-2">
-              <span>Rating</span>
-              <select name="rating" className="border rounded p-2" defaultValue="5">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="rating">Rating</Label>
+              <select
+                id="rating"
+                name="rating"
+                className="h-10 rounded-lg border bg-background px-3 text-sm"
+                defaultValue="5"
+              >
                 {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
               </select>
-            </label>
-            <textarea name="body" rows={3} placeholder="How was the collaboration?"
-              className="border rounded p-2" />
-            <button className="bg-black text-white rounded p-2 self-start px-6">Submit review</button>
+            </div>
+            <Textarea name="body" rows={3} placeholder="How was the collaboration?" />
+            <Button type="submit" className="self-start px-6">Submit review</Button>
           </form>
         </section>
       )}
 
-      <section className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-medium">Timeline</h2>
-          <Link href={`/report?deal=${deal.id}`} className="text-xs underline text-gray-500">
+      <section className="mt-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold">Timeline</h2>
+          <Link href={`/report?deal=${deal.id}`} className="text-xs text-muted-foreground underline">
             Report a problem
           </Link>
         </div>
-        <ul className="text-sm text-gray-600 flex flex-col gap-1">
+        <ul className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
           {(events ?? []).map((e, i) => (
             <li key={i}>
               {new Date(e.created_at).toLocaleString()} — {e.action}

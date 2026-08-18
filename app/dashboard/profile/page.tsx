@@ -2,6 +2,11 @@ import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { saveCreatorProfile, setProfileStatus } from "./actions";
 import { SiteNav } from "@/components/site-nav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 export default async function CreatorProfilePage({
   searchParams,
@@ -20,51 +25,66 @@ export default async function CreatorProfilePage({
   return (
     <>
       <SiteNav role={role} />
-      <main className="mx-auto max-w-xl p-8">
-      <h1 className="text-2xl font-semibold mb-2">Your creator profile</h1>
-      {p && (
-        <p className="mb-4 text-sm">
-          Status: <span className="font-medium">{p.status}</span>
-          {p.status === "live" && (
-            <> — public at <a className="underline" href={`/c/${p.handle}`}>/c/{p.handle}</a></>
-          )}
-        </p>
-      )}
-      {error && <p className="mb-4 text-red-600">{error}</p>}
-      {saved && <p className="mb-4 text-green-700">Saved.</p>}
+      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+        <h1 className="text-3xl font-extrabold tracking-tight">Your creator profile</h1>
+        {p && (
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+            Status: <Badge variant="secondary">{p.status}</Badge>
+            {p.status === "live" && (
+              <>
+                — public at{" "}
+                <a className="text-primary underline" href={`/c/${p.handle}`}>
+                  /c/{p.handle}
+                </a>
+              </>
+            )}
+          </p>
+        )}
+        {error && (
+          <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        {saved && (
+          <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+            Saved.
+          </p>
+        )}
 
-      <form action={saveCreatorProfile} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span>Handle (your public URL: /c/…)</span>
-          <input name="handle" defaultValue={p?.handle ?? ""} className="border rounded p-2" required />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Bio</span>
-          <textarea name="bio" defaultValue={p?.bio ?? ""} rows={4} className="border rounded p-2" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Niches (comma-separated, up to 8)</span>
-          <input name="niches" defaultValue={(p?.niches ?? []).join(", ")} className="border rounded p-2" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Country</span>
-          <input name="country" defaultValue={p?.country ?? ""} className="border rounded p-2" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Languages (comma-separated, up to 5)</span>
-          <input name="languages" defaultValue={(p?.languages ?? []).join(", ")} className="border rounded p-2" />
-        </label>
-        <button className="bg-black text-white rounded p-2">Save profile</button>
-      </form>
-
-      {p && (
-        <form action={setProfileStatus} className="mt-6">
-          <input type="hidden" name="status" value={p.status === "live" ? "draft" : "live"} />
-          <button className="border rounded p-2 w-full">
-            {p.status === "live" ? "Unpublish (back to draft)" : "Publish storefront"}
-          </button>
+        <form action={saveCreatorProfile} className="mt-6 flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="handle">Handle (your public URL: /c/…)</Label>
+            <Input id="handle" name="handle" defaultValue={p?.handle ?? ""} required />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea id="bio" name="bio" defaultValue={p?.bio ?? ""} rows={4} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="niches">Niches (comma-separated, up to 8)</Label>
+            <Input id="niches" name="niches" defaultValue={(p?.niches ?? []).join(", ")} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="country">Country</Label>
+            <Input id="country" name="country" defaultValue={p?.country ?? ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="languages">Languages (comma-separated, up to 5)</Label>
+            <Input id="languages" name="languages" defaultValue={(p?.languages ?? []).join(", ")} />
+          </div>
+          <Button type="submit" className="mt-2">
+            Save profile
+          </Button>
         </form>
-      )}
+
+        {p && (
+          <form action={setProfileStatus} className="mt-6">
+            <input type="hidden" name="status" value={p.status === "live" ? "draft" : "live"} />
+            <Button type="submit" variant="outline" className="w-full">
+              {p.status === "live" ? "Unpublish (back to draft)" : "Publish storefront"}
+            </Button>
+          </form>
+        )}
       </main>
     </>
   );

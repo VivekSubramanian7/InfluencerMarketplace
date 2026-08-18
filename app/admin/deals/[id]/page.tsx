@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { SiteNav } from "@/components/site-nav";
 import { resolveDispute } from "../../actions";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default async function AdminDealPage({
   params, searchParams,
@@ -28,61 +30,75 @@ export default async function AdminDealPage({
   return (
     <>
       <SiteNav role={role} />
-      <main className="mx-auto max-w-2xl p-8">
-        <Link href="/admin" className="text-sm underline">← Admin</Link>
-        <h1 className="text-2xl font-semibold mt-2 mb-1">{deal.offering_title}</h1>
-        <p className="mb-4">
-          Status: <span className="font-medium">{deal.status}</span> ·
-          ${(deal.price_cents / 100).toFixed(2)} · {deal.payment_mode}
+      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+        <Link href="/admin" className="text-sm text-muted-foreground hover:underline">← Admin</Link>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight">{deal.offering_title}</h1>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
+          Status: <Badge variant="secondary">{deal.status}</Badge> ·
+          <span className="font-extrabold tabular-nums text-primary">
+            ${(deal.price_cents / 100).toFixed(2)}
+          </span>
+          · {deal.payment_mode}
           {deal.marked_paid_at && " · marked paid"}
         </p>
-        {error && <p className="mb-4 text-red-600">{error}</p>}
-        {resolved && <p className="mb-4 text-green-700">Dispute resolved.</p>}
+        {error && (
+          <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        {resolved && (
+          <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+            Dispute resolved.
+          </p>
+        )}
 
         {deal.status === "disputed" && (
-          <section className="mb-6 border rounded p-4 bg-amber-50">
-            <h2 className="font-medium mb-3">Resolve dispute</h2>
-            <div className="flex gap-3">
+          <section className="mt-6 rounded-xl border border-amber bg-amber/15 p-5">
+            <h2 className="flex items-center gap-2 text-base font-bold">
+              Resolve dispute
+              <Badge className="bg-amber text-amber-foreground hover:bg-amber">Disputed</Badge>
+            </h2>
+            <div className="mt-3 flex gap-3">
               <form action={resolveDispute}>
                 <input type="hidden" name="deal_id" value={deal.id} />
                 <input type="hidden" name="resolution" value="release" />
-                <button className="bg-black text-white rounded px-4 py-2 text-sm">
+                <Button type="submit" size="sm">
                   Release to creator (complete)
-                </button>
+                </Button>
               </form>
               <form action={resolveDispute}>
                 <input type="hidden" name="deal_id" value={deal.id} />
                 <input type="hidden" name="resolution" value="refund" />
-                <button className="border border-red-300 text-red-700 rounded px-4 py-2 text-sm">
+                <Button type="submit" variant="outline" size="sm" className="text-destructive border-destructive/40">
                   Refund brand (cancel)
-                </button>
+                </Button>
               </form>
             </div>
           </section>
         )}
 
         {brief && (
-          <section className="mb-6 border rounded p-4">
-            <h2 className="font-medium mb-2">Brief</h2>
-            <p className="text-sm whitespace-pre-line">{brief.goals}</p>
+          <section className="mt-6 rounded-xl border p-5">
+            <h2 className="text-base font-bold">Brief</h2>
+            <p className="mt-2 whitespace-pre-line text-sm">{brief.goals}</p>
           </section>
         )}
 
-        <section className="mb-6 border rounded p-4">
-          <h2 className="font-medium mb-2">Messages ({(messages ?? []).length})</h2>
-          <ul className="text-sm flex flex-col gap-2">
+        <section className="mt-6 rounded-xl border p-5">
+          <h2 className="text-base font-bold">Messages ({(messages ?? []).length})</h2>
+          <ul className="mt-2 flex flex-col gap-2 text-sm">
             {(messages ?? []).map((m, i) => (
               <li key={i} className="border-b pb-1">
-                <span className="text-gray-500">{new Date(m.created_at).toLocaleString()}:</span>{" "}
+                <span className="text-muted-foreground">{new Date(m.created_at).toLocaleString()}:</span>{" "}
                 <span className="whitespace-pre-line">{m.body}</span>
               </li>
             ))}
           </ul>
         </section>
 
-        <section>
-          <h2 className="font-medium mb-2">Timeline</h2>
-          <ul className="text-sm text-gray-600 flex flex-col gap-1">
+        <section className="mt-6">
+          <h2 className="text-base font-bold">Timeline</h2>
+          <ul className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
             {(events ?? []).map((e, i) => (
               <li key={i}>
                 {new Date(e.created_at).toLocaleString()} — {e.action}

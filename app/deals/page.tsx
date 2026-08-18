@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { SiteNav } from "@/components/site-nav";
+import { Badge } from "@/components/ui/badge";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator", funded: "Funded",
@@ -40,22 +41,29 @@ export default async function DealsPage() {
 
   const section = (title: string, rows: typeof mine) => (
     <section className="mb-8">
-      <h2 className="text-lg font-medium mb-3">{title}</h2>
+      <h2 className="text-lg font-bold">{title}</h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-500">Nothing here.</p>
+        <p className="mt-3 text-sm text-muted-foreground">Nothing here.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="mt-3 flex flex-col gap-2">
           {rows.map((d) => (
             <li key={d.id}>
-              <Link href={`/deals/${d.id}`}
-                className="border rounded p-4 flex justify-between items-center gap-4 hover:bg-gray-50">
+              <Link
+                href={`/deals/${d.id}`}
+                className="flex items-center justify-between gap-4 rounded-xl border p-5 transition-colors hover:border-primary/40"
+              >
                 <span className="min-w-0 truncate">
                   {d.offering_title}
-                  <span className="text-gray-500"> · {myRole(d) === "brand" ? "buying" : "selling"}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {myRole(d) === "brand" ? "buying" : "selling"}
+                  </span>
                 </span>
-                <span className="flex items-center gap-4 shrink-0">
-                  <span className="text-sm text-gray-600">{STATUS_LABELS[d.status] ?? d.status}</span>
-                  <span>${(d.price_cents / 100).toFixed(2)}</span>
+                <span className="flex shrink-0 items-center gap-4">
+                  <Badge variant="secondary">{STATUS_LABELS[d.status] ?? d.status}</Badge>
+                  <span className="font-extrabold tabular-nums text-primary">
+                    ${(d.price_cents / 100).toFixed(2)}
+                  </span>
                 </span>
               </Link>
             </li>
@@ -68,11 +76,13 @@ export default async function DealsPage() {
   return (
     <>
       <SiteNav role={role} />
-      <main className="mx-auto max-w-3xl p-8">
-        <h1 className="text-2xl font-semibold mb-6">Your deals</h1>
-        {section("Action needed", needsMe)}
-        {section("In progress", inFlight)}
-        {section("Done", done)}
+      <main className="mx-auto w-full max-w-4xl px-6 py-10">
+        <h1 className="text-3xl font-extrabold tracking-tight">Your deals</h1>
+        <div className="mt-6">
+          {section("Action needed", needsMe)}
+          {section("In progress", inFlight)}
+          {section("Done", done)}
+        </div>
       </main>
     </>
   );

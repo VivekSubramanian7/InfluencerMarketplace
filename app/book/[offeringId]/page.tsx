@@ -3,6 +3,9 @@ import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createBooking } from "./actions";
 import { SiteNav } from "@/components/site-nav";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export default async function BookOfferingPage({
   params, searchParams,
@@ -31,34 +34,47 @@ export default async function BookOfferingPage({
   return (
     <>
       <SiteNav role={role} />
-      <main className="mx-auto max-w-xl p-8">
-      <h1 className="text-2xl font-semibold mb-1">Book: {offering.title}</h1>
-      <p className="text-gray-600 mb-6">
-        {creator ? <>by @{creator.handle} · </> : null}
-        ${(offering.price_cents / 100).toFixed(2)} · {offering.turnaround_days}d turnaround ·{" "}
-        {offering.revision_limit} revision{offering.revision_limit === 1 ? "" : "s"}
-      </p>
-      <p className="mb-6 text-sm border rounded p-3 bg-gray-50">
+      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+      <h1 className="text-3xl font-extrabold tracking-tight">Book: {offering.title}</h1>
+
+      <div className="mt-4 rounded-xl border p-5">
+        <p className="text-muted-foreground">
+          {creator ? <>by @{creator.handle} · </> : null}
+          <span className="font-extrabold tabular-nums text-primary">
+            ${(offering.price_cents / 100).toFixed(2)}
+          </span>{" "}
+          · {offering.turnaround_days}d turnaround ·{" "}
+          {offering.revision_limit} revision{offering.revision_limit === 1 ? "" : "s"}
+        </p>
+      </div>
+
+      <p className="mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 text-sm">
         Payment is handled outside the platform for now — you and the creator
         agree on payment directly. The deal tracker keeps both sides honest.
       </p>
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
-      <form action={createBooking} className="flex flex-col gap-4">
+      <form action={createBooking} className="mt-6 flex flex-col gap-4">
         <input type="hidden" name="offering_id" value={offering.id} />
-        <label className="flex flex-col gap-1">
-          <span>Goals — what does success look like? *</span>
-          <textarea name="goals" rows={4} className="border rounded p-2" required />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Product / service description</span>
-          <textarea name="product_description" rows={3} className="border rounded p-2" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Key talking points</span>
-          <textarea name="talking_points" rows={3} className="border rounded p-2" />
-        </label>
-        <button className="bg-black text-white rounded p-2">Send booking request</button>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="goals">Goals — what does success look like? *</Label>
+          <Textarea id="goals" name="goals" rows={4} required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product_description">Product / service description</Label>
+          <Textarea id="product_description" name="product_description" rows={3} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="talking_points">Key talking points</Label>
+          <Textarea id="talking_points" name="talking_points" rows={3} />
+        </div>
+        <Button type="submit" className="mt-2">
+          Send booking request
+        </Button>
       </form>
       </main>
     </>
