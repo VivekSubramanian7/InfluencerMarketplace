@@ -32,7 +32,7 @@ export default async function OnboardingHighlightsPage({
     .order("created_at", { ascending: false });
 
   return (
-    <WizardShell step="highlights">
+    <WizardShell step="highlights" skip={false}>
       <p className="mt-2 text-sm text-muted-foreground">
         Link the videos you&apos;re proudest of — they show as your recent work on the storefront.
       </p>
@@ -69,25 +69,33 @@ export default async function OnboardingHighlightsPage({
         )}
       </ul>
 
-      <form action={addHighlight} className="mt-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="media_url">Video link</Label>
-          <Input id="media_url" name="media_url" required placeholder="https://youtube.com/watch?v=…" />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="caption">Caption (optional)</Label>
-          <Input id="caption" name="caption" placeholder="Taste-testing every flavor of…" />
-        </div>
-        <div className="flex items-center gap-3">
-          <Button type="submit">Add highlight</Button>
-          <Link
-            href="/onboarding/publish"
-            className="text-sm font-medium underline underline-offset-2"
-          >
-            Continue → Go live
-          </Link>
-        </div>
-      </form>
+      <section className="mt-6 rounded-xl border p-5">
+        <h2 className="font-bold">Add a highlight</h2>
+        <form action={addHighlight} className="mt-3 flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="media_url">Video link</Label>
+            <Input id="media_url" name="media_url" required placeholder="https://youtube.com/watch?v=…" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="caption">Caption (optional)</Label>
+            <Input id="caption" name="caption" placeholder="Taste-testing every flavor of…" />
+          </div>
+          <Button type="submit" variant="outline" className="self-start">
+            Add highlight
+          </Button>
+        </form>
+      </section>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-6">
+        <p className="text-sm text-muted-foreground">
+          {(items ?? []).length > 0
+            ? `${(items ?? []).length} ${(items ?? []).length === 1 ? "highlight" : "highlights"} added`
+            : "Nothing added yet — you can do this later"}
+        </p>
+        <Button asChild>
+          <Link href="/onboarding/publish">Continue → Go live</Link>
+        </Button>
+      </div>
     </WizardShell>
   );
 }

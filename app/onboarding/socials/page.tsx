@@ -36,7 +36,7 @@ export default async function OnboardingSocialsPage({
   );
 
   return (
-    <WizardShell step="socials">
+    <WizardShell step="socials" skip={false}>
       <p className="mt-2 text-sm text-muted-foreground">
         Add the accounts where you post. We&apos;ll pull your public follower counts
         automatically so brands see real numbers on your storefront.
@@ -88,39 +88,47 @@ export default async function OnboardingSocialsPage({
         )}
       </ul>
 
-      <form action={addSocialAccount} className="mt-6 flex flex-col gap-4">
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,180px)_1fr]">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="platform">Platform</Label>
-            <select
-              id="platform"
-              name="platform"
-              className="h-10 rounded-lg border bg-background px-3 text-sm"
-              defaultValue={SOCIAL_PLATFORMS.find((p) => !existingByPlatform.has(p)) ?? "youtube"}
-            >
-              {SOCIAL_PLATFORMS.map((p) => (
-                <option key={p} value={p}>
-                  {SOCIAL_PLATFORM_LABELS[p]}
-                  {existingByPlatform.has(p) ? ` — replaces @${existingByPlatform.get(p)}` : ""}
-                </option>
-              ))}
-            </select>
+      <section className="mt-6 rounded-xl border p-5">
+        <h2 className="font-bold">Add a social account</h2>
+        <form action={addSocialAccount} className="mt-3 flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,180px)_1fr]">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="platform">Platform</Label>
+              <select
+                id="platform"
+                name="platform"
+                className="h-10 rounded-lg border bg-background px-3 text-sm"
+                defaultValue={SOCIAL_PLATFORMS.find((p) => !existingByPlatform.has(p)) ?? "youtube"}
+              >
+                {SOCIAL_PLATFORMS.map((p) => (
+                  <option key={p} value={p}>
+                    {SOCIAL_PLATFORM_LABELS[p]}
+                    {existingByPlatform.has(p) ? ` — replaces @${existingByPlatform.get(p)}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="handle">Handle or profile link</Label>
+              <Input id="handle" name="handle" required placeholder="@yourname or https://…" />
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="handle">Handle or profile link</Label>
-            <Input id="handle" name="handle" required placeholder="@yourname or https://…" />
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button type="submit">Add account</Button>
-          <Link
-            href="/onboarding/offerings"
-            className="text-sm font-medium underline underline-offset-2"
-          >
-            Continue → Offerings
-          </Link>
-        </div>
-      </form>
+          <Button type="submit" variant="outline" className="self-start">
+            Add account
+          </Button>
+        </form>
+      </section>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-6">
+        <p className="text-sm text-muted-foreground">
+          {(accounts ?? []).length > 0
+            ? `${(accounts ?? []).length} ${(accounts ?? []).length === 1 ? "account" : "accounts"} added`
+            : "Nothing added yet — you can do this later"}
+        </p>
+        <Button asChild>
+          <Link href="/onboarding/offerings">Continue → What you offer</Link>
+        </Button>
+      </div>
     </WizardShell>
   );
 }

@@ -38,7 +38,7 @@ export default async function OnboardingOfferingsPage({
     .order("created_at", { ascending: false });
 
   return (
-    <WizardShell step="offerings">
+    <WizardShell step="offerings" skip={false}>
       <p className="mt-2 text-sm text-muted-foreground">
         Productize what brands can book — a clear title, a set price, a turnaround.
       </p>
@@ -72,7 +72,9 @@ export default async function OnboardingOfferingsPage({
         )}
       </ul>
 
-      <form action={saveOfferingStep} className="mt-6 flex flex-col gap-4">
+      <section className="mt-6 rounded-xl border p-5">
+        <h2 className="font-bold">Add an offering</h2>
+        <form action={saveOfferingStep} className="mt-3 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="type">Type</Label>
           <select
@@ -110,16 +112,22 @@ export default async function OnboardingOfferingsPage({
             <Input id="revision_limit" name="revision_limit" type="number" defaultValue={1} />
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button type="submit">Add offering</Button>
-          <Link
-            href="/onboarding/highlights"
-            className="text-sm font-medium underline underline-offset-2"
-          >
-            Continue → Highlights
-          </Link>
-        </div>
-      </form>
+        <Button type="submit" variant="outline" className="self-start">
+          Add offering
+        </Button>
+        </form>
+      </section>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-6">
+        <p className="text-sm text-muted-foreground">
+          {(offerings ?? []).length > 0
+            ? `${(offerings ?? []).length} ${(offerings ?? []).length === 1 ? "offering" : "offerings"} added`
+            : "Nothing added yet — you can do this later"}
+        </p>
+        <Button asChild>
+          <Link href="/onboarding/highlights">Continue → Show your best work</Link>
+        </Button>
+      </div>
     </WizardShell>
   );
 }
