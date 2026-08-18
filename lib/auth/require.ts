@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -13,14 +14,20 @@ export function gateDecision(
   return { ok: true };
 }
 
-async function getUserAndRole() {
+// cache(): layouts, pages, and nested components share one lookup per request
+// instead of re-running the token check + role query each time.
+const getUserAndRole = cache(async () => {
   const supabase = await createServerSupabase();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return { user: null, role: null as Role | null };
+  // getClaims verifies the JWT signature (locally on asymmetric-key projects,
+  // via getUser on symmetric ones) — safe for authorization, without the
+  // guaranteed per-request Auth-server round trip getUser() always pays.
+  const { data } = await supabase.auth.getClaims();
+  const sub = data?.claims?.sub;
+  if (!sub) return { user: null as { id: string } | null, role: null as Role | null };
   const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", data.user.id).single();
-  return { user: data.user, role: (profile?.role ?? null) as Role | null };
-}
+    .from("profiles").select("role").eq("id", sub).single();
+  return { user: { id: sub }, role: (profile?.role ?? null) as Role | null };
+});
 
 export function safeNext(raw: string | null | undefined): string | null {
   if (!raw) return null;

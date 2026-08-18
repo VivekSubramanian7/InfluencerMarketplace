@@ -19,6 +19,10 @@ export async function updateSession(request: NextRequest) {
       },
     }
   );
-  await supabase.auth.getUser(); // refreshes expired tokens
+  // Refreshes expired tokens like getUser(), but verifies the JWT locally
+  // (WebCrypto + cached JWKS) when the project uses asymmetric signing keys —
+  // no Auth-server round trip per request. Falls back to getUser() internally
+  // on symmetric-key projects, so behavior is never worse than before.
+  await supabase.auth.getClaims();
   return response;
 }
