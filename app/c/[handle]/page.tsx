@@ -149,6 +149,11 @@ export default async function StorefrontPage({
                           avg views
                         </p>
                       )}
+                      {s.engagementRate !== null && (
+                        <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
+                          {s.engagementRate}% engagement
+                        </p>
+                      )}
                       {s.lastSyncedAt && (
                         <p className="mt-1 text-xs text-muted-foreground/70">
                           Public stats · updated {new Date(s.lastSyncedAt).toLocaleDateString()}

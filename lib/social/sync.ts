@@ -1,7 +1,13 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchYouTubeStats } from "@/lib/social/providers/youtube";
-import { fetchTikTokStats, fetchInstagramStats } from "@/lib/social/providers/scrapecreators";
+import { fetchYouTubeStats, fetchYouTubeVideos } from "@/lib/social/providers/youtube";
+import {
+  fetchTikTokStats,
+  fetchInstagramStats,
+  fetchTikTokVideos,
+  fetchInstagramVideos,
+} from "@/lib/social/providers/scrapecreators";
+import { computeVideoStats, VideoStat } from "@/lib/social/engagement";
 import { isDueForSync, isStale } from "@/lib/social/staleness";
 import { FetchStatsResult, SocialPlatform } from "@/lib/social/types";
 
@@ -12,6 +18,18 @@ const PROVIDERS: Record<
   youtube: fetchYouTubeStats,
   tiktok: fetchTikTokStats,
   instagram: fetchInstagramStats,
+};
+
+// Recent-video fetchers feeding avg_views/engagement_rate. Best effort:
+// every fetcher returns [] on any failure, and [] leaves the stored
+// values untouched (a follower sync must not wipe video metrics).
+const VIDEO_PROVIDERS: Record<
+  SocialPlatform,
+  (handle: string, signal?: AbortSignal) => Promise<VideoStat[]>
+> = {
+  youtube: fetchYouTubeVideos,
+  tiktok: fetchTikTokVideos,
+  instagram: fetchInstagramVideos,
 };
 
 // Status semantics (existing check constraint — no schema change):
@@ -37,15 +55,19 @@ export async function syncAccount(
   const scope = { creator_id: creatorId, platform, platform_handle: handle };
 
   if (result.ok && result.stats.followerCount !== null) {
+    const videoStats = computeVideoStats(
+      await VIDEO_PROVIDERS[platform](handle, AbortSignal.timeout(opts?.timeoutMs ?? 5000))
+    );
+    const update: Record<string, unknown> = {
+      follower_count: result.stats.followerCount,
+      last_synced_at: new Date().toISOString(),
+      verification_status: "pending",
+    };
+    if (videoStats.avgViews !== null) update.avg_views = videoStats.avgViews;
+    if (videoStats.engagementRate !== null) update.engagement_rate = videoStats.engagementRate;
     const { error } = await supabase
       .from("connected_accounts")
-      .update({
-        follower_count: result.stats.followerCount,
-        avg_views: result.stats.avgViews,
-        engagement_rate: result.stats.engagementRate,
-        last_synced_at: new Date().toISOString(),
-        verification_status: "pending",
-      })
+      .update(update)
       .match(scope)
       .neq("verification_status", "verified");
     if (error) return { synced: false, reason: "db_error: " + error.message };
