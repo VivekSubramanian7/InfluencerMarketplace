@@ -72,7 +72,7 @@ export default async function PortfolioPage({
           <p className="mt-1 text-sm text-muted-foreground">
             Paste any video link — we detect the platform automatically.
           </p>
-          <form action={addPortfolioItem} className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
+          <form action={addPortfolioItem} className="mt-4 flex flex-col gap-4 md:flex-row md:items-end">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="media_url">Video link</Label>
               <Input
@@ -80,7 +80,7 @@ export default async function PortfolioPage({
                 name="media_url"
                 type="url"
                 required
-                placeholder="https://youtube.com/watch?v=… · tiktok.com/@you/video/… · instagram.com/reel/…"
+                placeholder="Paste your video link"
               />
             </div>
             <div className="flex flex-1 flex-col gap-1.5">

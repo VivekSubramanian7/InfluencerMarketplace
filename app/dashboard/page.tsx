@@ -119,7 +119,7 @@ export default async function DashboardPage() {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
           {/* Recent deals */}
-          <section className="rounded-2xl bg-card p-6 shadow-card">
+          <section className="min-w-0 rounded-2xl bg-card p-6 shadow-card">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">Recent deals</h2>
               <Link href="/deals" className="text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -166,7 +166,7 @@ export default async function DashboardPage() {
           </section>
 
           {/* Storefront card + setup */}
-          <aside className="flex flex-col gap-6">
+          <aside className="flex min-w-0 flex-col gap-6">
             <section className="overflow-hidden rounded-2xl bg-card shadow-card">
               <div
                 aria-hidden
