@@ -13,9 +13,16 @@ export async function GET(request: Request) {
         .select("role")
         .eq("id", data.user.id)
         .single();
-      return NextResponse.redirect(
-        `${origin}${profile?.role === "creator" ? "/dashboard" : "/discover"}`
-      );
+      let target = "/discover";
+      if (profile?.role === "creator") {
+        const { data: cp } = await supabase
+          .from("creator_profiles")
+          .select("user_id")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        target = cp ? "/dashboard" : "/onboarding";
+      }
+      return NextResponse.redirect(`${origin}${target}`);
     }
   }
   return NextResponse.redirect(`${origin}/auth/error?message=Could+not+sign+in`);

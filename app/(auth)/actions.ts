@@ -15,7 +15,7 @@ export async function signup(formData: FormData) {
   });
   if (error) redirect(`/auth/error?message=${encodeURIComponent(error.message)}`);
   revalidatePath("/", "layout");
-  redirect(role === "creator" ? "/dashboard" : "/discover");
+  redirect(role === "creator" ? "/onboarding" : "/discover");
 }
 
 export async function login(formData: FormData) {
@@ -30,8 +30,15 @@ export async function login(formData: FormData) {
   const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", data.user.id).single();
   revalidatePath("/", "layout");
+  let creatorHome = "/dashboard";
+  if (profile?.role === "creator") {
+    // no creator profile yet → resume onboarding
+    const { data: cp } = await supabase
+      .from("creator_profiles").select("user_id").eq("user_id", data.user.id).maybeSingle();
+    if (!cp) creatorHome = "/onboarding";
+  }
   const target = safeNext(String(formData.get("next") ?? "")) ??
-    (profile?.role === "creator" ? "/dashboard" : profile?.role === "admin" ? "/admin" : "/discover");
+    (profile?.role === "creator" ? creatorHome : profile?.role === "admin" ? "/admin" : "/discover");
   redirect(target);
 }
 

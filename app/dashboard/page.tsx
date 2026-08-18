@@ -27,12 +27,14 @@ export default async function DashboardPage() {
     { data: profile },
     { count: offeringCount },
     { count: portfolioCount },
+    { count: socialCount },
     { data: deals },
     { data: myRatings },
   ] = await Promise.all([
     supabase.from("creator_profiles").select("handle, status").eq("user_id", user.id).maybeSingle(),
     supabase.from("offerings").select("id", { count: "exact", head: true }).eq("creator_id", user.id),
     supabase.from("portfolio_items").select("id", { count: "exact", head: true }).eq("creator_id", user.id),
+    supabase.from("connected_accounts").select("id", { count: "exact", head: true }).eq("creator_id", user.id),
     supabase.from("deals")
       .select("id, offering_title, price_cents, status, requested_at")
       .eq("creator_id", user.id)
@@ -51,10 +53,11 @@ export default async function DashboardPage() {
   const recentDeals = allDeals.slice(0, 4);
 
   const steps = [
-    { done: !!profile, label: "Create your profile", href: "/dashboard/profile" },
-    { done: (offeringCount ?? 0) > 0, label: "Add at least one offering", href: "/dashboard/offerings" },
-    { done: (portfolioCount ?? 0) > 0, label: "Link portfolio videos", href: "/dashboard/portfolio" },
-    { done: profile?.status === "live", label: "Publish your storefront", href: "/dashboard/profile" },
+    { done: !!profile, label: "Create your profile", href: "/onboarding/profile" },
+    { done: (socialCount ?? 0) > 0, label: "Add your social accounts", href: "/onboarding/socials" },
+    { done: (offeringCount ?? 0) > 0, label: "Add at least one offering", href: "/onboarding/offerings" },
+    { done: (portfolioCount ?? 0) > 0, label: "Link portfolio videos", href: "/onboarding/highlights" },
+    { done: profile?.status === "live", label: "Publish your storefront", href: "/onboarding/publish" },
   ];
   const openSteps = steps.filter((s) => !s.done);
   const gradient = profile ? creatorGradient(profile.handle) : null;

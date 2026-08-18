@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 import { getStorefront } from "@/lib/storefront/queries";
+import { isDueForSync } from "@/lib/social/staleness";
+import { syncDueForCreator } from "@/lib/social/sync";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { detectPlatform } from "@/lib/portfolio/platform";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +45,13 @@ export default async function StorefrontPage({
   const { profile, offerings, portfolio, stats, reviews, avgRating, ratingCount } = storefront;
   const initial = (profile.displayName ?? profile.handle).charAt(0).toUpperCase();
   const gradient = creatorGradient(profile.handle);
+
+  // Refresh-on-view: re-sync overdue public stats after the response is
+  // sent (never blocks the viewer). ISR (revalidate=300) + the 7-day
+  // per-account window in isDueForSync throttle provider calls.
+  if (stats.some((s) => isDueForSync(s.lastSyncedAt))) {
+    after(() => syncDueForCreator(profile.userId));
+  }
 
   return (
     <>
@@ -110,11 +120,7 @@ export default async function StorefrontPage({
           <h2 className="mb-4 text-xl font-bold">Audience</h2>
           {stats.length === 0 ? (
             <div className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">
-              <span className="mr-2 font-semibold text-foreground">
-                Verification pending
-              </span>
-              Stats appear once this creator connects their platform accounts —
-              Clipline never shows unverified numbers.
+              This creator hasn&apos;t linked social accounts yet.
             </div>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-3">
@@ -131,7 +137,7 @@ export default async function StorefrontPage({
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">@{s.platformHandle}</p>
-                  {s.verificationStatus === "verified" && s.followerCount !== null ? (
+                  {s.followerCount !== null ? (
                     <>
                       <p className="mt-2 text-2xl font-black tabular-nums">
                         {Intl.NumberFormat("en", { notation: "compact" }).format(s.followerCount)}
@@ -145,13 +151,13 @@ export default async function StorefrontPage({
                       )}
                       {s.lastSyncedAt && (
                         <p className="mt-1 text-xs text-muted-foreground/70">
-                          updated {new Date(s.lastSyncedAt).toLocaleDateString()}
+                          Public stats · updated {new Date(s.lastSyncedAt).toLocaleDateString()}
                         </p>
                       )}
                     </>
                   ) : (
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Verification {s.verificationStatus}
+                      {s.verificationStatus === "failed" ? "Stats unavailable" : "Stats syncing…"}
                     </p>
                   )}
                 </li>
