@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getStorefront } from "@/lib/storefront/queries";
 import { creatorGradient } from "@/lib/identity/gradient";
+import { detectPlatform } from "@/lib/portfolio/platform";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -249,7 +250,13 @@ export default async function StorefrontPage({
                         opacity: 0.85,
                       }}
                     />
-                    <div className="p-4">
+                    <span
+                      className="-mt-4 ml-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold shadow-card"
+                      style={{ color: creatorGradient(`${profile.handle}-${i}`).deep }}
+                    >
+                      {detectPlatform(item.mediaUrl).label}
+                    </span>
+                    <div className="px-4 pb-4 pt-2">
                       <p className="font-semibold">{item.caption ?? "Watch"}</p>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
                         {item.mediaUrl}
