@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Supabase CLI-generated local dev artifacts (bundled function code, secrets cache).
     "supabase/**",
+    // design-sync staging + generated bundle output (claude.ai/design converter).
+    ".ds-sync/**",
+    "ds-bundle/**",
+    ".design-sync/**",
   ]),
 ]);
 
