@@ -1,0 +1,21 @@
+{
+  "projectId": "325c2d35-a138-419d-ab73-56f472e134c7",
+  "shape": "package",
+  "pkg": "influencer-marketplace",
+  "globalName": "CliplineDS",
+  "srcDir": "components/ui",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/ds-styles.css",
+  "runtimeFontPrefixes": [
+    "Bricolage"
+  ],
+  "overrides": {
+    "Button": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md",
+  "guidelinesGlob": [
+    "docs/DESIGN-SYSTEM-BRIEF.md"
+  ]
+}
