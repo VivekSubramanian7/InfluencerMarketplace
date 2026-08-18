@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { saveProfileStep } from "./actions";
 import { WizardShell } from "@/components/onboarding/wizard-shell";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -53,9 +53,9 @@ export default async function OnboardingProfilePage({
           <Label htmlFor="languages">Languages (comma-separated, up to 5)</Label>
           <Input id="languages" name="languages" defaultValue={(p?.languages ?? []).join(", ")} />
         </div>
-        <Button type="submit" className="mt-2 self-start">
+        <SubmitButton className="mt-2 self-start" pendingLabel="Saving…">
           Save and continue
-        </Button>
+        </SubmitButton>
       </form>
     </WizardShell>
   );

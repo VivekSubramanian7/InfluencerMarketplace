@@ -5,6 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { saveOfferingStep } from "./actions";
 import { WizardShell } from "@/components/onboarding/wizard-shell";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -112,9 +113,9 @@ export default async function OnboardingOfferingsPage({
             <Input id="revision_limit" name="revision_limit" type="number" defaultValue={1} />
           </div>
         </div>
-        <Button type="submit" variant="outline" className="self-start">
+        <SubmitButton variant="outline" className="self-start" pendingLabel="Adding…">
           Add offering
-        </Button>
+        </SubmitButton>
         </form>
       </section>
 

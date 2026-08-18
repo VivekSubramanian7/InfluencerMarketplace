@@ -5,7 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOnboardingState } from "@/lib/onboarding/state";
 import { publishStorefront } from "./actions";
 import { WizardShell } from "@/components/onboarding/wizard-shell";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export default async function OnboardingPublishPage({
   searchParams,
@@ -57,9 +57,9 @@ export default async function OnboardingPublishPage({
 
       <div className="mt-6 flex items-center gap-4">
         <form action={publishStorefront}>
-          <Button type="submit">
+          <SubmitButton pendingLabel="Publishing…">
             {state.isLive ? "You're live — back to dashboard" : "Publish storefront"}
-          </Button>
+          </SubmitButton>
         </form>
         {state.handle && (
           <Link

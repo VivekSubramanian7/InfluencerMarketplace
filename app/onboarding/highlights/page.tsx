@@ -6,6 +6,7 @@ import { addHighlight, removeHighlight } from "./actions";
 import { detectPlatform } from "@/lib/portfolio/platform";
 import { WizardShell } from "@/components/onboarding/wizard-shell";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -80,9 +81,9 @@ export default async function OnboardingHighlightsPage({
             <Label htmlFor="caption">Caption (optional)</Label>
             <Input id="caption" name="caption" placeholder="Taste-testing every flavor of…" />
           </div>
-          <Button type="submit" variant="outline" className="self-start">
+          <SubmitButton variant="outline" className="self-start" pendingLabel="Adding…">
             Add highlight
-          </Button>
+          </SubmitButton>
         </form>
       </section>
 

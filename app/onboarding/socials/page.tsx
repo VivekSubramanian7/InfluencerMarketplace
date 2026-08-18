@@ -6,6 +6,7 @@ import { addSocialAccount, removeSocialAccount } from "./actions";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABELS, SocialPlatform } from "@/lib/social/types";
 import { WizardShell } from "@/components/onboarding/wizard-shell";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -113,9 +114,9 @@ export default async function OnboardingSocialsPage({
               <Input id="handle" name="handle" required placeholder="@yourname or https://…" />
             </div>
           </div>
-          <Button type="submit" variant="outline" className="self-start">
+          <SubmitButton variant="outline" className="self-start" pendingLabel="Adding & syncing stats…">
             Add account
-          </Button>
+          </SubmitButton>
         </form>
       </section>
 
