@@ -1,26 +1,111 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Clipline brand extensions */
+  --color-brand-deep: var(--brand-deep);
+  --color-band: var(--band);
+  --color-band-foreground: var(--band-foreground);
+  --color-amber: var(--amber);
+  --color-amber-foreground: var(--amber-foreground);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+ * Clipline — committed light theme. The crimson "safelight" primary carries
+ * identity; amber is the second voice (ratings, badges, state). Pure white
+ * ground: warmth lives in the brand colors, never the surface.
+ */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.205 0.02 27);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.02 27);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.02 27);
+  --primary: oklch(0.464 0.169 26.9);
+  --primary-foreground: oklch(0.985 0.005 27);
+  --secondary: oklch(0.965 0.006 27);
+  --secondary-foreground: oklch(0.205 0.02 27);
+  --muted: oklch(0.965 0.006 27);
+  --muted-foreground: oklch(0.49 0.015 27);
+  --accent: oklch(0.955 0.012 27);
+  --accent-foreground: oklch(0.205 0.02 27);
+  --destructive: oklch(0.505 0.19 27);
+  --border: oklch(0.9 0.008 27);
+  --input: oklch(0.9 0.008 27);
+  --ring: oklch(0.464 0.169 26.9);
+  --radius: 0.75rem;
+  /* brand extensions */
+  --brand-deep: oklch(0.36 0.14 27);
+  --band: oklch(0.17 0.015 27);
+  --band-foreground: oklch(0.97 0.005 27);
+  --amber: oklch(0.86 0.12 85);
+  --amber-foreground: oklch(0.28 0.05 60);
+  --ok: oklch(0.55 0.12 150);
+  --warn: oklch(0.62 0.14 60);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "ss01";
+  }
+  html {
+    @apply font-sans;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: oklch(0.464 0.169 26.9 / 0.18);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

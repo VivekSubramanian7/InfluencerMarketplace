@@ -1,26 +1,51 @@
 import Link from "next/link";
 import { logout } from "@/app/(auth)/actions";
+import { Button } from "@/components/ui/button";
 
 export function SiteNav({ role }: { role: "creator" | "brand" | "admin" }) {
   const links =
     role === "creator"
-      ? [{ href: "/dashboard", label: "Dashboard" }, { href: "/deals", label: "Deals" }]
+      ? [
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "/deals", label: "Deals" },
+        ]
       : role === "admin"
-        ? [{ href: "/admin", label: "Admin" }, { href: "/deals", label: "Deals" }]
-        : [{ href: "/discover", label: "Discover" }, { href: "/deals", label: "Deals" }];
+        ? [
+            { href: "/admin", label: "Admin" },
+            { href: "/deals", label: "Deals" },
+          ]
+        : [
+            { href: "/discover", label: "Discover" },
+            { href: "/deals", label: "Deals" },
+          ];
   return (
-    <nav className="flex items-center justify-between border-b px-8 py-3 mb-2">
-      <div className="flex items-center gap-6">
-        <Link href="/" className="font-semibold">Clipline</Link>
-        {links.map((l) => (
-          <Link key={l.href} href={l.href} className="text-sm underline-offset-4 hover:underline">
-            {l.label}
+    <nav className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        <div className="flex items-center gap-8">
+          <Link
+            href="/"
+            className="text-lg font-extrabold tracking-tight text-primary"
+          >
+            Clipline
           </Link>
-        ))}
+          <div className="flex items-center gap-1">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <form action={logout}>
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            Log out
+          </Button>
+        </form>
       </div>
-      <form action={logout}>
-        <button className="text-sm underline">Log out</button>
-      </form>
     </nav>
   );
 }

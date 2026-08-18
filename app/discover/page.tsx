@@ -4,6 +4,9 @@ import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters } from "@/lib/discovery/filters";
 import { searchCreators } from "@/lib/discovery/queries";
 import { SiteNav } from "@/components/site-nav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -39,83 +42,183 @@ export default async function DiscoverPage({
     redirect(pageHref(flatParams, totalPages));
   }
 
+  const chip =
+    "h-10 rounded-full border bg-background px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
   return (
     <>
       <SiteNav role={role} />
-      <main className="mx-auto max-w-5xl p-8">
-      <h1 className="text-2xl font-semibold mb-6">Find video creators</h1>
+      <main className="mx-auto w-full max-w-6xl px-6 py-10">
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          Find video creators
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          Real offerings, transparent prices, verified-or-labeled stats.
+        </p>
 
-      <form method="get" className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-8">
-        <input name="q" defaultValue={filters.q ?? ""} placeholder="Search creators"
-          className="border rounded p-2 sm:col-span-2" />
-        <input name="niche" defaultValue={filters.niche ?? ""} placeholder="Niche (e.g. gaming)"
-          className="border rounded p-2" />
-        <input name="country" defaultValue={filters.country ?? ""} placeholder="Country"
-          className="border rounded p-2" />
-        <select name="type" defaultValue={filters.type ?? ""} className="border rounded p-2">
-          <option value="">Any format</option>
-          {Object.entries(TYPE_LABELS).map(([v, label]) => (
-            <option key={v} value={v}>{label}</option>
-          ))}
-        </select>
-        <div className="flex gap-2">
-          <input name="min_price" defaultValue={filters.minPriceCents ? filters.minPriceCents / 100 : ""}
-            placeholder="Min $" inputMode="numeric" className="border rounded p-2 w-full" />
-          <input name="max_price" defaultValue={filters.maxPriceCents ? filters.maxPriceCents / 100 : ""}
-            placeholder="Max $" inputMode="numeric" className="border rounded p-2 w-full" />
-        </div>
-        <button className="bg-black text-white rounded p-2 sm:col-span-3 lg:col-span-6">
-          Search
-        </button>
-      </form>
+        {/* Search band: Heepsy's filter-chip pattern, Clipline's skin */}
+        <form
+          method="get"
+          className="mt-6 rounded-2xl border bg-secondary/50 p-4"
+        >
+          <div className="flex flex-wrap gap-2">
+            <Input
+              name="q"
+              defaultValue={filters.q ?? ""}
+              placeholder="Search by name, handle, or bio"
+              aria-label="Search creators"
+              className="h-10 min-w-56 flex-1 rounded-full bg-background px-4"
+            />
+            <Button type="submit" className="h-10 rounded-full px-6">
+              Search
+            </Button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              name="niche"
+              defaultValue={filters.niche ?? ""}
+              placeholder="Niche · e.g. gaming"
+              aria-label="Niche"
+              className={`${chip} w-40`}
+            />
+            <input
+              name="country"
+              defaultValue={filters.country ?? ""}
+              placeholder="Country"
+              aria-label="Country"
+              className={`${chip} w-36`}
+            />
+            <select
+              name="type"
+              defaultValue={filters.type ?? ""}
+              aria-label="Format"
+              className={`${chip} w-44 appearance-none`}
+            >
+              <option value="">Any format</option>
+              {Object.entries(TYPE_LABELS).map(([v, label]) => (
+                <option key={v} value={v}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <input
+              name="min_price"
+              defaultValue={filters.minPriceCents ? filters.minPriceCents / 100 : ""}
+              placeholder="Min $"
+              inputMode="numeric"
+              aria-label="Minimum price"
+              className={`${chip} w-24`}
+            />
+            <input
+              name="max_price"
+              defaultValue={filters.maxPriceCents ? filters.maxPriceCents / 100 : ""}
+              placeholder="Max $"
+              inputMode="numeric"
+              aria-label="Maximum price"
+              className={`${chip} w-24`}
+            />
+          </div>
+        </form>
 
-      <p className="text-sm text-gray-600 mb-4">
-        {total} creator{total === 1 ? "" : "s"} found
-      </p>
+        <p className="mt-6 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground tabular-nums">{total}</span>{" "}
+          creator{total === 1 ? "" : "s"} found
+        </p>
 
-      {creators.length === 0 ? (
-        <div className="border rounded p-8 text-center text-gray-600">
-          <p className="mb-2">No creators match those filters yet.</p>
-          <Link className="underline" href="/discover">Clear filters</Link>
-        </div>
-      ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {creators.map((c) => (
-            <li key={c.userId} className="border rounded p-5 flex flex-col gap-2">
-              <div>
-                <p className="font-medium">{c.displayName ?? `@${c.handle}`}</p>
-                <p className="text-sm text-gray-600">
-                  @{c.handle}{c.country ? ` · ${c.country}` : ""}
-                </p>
-              </div>
-              {c.bio && <p className="text-sm line-clamp-3">{c.bio}</p>}
-              {c.niches.length > 0 && (
-                <p className="text-xs text-gray-500">{c.niches.slice(0, 4).join(" · ")}</p>
-              )}
-              <p className="text-sm mt-auto">
-                {c.minPriceCents !== null
-                  ? <>From <span className="font-medium">${(c.minPriceCents / 100).toFixed(0)}</span> · {c.offeringCount} offering{c.offeringCount === 1 ? "" : "s"}</>
-                  : "No offerings listed"}
-              </p>
-              <Link href={`/c/${c.handle}`} className="border rounded text-center p-2 mt-1">
-                View storefront
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+        {creators.length === 0 ? (
+          <div className="mt-4 rounded-2xl border border-dashed p-12 text-center">
+            <p className="text-lg font-semibold">No creators match those filters yet.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Try widening the price range or clearing a filter.
+            </p>
+            <Button asChild variant="outline" className="mt-4">
+              <Link href="/discover">Clear all filters</Link>
+            </Button>
+          </div>
+        ) : (
+          <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {creators.map((c) => {
+              const initial = (c.displayName ?? c.handle).charAt(0).toUpperCase();
+              return (
+                <li key={c.userId}>
+                  <Link
+                    href={`/c/${c.handle}`}
+                    className="group flex h-full flex-col rounded-2xl border p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        aria-hidden
+                        className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary text-xl font-extrabold text-primary-foreground"
+                      >
+                        {initial}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-bold group-hover:text-primary">
+                          {c.displayName ?? `@${c.handle}`}
+                        </p>
+                        <p className="truncate text-sm text-muted-foreground">
+                          @{c.handle}
+                          {c.country ? ` · ${c.country}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    {c.bio && (
+                      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                        {c.bio}
+                      </p>
+                    )}
+                    {c.niches.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {c.niches.slice(0, 3).map((n) => (
+                          <Badge key={n} variant="secondary" className="font-normal">
+                            {n}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-auto pt-4 text-sm">
+                      {c.minPriceCents !== null ? (
+                        <>
+                          From{" "}
+                          <span className="text-lg font-extrabold tabular-nums text-primary">
+                            ${(c.minPriceCents / 100).toFixed(0)}
+                          </span>{" "}
+                          <span className="text-muted-foreground">
+                            · {c.offeringCount} offering{c.offeringCount === 1 ? "" : "s"}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">No offerings listed</span>
+                      )}
+                    </p>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      {totalPages > 1 && (
-        <nav className="flex justify-center gap-4 mt-8">
-          {page > 1 && (
-            <Link className="underline" href={pageHref(flatParams, page - 1)}>← Previous</Link>
-          )}
-          <span className="text-gray-600">Page {page} of {totalPages}</span>
-          {page < totalPages && (
-            <Link className="underline" href={pageHref(flatParams, page + 1)}>Next →</Link>
-          )}
-        </nav>
-      )}
+        {totalPages > 1 && (
+          <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-5">
+            {page > 1 ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={pageHref(flatParams, page - 1)}>← Previous</Link>
+              </Button>
+            ) : (
+              <span aria-hidden className="w-24" />
+            )}
+            <span className="text-sm text-muted-foreground tabular-nums">
+              Page {page} of {totalPages}
+            </span>
+            {page < totalPages ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={pageHref(flatParams, page + 1)}>Next →</Link>
+              </Button>
+            ) : (
+              <span aria-hidden className="w-24" />
+            )}
+          </nav>
+        )}
       </main>
     </>
   );
