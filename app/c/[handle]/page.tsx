@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getStorefront } from "@/lib/storefront/queries";
+import { creatorGradient } from "@/lib/identity/gradient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -37,68 +38,77 @@ export default async function StorefrontPage({
   if (handle !== handle.toLowerCase()) redirect(`/c/${handle.toLowerCase()}`);
   const storefront = await getStorefront(handle.toLowerCase());
   if (!storefront) notFound();
-  const { profile, offerings, portfolio, stats, reviews, avgRating } = storefront;
+  const { profile, offerings, portfolio, stats, reviews, avgRating, ratingCount } = storefront;
   const initial = (profile.displayName ?? profile.handle).charAt(0).toUpperCase();
+  const gradient = creatorGradient(profile.handle);
 
   return (
     <>
-      {/* Identity band — the creator is the hero */}
-      <header className="bg-band text-band-foreground">
-        <div className="mx-auto w-full max-w-4xl px-6 pb-10 pt-6">
-          <div className="mb-8 flex items-center justify-between text-sm">
-            <Link href="/" className="font-extrabold tracking-tight text-white">
-              Clipline
-            </Link>
-            <Link href="/discover" className="text-band-foreground/70 hover:text-white">
-              Find more creators
-            </Link>
-          </div>
-          <div className="flex flex-wrap items-end gap-6">
-            <span
-              aria-hidden
-              className="grid size-20 shrink-0 place-items-center rounded-2xl bg-primary text-4xl font-extrabold text-primary-foreground"
-            >
-              {initial}
-            </span>
-            <div className="min-w-0">
-              <h1 className="text-[clamp(1.8rem,4.5vw,2.8rem)] font-extrabold leading-tight">
-                {profile.displayName ?? `@${profile.handle}`}
-              </h1>
-              <p className="text-band-foreground/70">
-                @{profile.handle}
-                {profile.country ? ` · ${profile.country}` : ""}
-                {avgRating !== null && (
-                  <span className="ml-2 font-semibold text-amber">
-                    ★ {avgRating}
-                  </span>
-                )}
-              </p>
+      <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-4">
+        <Link href="/" className="text-lg font-black tracking-tight">
+          Clipline
+        </Link>
+        <Link href="/discover" className="text-sm text-muted-foreground hover:text-foreground">
+          Find more creators
+        </Link>
+      </header>
+
+      <main className="mx-auto w-full max-w-4xl px-6 pb-12">
+        {/* Gradient identity banner — the creator's own color */}
+        <section
+          className="relative rounded-3xl p-8 text-white sm:p-11"
+          style={{ background: gradient.css }}
+        >
+          {(ratingCount > 0 || stats.some((s) => s.verificationStatus === "verified")) && (
+            <div className="absolute right-6 top-6 rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-foreground shadow-card">
+              {ratingCount > 0 && (
+                <>
+                  {ratingCount} review{ratingCount === 1 ? "" : "s"} ·{" "}
+                  <span className="text-amber">★</span> {avgRating}
+                </>
+              )}
+              {ratingCount > 0 &&
+                stats.some((s) => s.verificationStatus === "verified") && " · "}
+              {stats.some((s) => s.verificationStatus === "verified") && "Verified"}
             </div>
-          </div>
+          )}
+          <span
+            aria-hidden
+            className="grid size-18 place-items-center rounded-2xl bg-white/95 text-4xl font-black shadow-card"
+            style={{ color: gradient.deep }}
+          >
+            {initial}
+          </span>
+          <h1 className="mt-5 text-[clamp(1.9rem,4.5vw,3rem)] font-black leading-tight">
+            {profile.displayName ?? `@${profile.handle}`}
+          </h1>
+          <p className="mt-1 font-medium text-white/85">
+            @{profile.handle}
+            {profile.country ? ` · ${profile.country}` : ""}
+          </p>
           {profile.bio && (
-            <p className="mt-5 max-w-[65ch] whitespace-pre-line leading-relaxed text-band-foreground/90">
+            <p className="mt-4 max-w-[60ch] whitespace-pre-line leading-relaxed text-white/95">
               {profile.bio}
             </p>
           )}
           {profile.niches.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-2">
+            <ul className="mt-5 flex flex-wrap gap-2">
               {profile.niches.map((n) => (
-                <li key={n}>
-                  <Badge className="border-white/20 bg-white/10 text-band-foreground hover:bg-white/10">
-                    {n}
-                  </Badge>
+                <li
+                  key={n}
+                  className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium"
+                >
+                  {n}
                 </li>
               ))}
             </ul>
           )}
-        </div>
-      </header>
+        </section>
 
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
-        <section className="mb-12">
+        <section className="mt-10">
           <h2 className="mb-4 text-xl font-bold">Audience</h2>
           {stats.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">
               <span className="mr-2 font-semibold text-foreground">
                 Verification pending
               </span>
@@ -106,9 +116,9 @@ export default async function StorefrontPage({
               Clipline never shows unverified numbers.
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-3">
+            <ul className="grid gap-4 sm:grid-cols-3">
               {stats.map((s) => (
-                <li key={s.platform} className="rounded-xl border p-4">
+                <li key={s.platform} className="rounded-2xl bg-card p-5 shadow-card">
                   <div className="flex items-center justify-between">
                     <p className="font-bold">
                       {PLATFORM_LABELS[s.platform] ?? s.platform}
@@ -122,7 +132,7 @@ export default async function StorefrontPage({
                   <p className="text-sm text-muted-foreground">@{s.platformHandle}</p>
                   {s.verificationStatus === "verified" && s.followerCount !== null ? (
                     <>
-                      <p className="mt-2 text-2xl font-extrabold tabular-nums">
+                      <p className="mt-2 text-2xl font-black tabular-nums">
                         {Intl.NumberFormat("en", { notation: "compact" }).format(s.followerCount)}
                       </p>
                       <p className="text-xs text-muted-foreground">followers</p>
@@ -149,7 +159,7 @@ export default async function StorefrontPage({
           )}
         </section>
 
-        <section className="mb-12">
+        <section className="mt-10">
           <h2 className="mb-4 text-xl font-bold">Offerings</h2>
           {offerings.length === 0 ? (
             <p className="text-muted-foreground">No offerings listed yet.</p>
@@ -159,7 +169,7 @@ export default async function StorefrontPage({
                 <li
                   key={o.id}
                   data-offering-id={o.id}
-                  className="rounded-xl border p-5 transition-colors hover:border-primary/40"
+                  className="rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -170,7 +180,7 @@ export default async function StorefrontPage({
                         {o.revisionLimit === 1 ? "" : "s"} included
                       </p>
                     </div>
-                    <span className="text-2xl font-extrabold tabular-nums text-primary">
+                    <span className="text-2xl font-black tabular-nums">
                       ${(o.priceCents / 100).toFixed(0)}
                     </span>
                   </div>
@@ -179,7 +189,7 @@ export default async function StorefrontPage({
                       {o.description}
                     </p>
                   )}
-                  <Button asChild className="mt-4">
+                  <Button asChild className="mt-4 px-6">
                     <a href={`/book/${o.id}`}>Book this</a>
                   </Button>
                 </li>
@@ -189,18 +199,18 @@ export default async function StorefrontPage({
         </section>
 
         {reviews.length > 0 && (
-          <section className="mb-12">
+          <section className="mt-10">
             <h2 className="mb-4 text-xl font-bold">
               Brand reviews
               {avgRating !== null && (
-                <span className="ml-2 text-amber-foreground">
+                <span className="ml-2">
                   <span className="text-amber">★</span> {avgRating}
                 </span>
               )}
             </h2>
             <ul className="grid gap-4 sm:grid-cols-2">
               {reviews.map((r, i) => (
-                <li key={i} className="rounded-xl bg-secondary p-5">
+                <li key={i} className="rounded-2xl bg-secondary p-5">
                   <p aria-label={`${r.rating} out of 5 stars`} className="text-amber">
                     {"★".repeat(r.rating)}
                     <span className="text-border">{"★".repeat(5 - r.rating)}</span>
@@ -220,23 +230,31 @@ export default async function StorefrontPage({
         )}
 
         {portfolio.length > 0 && (
-          <section>
+          <section className="mt-10">
             <h2 className="mb-4 text-xl font-bold">Recent work</h2>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {portfolio.map((item) => (
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {portfolio.map((item, i) => (
                 <li key={item.id}>
                   <a
                     href={item.mediaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block rounded-xl border p-4 transition-colors hover:border-primary/40"
+                    className="block overflow-hidden rounded-2xl bg-card shadow-card transition-shadow hover:shadow-card-hover"
                   >
-                    <p className="font-semibold">
-                      {item.caption ?? "Watch"}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      {item.mediaUrl}
-                    </p>
+                    <div
+                      aria-hidden
+                      className="h-28"
+                      style={{
+                        background: creatorGradient(`${profile.handle}-${i}`).css,
+                        opacity: 0.85,
+                      }}
+                    />
+                    <div className="p-4">
+                      <p className="font-semibold">{item.caption ?? "Watch"}</p>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                        {item.mediaUrl}
+                      </p>
+                    </div>
                   </a>
                 </li>
               ))}

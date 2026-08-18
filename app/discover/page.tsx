@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters } from "@/lib/discovery/filters";
 import { searchCreators } from "@/lib/discovery/queries";
 import { SiteNav } from "@/components/site-nav";
+import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -139,21 +140,28 @@ export default async function DiscoverPage({
           <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {creators.map((c) => {
               const initial = (c.displayName ?? c.handle).charAt(0).toUpperCase();
+              const gradient = creatorGradient(c.handle);
               return (
                 <li key={c.userId}>
                   <Link
                     href={`/c/${c.handle}`}
-                    className="group flex h-full flex-col rounded-2xl border p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
                   >
-                    <div className="flex items-center gap-3">
+                    <div
+                      aria-hidden
+                      className="h-20"
+                      style={{ background: gradient.css }}
+                    />
+                    <div className="-mt-6 flex items-end gap-3 px-5">
                       <span
                         aria-hidden
-                        className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary text-xl font-extrabold text-primary-foreground"
+                        className="grid size-12 shrink-0 place-items-center rounded-xl bg-white text-xl font-black shadow-card"
+                        style={{ color: gradient.deep }}
                       >
                         {initial}
                       </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-bold group-hover:text-primary">
+                      <div className="min-w-0 pb-0.5">
+                        <p className="truncate font-bold">
                           {c.displayName ?? `@${c.handle}`}
                         </p>
                         <p className="truncate text-sm text-muted-foreground">
@@ -162,6 +170,7 @@ export default async function DiscoverPage({
                         </p>
                       </div>
                     </div>
+                    <div className="flex flex-1 flex-col px-5 pb-5">
                     {c.bio && (
                       <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                         {c.bio}
@@ -191,6 +200,7 @@ export default async function DiscoverPage({
                         <span className="text-muted-foreground">No offerings listed</span>
                       )}
                     </p>
+                    </div>
                   </Link>
                 </li>
               );

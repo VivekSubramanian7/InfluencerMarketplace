@@ -23,14 +23,15 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Clipline brand extensions */
-  --color-brand-deep: var(--brand-deep);
+  /* Gallery Frame extensions */
   --color-band: var(--band);
   --color-band-foreground: var(--band-foreground);
   --color-amber: var(--amber);
   --color-amber-foreground: var(--amber-foreground);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
+  --shadow-card: 0 1px 2px rgb(27 25 23 / 0.05), 0 6px 20px rgb(27 25 23 / 0.06);
+  --shadow-card-hover: 0 2px 4px rgb(27 25 23 / 0.06), 0 10px 28px rgb(27 25 23 / 0.10);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -41,38 +42,39 @@
 }
 
 /*
- * Clipline — committed light theme. The crimson "safelight" primary carries
- * identity; amber is the second voice (ratings, badges, state). Pure white
- * ground: warmth lives in the brand colors, never the surface.
+ * Clipline — "Gallery Frame" (DESIGN.md, 2026-08-18). Quiet premium chrome:
+ * warm near-white ground, warm ink, black pill CTAs, soft shadows. Creator
+ * gradients (lib/identity/gradient.ts) supply the color; amber is reserved
+ * for the trust voice (ratings, Verified). Light-only by commitment.
  */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.205 0.02 27);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.205 0.02 27);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.205 0.02 27);
-  --primary: oklch(0.464 0.169 26.9);
-  --primary-foreground: oklch(0.985 0.005 27);
-  --secondary: oklch(0.965 0.006 27);
-  --secondary-foreground: oklch(0.205 0.02 27);
-  --muted: oklch(0.965 0.006 27);
-  --muted-foreground: oklch(0.49 0.015 27);
-  --accent: oklch(0.955 0.012 27);
-  --accent-foreground: oklch(0.205 0.02 27);
-  --destructive: oklch(0.505 0.19 27);
-  --border: oklch(0.9 0.008 27);
-  --input: oklch(0.9 0.008 27);
-  --ring: oklch(0.464 0.169 26.9);
-  --radius: 0.75rem;
-  /* brand extensions */
-  --brand-deep: oklch(0.36 0.14 27);
-  --band: oklch(0.17 0.015 27);
-  --band-foreground: oklch(0.97 0.005 27);
-  --amber: oklch(0.86 0.12 85);
-  --amber-foreground: oklch(0.28 0.05 60);
-  --ok: oklch(0.55 0.12 150);
-  --warn: oklch(0.62 0.14 60);
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --background: #faf9f6;
+  --foreground: #1b1917;
+  --card: #ffffff;
+  --card-foreground: #1b1917;
+  --popover: #ffffff;
+  --popover-foreground: #1b1917;
+  --primary: #1b1917;
+  --primary-foreground: #faf9f6;
+  --secondary: #f3f1ec;
+  --secondary-foreground: #1b1917;
+  --muted: #f3f1ec;
+  --muted-foreground: #6b6660;
+  --accent: #f3f1ec;
+  --accent-foreground: #1b1917;
+  --destructive: #b3362b;
+  --border: #e7e3dc;
+  --input: #e7e3dc;
+  --ring: #1b1917;
+  --radius: 0.875rem;
+  /* extensions */
+  --band: #1b1917;
+  --band-foreground: #faf9f6;
+  --amber: #c9962b;
+  --amber-foreground: #2c2412;
+  --ok: #2e7d4f;
+  --warn: #b07c24;
 }
 
 @layer base {
@@ -81,7 +83,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01";
   }
   html {
     @apply font-sans;
@@ -91,13 +92,19 @@
     letter-spacing: -0.02em;
   }
   ::selection {
-    background: oklch(0.464 0.169 26.9 / 0.18);
+    background: rgb(27 25 23 / 0.12);
   }
 }
 
 @layer utilities {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
   }
 }
 

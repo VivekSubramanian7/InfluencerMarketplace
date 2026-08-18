@@ -18,6 +18,7 @@ export interface Storefront {
   }>;
   reviews: Array<{ rating: number; body: string | null; createdAt: string }>;
   avgRating: number | null;
+  ratingCount: number;
 }
 
 export async function getStorefront(handle: string): Promise<Storefront | null> {
@@ -94,5 +95,6 @@ export async function getStorefront(handle: string): Promise<Storefront | null> 
     avgRating: (allRatings ?? []).length > 0
       ? Math.round(((allRatings ?? []).reduce((sum, r) => sum + r.rating, 0) / (allRatings ?? []).length) * 10) / 10
       : null,
+    ratingCount: (allRatings ?? []).length,
   };
 }

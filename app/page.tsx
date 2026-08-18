@@ -58,7 +58,7 @@ export default function LandingPage() {
   return (
     <>
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-        <span className="text-xl font-extrabold tracking-tight text-primary">
+        <span className="text-xl font-black tracking-tight">
           Clipline
         </span>
         <div className="flex items-center gap-3">
@@ -75,10 +75,10 @@ export default function LandingPage() {
         {/* Hero: copy left, deal machinery right */}
         <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.1fr_0.9fr] md:py-24">
           <div>
-            <h1 className="text-[clamp(2.4rem,6vw,4.2rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">
+            <h1 className="text-[clamp(2.4rem,6vw,4.2rem)] font-black leading-[1.05] tracking-[-0.03em]">
               Book video creators.
               <br />
-              <span className="text-primary">Skip the DM chaos.</span>
+              <span className="text-muted-foreground">Skip the DM chaos.</span>
             </h1>
             <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
               Creators list real offerings at real prices. Brands book with a

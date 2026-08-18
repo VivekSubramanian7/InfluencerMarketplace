@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
-
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "Clipline — book video creators",
@@ -16,7 +9,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${bricolage.variable} h-full antialiased font-sans`}>
+    <html lang="en" className="h-full antialiased font-sans">
+      {/* Satoshi via Fontshare (DESIGN.md: CDN now, next/font/local for prod) */}
+      <link
+        rel="stylesheet"
+        precedence="default"
+        href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
+      />
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
