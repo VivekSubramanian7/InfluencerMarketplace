@@ -198,6 +198,9 @@ export default async function DashboardPage() {
                   <Link className="text-muted-foreground hover:text-foreground" href="/dashboard/profile">
                     Edit profile →
                   </Link>
+                  <Link className="text-muted-foreground hover:text-foreground" href="/onboarding/socials">
+                    Socials ({socialCount ?? 0}) →
+                  </Link>
                   <Link className="text-muted-foreground hover:text-foreground" href="/dashboard/offerings">
                     Offerings ({offeringCount ?? 0}) →
                   </Link>
