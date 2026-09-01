@@ -11,6 +11,9 @@
     "gen:transitions": "tsx scripts/generate-transitions-sql.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.46",
+    "@ai-sdk/google": "^4.0.60",
+    "@ai-sdk/openai": "^4.0.54",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "@vercel/analytics": "^2.0.1",
