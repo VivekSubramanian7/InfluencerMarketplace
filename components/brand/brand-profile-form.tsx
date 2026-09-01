@@ -20,6 +20,7 @@ export interface BrandProfileDefaults {
   outreach_template: string | null;
   pref_niches: string[];
   pref_types: string[];
+  pref_types_other: string | null;
   guidelines_path: string | null;
   rules_path: string | null;
 }
@@ -94,6 +95,18 @@ export function BrandProfileForm({
                 {TYPE_LABELS[t]}
               </label>
             ))}
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="pref_types_other" className="text-sm font-normal text-muted-foreground">
+              Other
+            </Label>
+            <Input
+              id="pref_types_other"
+              name="pref_types_other"
+              maxLength={500}
+              defaultValue={defaults?.pref_types_other ?? ""}
+              placeholder="e.g. podcast mentions, newsletter sponsorships…"
+            />
           </div>
         </div>
       </fieldset>

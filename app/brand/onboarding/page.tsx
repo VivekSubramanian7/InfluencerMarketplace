@@ -70,6 +70,7 @@ export default async function BrandOnboardingPage({
                   outreach_template: null,
                   pref_niches: proposal.niches,
                   pref_types: [],
+                  pref_types_other: null,
                   guidelines_path: null,
                   rules_path: null,
                 }

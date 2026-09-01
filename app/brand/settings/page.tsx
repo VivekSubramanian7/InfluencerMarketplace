@@ -28,7 +28,7 @@ export default async function BrandSettingsPage({
   const [{ data: profile }, { data: products }, { data: invites }, { data: ingestion }] = await Promise.all([
     supabase
       .from("brand_profiles")
-      .select("company, website, description, notes, outreach_template, pref_niches, pref_types, guidelines_path, rules_path")
+      .select("company, website, description, notes, outreach_template, pref_niches, pref_types, pref_types_other, guidelines_path, rules_path")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -112,6 +112,7 @@ export default async function BrandSettingsPage({
                       outreach_template: null,
                       pref_niches: proposal.niches,
                       pref_types: [],
+                      pref_types_other: null,
                       guidelines_path: null,
                       rules_path: null,
                     }

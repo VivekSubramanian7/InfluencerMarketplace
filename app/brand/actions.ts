@@ -66,6 +66,7 @@ export async function saveBrandProfile(formData: FormData) {
     .getAll("pref_types")
     .map(String)
     .filter((t): t is OfferingType => (OFFERING_TYPES as readonly string[]).includes(t));
+  const prefTypesOther = parseOptionalText(String(formData.get("pref_types_other") ?? ""), 500);
 
   const paths: { guidelines_path?: string; rules_path?: string } = {};
   for (const slot of ["guidelines", "rules"] as const) {
@@ -87,6 +88,7 @@ export async function saveBrandProfile(formData: FormData) {
       outreach_template: template.ok ? template.value : null,
       pref_niches: prefNiches,
       pref_types: prefTypes,
+      pref_types_other: prefTypesOther.ok ? prefTypesOther.value : null,
       ...paths,
     },
     { onConflict: "user_id" }
