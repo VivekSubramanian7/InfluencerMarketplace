@@ -5,12 +5,25 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseMediaUrl } from "@/lib/storefront/validation";
+import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
 
 const USER_ACTIONS = new Set([
   "accept", "decline", "begin_production", "submit_preview",
   "request_revision", "mark_published", "approve", "cancel", "dispute",
 ]);
+
+const ACTION_TITLES: Record<string, string> = {
+  accept: "Your booking was accepted",
+  decline: "Your booking was declined",
+  begin_production: "Production has started",
+  submit_preview: "A preview is ready for your review",
+  request_revision: "Changes were requested on your preview",
+  mark_published: "The video is live — verify and approve",
+  approve: "Your work was approved",
+  cancel: "The deal was cancelled",
+  dispute: "The deal was disputed",
+};
 
 export async function performDealAction(formData: FormData) {
   const { role } = await requireUser();
@@ -33,7 +46,7 @@ export async function performDealAction(formData: FormData) {
     payload[action === "submit_preview" ? "preview_url" : "live_url"] = url;
   }
 
-  const { error } = await supabase.rpc("transition_deal", {
+  const { data: deal, error } = await supabase.rpc("transition_deal", {
     p_deal_id: dealId,
     p_action: action,
     p_actor_role: role,
@@ -42,6 +55,17 @@ export async function performDealAction(formData: FormData) {
   if (error) {
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
+
+  if (deal) {
+    await notify({
+      userId: role === "brand" ? deal.creator_id : deal.brand_id,
+      kind: "deal",
+      title: `${ACTION_TITLES[action] ?? "Deal updated"} · ${deal.offering_title}`,
+      href: `/deals/${dealId}`,
+      email: true,
+    });
+  }
+
   revalidatePath(`/deals/${dealId}`);
   redirect(`/deals/${dealId}`);
 }

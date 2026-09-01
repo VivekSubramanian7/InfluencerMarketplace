@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parsePriceCents, parseText } from "@/lib/storefront/validation";
+import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
 
 export async function applyToCampaign(formData: FormData) {
@@ -39,6 +40,17 @@ export async function applyToCampaign(formData: FormData) {
     redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(msg));
   }
 
+  const { data: campaign } = await supabase
+    .from("campaigns").select("brand_id, title").eq("id", campaignId).maybeSingle();
+  if (campaign) {
+    await notify({
+      userId: campaign.brand_id,
+      kind: "application",
+      title: `New application on "${campaign.title}"`,
+      href: `/campaigns/${campaignId}`,
+    });
+  }
+
   redirect(`/campaigns/${campaignId}?saved=1`);
 }
 
@@ -67,15 +79,47 @@ export async function decideApplication(formData: FormData) {
   const decision = String(formData.get("decision") ?? "");
   if (decision !== "accepted" && decision !== "declined") redirect(`/campaigns/${campaignId}`);
 
+  // Accepting creates the deal at the creator's proposed price (RPC also
+  // flips the application to accepted and links the deal).
+  if (decision === "accepted") {
+    const { data: dealId, error } = await supabase.rpc("accept_campaign_application", {
+      p_application_id: id,
+    });
+    if (error || !dealId) {
+      redirect(`/campaigns/${campaignId}?error=` +
+        encodeURIComponent(friendlyDbError(error)));
+    }
+    const { data: app } = await supabase
+      .from("campaign_applications").select("creator_id").eq("id", id).maybeSingle();
+    if (app) {
+      await notify({
+        userId: app.creator_id,
+        kind: "application_response",
+        title: "Your campaign application was accepted — the deal has started",
+        href: `/deals/${dealId}`,
+        email: true,
+      });
+    }
+    redirect(`/deals/${dealId}`);
+  }
+
   // RLS restricts the update to campaigns this brand owns; the update trigger
-  // enforces the pending → accepted/declined transition.
-  const { error, count } = await supabase
+  // enforces the pending → declined transition.
+  const { data: declined, error } = await supabase
     .from("campaign_applications")
-    .update({ status: decision }, { count: "exact" })
-    .eq("id", id);
-  if (error || count === 0) {
+    .update({ status: "declined" })
+    .eq("id", id)
+    .select("creator_id")
+    .maybeSingle();
+  if (error || !declined) {
     redirect(`/campaigns/${campaignId}?error=` +
       encodeURIComponent(error ? friendlyDbError(error) : "Application not found"));
   }
+  await notify({
+    userId: declined.creator_id,
+    kind: "application_response",
+    title: "Your campaign application was declined",
+    href: `/campaigns/${campaignId}`,
+  });
   redirect(`/campaigns/${campaignId}?saved=1`);
 }

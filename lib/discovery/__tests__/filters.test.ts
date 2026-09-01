@@ -5,7 +5,7 @@ describe("parseDiscoveryFilters", () => {
   it("defaults on empty params", () => {
     expect(parseDiscoveryFilters({})).toEqual({
       q: null, niche: null, country: null, type: null,
-      minPriceCents: null, maxPriceCents: null, page: 1,
+      minPriceCents: null, maxPriceCents: null, page: 1, tab: "new",
     });
   });
 
@@ -13,21 +13,23 @@ describe("parseDiscoveryFilters", () => {
     const f = parseDiscoveryFilters({
       q: "  Tech reviews ", niche: " Gaming ", country: " Germany ",
       type: "dedicated_video", min_price: "50", max_price: "500", page: "3",
+      tab: "worked",
     });
     expect(f).toEqual({
       q: "Tech reviews", niche: "gaming", country: "Germany",
       type: "dedicated_video", minPriceCents: 5000, maxPriceCents: 50000, page: 3,
+      tab: "worked",
     });
   });
 
   it("rejects invalid values to defaults, never throws", () => {
     const f = parseDiscoveryFilters({
       q: "x".repeat(81), niche: "y".repeat(31), type: "bogus",
-      min_price: "-5", max_price: "abc", page: "0",
+      min_price: "-5", max_price: "abc", page: "0", tab: "bogus",
     });
     expect(f).toEqual({
       q: null, niche: null, country: null, type: null,
-      minPriceCents: null, maxPriceCents: null, page: 1,
+      minPriceCents: null, maxPriceCents: null, page: 1, tab: "new",
     });
   });
 

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseOptionalText, parseText } from "@/lib/storefront/validation";
+import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
 
 export async function createBooking(formData: FormData) {
@@ -65,6 +66,14 @@ export async function createBooking(formData: FormData) {
     redirect(`/deals/${deal.id}?error=` +
       encodeURIComponent("Deal created but the brief failed to save: " + friendlyDbError(bErr)));
   }
+
+  await notify({
+    userId: offering.creator_id,
+    kind: "booking",
+    title: `New booking request: ${offering.title}`,
+    href: `/deals/${deal.id}`,
+    email: true,
+  });
 
   redirect(`/deals/${deal.id}`);
 }

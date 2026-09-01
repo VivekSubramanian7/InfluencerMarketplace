@@ -121,7 +121,7 @@ async function OwnerPanel({
 }) {
   const { data: apps, error } = await supabase
     .from("campaign_applications")
-    .select("id, creator_id, pitch, proposed_price_cents, status, created_at")
+    .select("id, creator_id, pitch, proposed_price_cents, status, deal_id, created_at")
     .eq("campaign_id", campaignId)
     .order("created_at", { ascending: true });
   if (error) throw new Error("applications query failed: " + error.message);
@@ -193,13 +193,19 @@ async function OwnerPanel({
                   </form>
                 </div>
               )}
-              {a.status === "accepted" && handle && (
+              {a.status === "accepted" && (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Accepted — book them from{" "}
-                  <Link href={`/c/${handle}`} className="font-medium underline underline-offset-2">
-                    their storefront
-                  </Link>{" "}
-                  to start the deal.
+                  {a.deal_id ? (
+                    <>
+                      Accepted at their proposed price —{" "}
+                      <Link href={`/deals/${a.deal_id}`} className="font-medium underline underline-offset-2">
+                        open the deal
+                      </Link>
+                      .
+                    </>
+                  ) : (
+                    "Accepted."
+                  )}
                 </p>
               )}
             </li>
@@ -228,7 +234,7 @@ async function CreatorPanel({
 }) {
   const { data: mine } = await supabase
     .from("campaign_applications")
-    .select("id, pitch, proposed_price_cents, status")
+    .select("id, pitch, proposed_price_cents, status, deal_id")
     .eq("campaign_id", campaignId)
     .eq("creator_id", userId)
     .maybeSingle();
@@ -248,7 +254,17 @@ async function CreatorPanel({
         <p className="mt-2 whitespace-pre-wrap text-sm">{mine.pitch}</p>
         {mine.status === "accepted" && (
           <p className="mt-3 text-sm text-ok">
-            Accepted — the brand can now book you through your storefront.
+            {mine.deal_id ? (
+              <>
+                Accepted at your price —{" "}
+                <Link href={`/deals/${mine.deal_id}`} className="font-medium underline underline-offset-2">
+                  open the deal
+                </Link>
+                .
+              </>
+            ) : (
+              "Accepted."
+            )}
           </p>
         )}
         {mine.status === "pending" && (

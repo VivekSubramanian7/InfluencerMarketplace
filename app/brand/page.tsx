@@ -1,0 +1,229 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth/require";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { unblockCreator } from "./actions";
+import { SiteNav } from "@/components/site-nav";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const DEAL_LABELS: Record<string, string> = {
+  requested: "Awaiting creator", funded: "Funded",
+  accepted: "Accepted", in_production: "In production",
+  submitted: "Preview submitted", revision_requested: "Changes requested",
+  published: "Published — awaiting approval", completed: "Completed",
+  cancelled: "Cancelled", disputed: "Disputed",
+};
+const INVITE_LABELS: Record<string, string> = {
+  invited: "Invite pending", accepted: "In conversation", declined: "Declined",
+};
+const DONE = ["completed", "cancelled"];
+
+export default async function BrandOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; saved?: string }>;
+}) {
+  const { user, role } = await requireRole("brand", "/brand");
+  const { error } = await searchParams;
+  const supabase = await createServerSupabase();
+
+  const [profileRes, convRes, dealsRes, blockRes] = await Promise.all([
+    supabase.from("brand_profiles").select("company").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("conversations")
+      .select("id, creator_id, status, created_at")
+      .eq("brand_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("deals")
+      .select("id, creator_id, offering_title, price_cents, status, requested_at")
+      .eq("brand_id", user.id)
+      .order("requested_at", { ascending: false }),
+    supabase.from("brand_blocklist").select("creator_id, created_at").eq("brand_id", user.id),
+  ]);
+  // never onboarded — send them through the form first
+  if (!profileRes.data) redirect("/brand/onboarding");
+
+  const conversations = convRes.data ?? [];
+  const deals = dealsRes.data ?? [];
+  const blocked = blockRes.data ?? [];
+
+  const creatorIds = [
+    ...new Set([
+      ...conversations.map((c) => c.creator_id),
+      ...deals.map((d) => d.creator_id),
+      ...blocked.map((b) => b.creator_id),
+    ]),
+  ];
+  const nameById = new Map<string, string | null>();
+  const handleById = new Map<string, string>();
+  if (creatorIds.length > 0) {
+    const [{ data: profiles }, { data: creators }] = await Promise.all([
+      supabase.from("profiles").select("id, display_name").in("id", creatorIds),
+      supabase.from("creator_profiles").select("user_id, handle").in("user_id", creatorIds),
+    ]);
+    for (const p of profiles ?? []) nameById.set(p.id, p.display_name);
+    for (const c of creators ?? []) handleById.set(c.user_id, c.handle);
+  }
+  const creatorLabel = (id: string) =>
+    nameById.get(id) || (handleById.get(id) ? `@${handleById.get(id)}` : "Creator");
+
+  const inProgress = deals.filter((d) => !DONE.includes(d.status));
+  const completed = deals.filter((d) => d.status === "completed");
+
+  const stat = (label: string, value: number) => (
+    <div className="rounded-2xl bg-card p-5 shadow-card">
+      <p className="text-3xl font-extrabold tabular-nums">{value}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+    </div>
+  );
+
+  return (
+    <>
+      <SiteNav role={role} />
+      <main className="mx-auto w-full max-w-6xl px-6 py-10">
+        <div className="flex flex-wrap items-baseline justify-between gap-4">
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            {profileRes.data?.company || "Your brand"}
+          </h1>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/brand/settings">Brand settings</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/discover">Find creators</Link>
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stat("Contacted", conversations.length)}
+          {stat("In progress", inProgress.length)}
+          {stat("Completed", completed.length)}
+          {stat("Blocked", blocked.length)}
+        </div>
+
+        <section className="mt-10">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-bold">Contacted creators</h2>
+            <Link href="/inbox" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+              Open inbox →
+            </Link>
+          </div>
+          {conversations.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              No reachouts yet — select creators in{" "}
+              <Link href="/discover" className="font-medium underline underline-offset-2">Discover</Link>{" "}
+              to invite them.
+            </p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2">
+              {conversations.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/inbox/${c.id}`}
+                    className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:border-primary/40"
+                  >
+                    <span className="min-w-0 truncate font-medium">{creatorLabel(c.creator_id)}</span>
+                    <Badge variant="secondary">{INVITE_LABELS[c.status] ?? c.status}</Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-bold">Arrangements in progress</h2>
+            <Link href="/deals" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+              All deals →
+            </Link>
+          </div>
+          {inProgress.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">Nothing in flight.</p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2">
+              {inProgress.map((d) => (
+                <li key={d.id}>
+                  <Link
+                    href={`/deals/${d.id}`}
+                    className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:border-primary/40"
+                  >
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium">{creatorLabel(d.creator_id)}</span>
+                      <span className="text-muted-foreground"> · {d.offering_title}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-3">
+                      <Badge variant="secondary">{DEAL_LABELS[d.status] ?? d.status}</Badge>
+                      <span className="font-extrabold tabular-nums text-primary">
+                        ${(d.price_cents / 100).toFixed(2)}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-lg font-bold">Completed</h2>
+          {completed.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">No completed arrangements yet.</p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2">
+              {completed.map((d) => (
+                <li key={d.id}>
+                  <Link
+                    href={`/deals/${d.id}`}
+                    className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:border-primary/40"
+                  >
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium">{creatorLabel(d.creator_id)}</span>
+                      <span className="text-muted-foreground"> · {d.offering_title}</span>
+                    </span>
+                    <span className="font-extrabold tabular-nums text-primary">
+                      ${(d.price_cents / 100).toFixed(2)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-lg font-bold">Blocked creators</h2>
+          {blocked.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Nobody blocked. Blocked creators disappear from your Discover and reachout.
+            </p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2">
+              {blocked.map((b) => (
+                <li
+                  key={b.creator_id}
+                  className="flex items-center justify-between gap-4 rounded-xl border p-4"
+                >
+                  <span className="font-medium">{creatorLabel(b.creator_id)}</span>
+                  <form action={unblockCreator}>
+                    <input type="hidden" name="creator_id" value={b.creator_id} />
+                    <Button type="submit" variant="outline" size="sm">Unblock</Button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+    </>
+  );
+}

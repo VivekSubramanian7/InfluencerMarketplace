@@ -1,6 +1,10 @@
 export const PAGE_SIZE = 12;
 
-const OFFERING_TYPES = ["dedicated_video", "integration", "short_form_post", "ugc_video"] as const;
+// Filter keys allowed into saved_filters.params and back out into URLs —
+// whitelisted on save AND on render so a tampered blob can't inject URLs.
+export const SAVED_FILTER_KEYS = ["q", "niche", "country", "type", "min_price", "max_price"] as const;
+
+export const OFFERING_TYPES = ["dedicated_video", "integration", "short_form_post", "ugc_video"] as const;
 export type OfferingType = (typeof OFFERING_TYPES)[number];
 
 export interface DiscoveryFilters {
@@ -11,6 +15,8 @@ export interface DiscoveryFilters {
   minPriceCents: number | null;
   maxPriceCents: number | null;
   page: number;
+  /** brand-only view split: "new" = never collaborated, "worked" = past collaborators */
+  tab: "new" | "worked";
 }
 
 function first(v: string | string[] | undefined): string {
@@ -56,5 +62,6 @@ export function parseDiscoveryFilters(
     minPriceCents,
     maxPriceCents,
     page,
+    tab: first(params.tab) === "worked" ? "worked" : "new",
   };
 }

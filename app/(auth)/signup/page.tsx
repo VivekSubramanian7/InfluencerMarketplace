@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string }>;
+}) {
+  const { invite } = await searchParams;
   return (
     <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center px-6 py-16">
       <Link
@@ -15,7 +20,14 @@ export default function SignupPage() {
       </Link>
       <div className="rounded-xl border p-6">
         <h1 className="text-2xl font-extrabold tracking-tight">Create your account</h1>
+        {invite && (
+          <p className="mt-3 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+            A brand invited you to Clipline — sign up as a creator and your
+            conversation with them opens automatically.
+          </p>
+        )}
         <form action={signup} className="mt-6 flex flex-col gap-4">
+          {invite && <input type="hidden" name="invite" value={invite} />}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="role">I am a…</Label>
             <select

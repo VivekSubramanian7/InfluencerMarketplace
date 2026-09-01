@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/require";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function signup(formData: FormData) {
   const supabase = await createServerSupabase();
   const role = formData.get("role") === "creator" ? "creator" : "brand";
@@ -14,8 +16,15 @@ export async function signup(formData: FormData) {
     options: { data: { role, display_name: String(formData.get("display_name") ?? "") } },
   });
   if (error) redirect(`/auth/error?message=${encodeURIComponent(error.message)}`);
+
+  // creator arrived through a brand's invite link → open their conversation
+  const invite = String(formData.get("invite") ?? "");
+  if (role === "creator" && UUID_RE.test(invite)) {
+    await supabase.rpc("claim_creator_invite", { p_token: invite });
+  }
+
   revalidatePath("/", "layout");
-  redirect(role === "creator" ? "/onboarding" : "/discover");
+  redirect(role === "creator" ? "/onboarding" : "/brand/onboarding");
 }
 
 export async function login(formData: FormData) {
@@ -37,8 +46,15 @@ export async function login(formData: FormData) {
       .from("creator_profiles").select("user_id").eq("user_id", data.user.id).maybeSingle();
     if (!cp) creatorHome = "/onboarding";
   }
+  let brandHome = "/brand";
+  if (profile?.role === "brand") {
+    // never onboarded → the brand form first
+    const { data: bp } = await supabase
+      .from("brand_profiles").select("user_id").eq("user_id", data.user.id).maybeSingle();
+    if (!bp) brandHome = "/brand/onboarding";
+  }
   const target = safeNext(String(formData.get("next") ?? "")) ??
-    (profile?.role === "creator" ? creatorHome : profile?.role === "admin" ? "/admin" : "/discover");
+    (profile?.role === "creator" ? creatorHome : profile?.role === "admin" ? "/admin" : brandHome);
   redirect(target);
 }
 

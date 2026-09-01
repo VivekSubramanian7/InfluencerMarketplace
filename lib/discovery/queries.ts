@@ -12,13 +12,27 @@ export interface CreatorCard {
   offeringCount: number;
 }
 
-export async function searchCreators(filters: DiscoveryFilters): Promise<{
+export interface SearchScope {
+  /** hard-exclude these creators (blocklist, past collaborators) */
+  excludeIds?: string[];
+  /** restrict results to these creators (the "worked with" tab); [] → no results */
+  onlyIds?: string[];
+}
+
+export async function searchCreators(
+  filters: DiscoveryFilters,
+  scope: SearchScope = {}
+): Promise<{
   creators: CreatorCard[];
   total: number;
   page: number;
   pageSize: number;
 }> {
   const supabase = createPublicClient();
+
+  if (scope.onlyIds && scope.onlyIds.length === 0) {
+    return { creators: [], total: 0, page: 1, pageSize: PAGE_SIZE };
+  }
 
   // Clamp the page before it feeds into range()/from — an unclamped huge
   // page number (or Infinity, if it ever slipped past the parser) would
@@ -52,6 +66,13 @@ export async function searchCreators(filters: DiscoveryFilters): Promise<{
     .select("user_id, handle, bio, niches, country", { count: "exact" })
     .eq("status", "live");
   if (creatorIdAllowlist) cq = cq.in("user_id", creatorIdAllowlist);
+  if (scope.onlyIds) cq = cq.in("user_id", scope.onlyIds);
+  if (scope.excludeIds && scope.excludeIds.length > 0) {
+    // ponytail: id lists ride in the PostgREST query string — fine for a
+    // brand's collaborator/blocklist scale; move server-side if brands
+    // accumulate thousands of past collaborators.
+    cq = cq.not("user_id", "in", `(${scope.excludeIds.join(",")})`);
+  }
   if (filters.niche) cq = cq.contains("niches", [filters.niche]);
   if (filters.country) {
     // filters.country is interpolated into an ilike pattern; escape LIKE
