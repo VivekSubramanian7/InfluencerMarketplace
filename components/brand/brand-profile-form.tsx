@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { OtherFormatField } from "@/components/brand/other-format-field";
+import { ProposedProducts } from "@/components/brand/proposed-products";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -40,7 +41,7 @@ export function BrandProfileForm({
   return (
     <form action={saveBrandProfile} className="flex flex-col gap-5">
       <input type="hidden" name="from" value={from} />
-      {productsJson && <input type="hidden" name="products_json" value={productsJson} />}
+      {productsJson && <ProposedProducts initial={JSON.parse(productsJson)} />}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="company">Company name</Label>
