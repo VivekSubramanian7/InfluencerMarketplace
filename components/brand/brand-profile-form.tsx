@@ -4,6 +4,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { OtherFormatField } from "@/components/brand/other-format-field";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -96,18 +97,7 @@ export function BrandProfileForm({
               </label>
             ))}
           </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="pref_types_other" className="text-sm font-normal text-muted-foreground">
-              Other
-            </Label>
-            <Input
-              id="pref_types_other"
-              name="pref_types_other"
-              maxLength={500}
-              defaultValue={defaults?.pref_types_other ?? ""}
-              placeholder="e.g. podcast mentions, newsletter sponsorships…"
-            />
-          </div>
+          <OtherFormatField defaultValue={defaults?.pref_types_other ?? ""} />
         </div>
       </fieldset>
 
