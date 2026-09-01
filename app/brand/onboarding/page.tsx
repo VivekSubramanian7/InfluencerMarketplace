@@ -63,7 +63,7 @@ export default async function BrandOnboardingPage({
           defaults={
             proposal
               ? {
-                  company: null,
+                  company: proposal.company || null,
                   website: ingestion?.website ?? null,
                   description: proposal.description || null,
                   notes: proposal.tone ? `Tone of voice: ${proposal.tone}` : null,

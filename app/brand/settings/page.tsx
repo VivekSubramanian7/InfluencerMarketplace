@@ -105,7 +105,7 @@ export default async function BrandSettingsPage({
                   }
                 : proposal
                   ? {
-                      company: null,
+                      company: proposal.company || null,
                       website: ingestion?.website ?? null,
                       description: proposal.description || null,
                       notes: proposal.tone ? `Tone of voice: ${proposal.tone}` : null,
