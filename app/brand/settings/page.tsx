@@ -7,6 +7,7 @@ import { BrandProfileForm } from "@/components/brand/brand-profile-form";
 import { WebsiteIngest } from "@/components/brand/website-ingest";
 import type { IngestProposal } from "@/lib/brand/ingest";
 import { SiteNav } from "@/components/site-nav";
+import { CopyInviteMessage } from "@/components/brand/copy-invite-message";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,15 +204,9 @@ export default async function BrandSettingsPage({
                     </Badge>
                   </div>
                   {i.status === "pending" && (
-                    <div className="mt-2 rounded-lg bg-secondary/60 p-3">
-                      <p className="whitespace-pre-wrap break-words text-sm">
-                        {template}
-                        {"\n\n"}Join me on Clipline: {origin}/signup?invite={i.token}
-                      </p>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Copy this message and send it to them.
-                      </p>
-                    </div>
+                    <CopyInviteMessage
+                      text={`${template}\n\nJoin me on Clipline: ${origin}/signup?invite=${i.token}`}
+                    />
                   )}
                 </li>
               ))}
