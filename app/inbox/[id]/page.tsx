@@ -40,18 +40,39 @@ export default async function ConversationPage({
   const iAmBrand = conv.brand_id === user.id;
   const otherId = iAmBrand ? conv.creator_id : conv.brand_id;
 
-  const [{ data: otherProfile }, { data: brandProfile }, { data: creatorProfile }] =
-    await Promise.all([
-      supabase.from("profiles").select("display_name").eq("id", otherId).maybeSingle(),
-      iAmBrand
-        ? Promise.resolve({ data: null })
-        : supabase.from("brand_profiles").select("company").eq("user_id", conv.brand_id).maybeSingle(),
-      supabase
-        .from("creator_profiles")
-        .select("handle")
-        .eq("user_id", conv.creator_id)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: otherProfile },
+    { data: brandProfile },
+    { data: creatorProfile },
+    offeringCountRes,
+    dealCountRes,
+  ] = await Promise.all([
+    supabase.from("profiles").select("display_name").eq("id", otherId).maybeSingle(),
+    iAmBrand
+      ? Promise.resolve({ data: null })
+      : supabase.from("brand_profiles").select("company").eq("user_id", conv.brand_id).maybeSingle(),
+    supabase
+      .from("creator_profiles")
+      .select("handle")
+      .eq("user_id", conv.creator_id)
+      .maybeSingle(),
+    iAmBrand
+      ? supabase
+          .from("offerings")
+          .select("id", { count: "exact", head: true })
+          .eq("creator_id", conv.creator_id)
+          .eq("active", true)
+      : Promise.resolve({ count: null }),
+    iAmBrand
+      ? supabase
+          .from("deals")
+          .select("id", { count: "exact", head: true })
+          .eq("brand_id", conv.brand_id)
+          .eq("creator_id", conv.creator_id)
+      : Promise.resolve({ count: null }),
+  ]);
+  const activeOfferings = offeringCountRes.count ?? 0;
+  const pastDeals = dealCountRes.count ?? 0;
   const otherLabel =
     (!iAmBrand ? brandProfile?.company : null) || otherProfile?.display_name || "Someone";
 
@@ -131,6 +152,21 @@ export default async function ConversationPage({
             </Badge>
           </span>
         </div>
+        {iAmBrand && (activeOfferings > 0 || pastDeals > 0) && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {activeOfferings > 0 && (
+              <span>
+                {activeOfferings} active offering{activeOfferings !== 1 ? "s" : ""}
+              </span>
+            )}
+            {activeOfferings > 0 && pastDeals > 0 && <span> · </span>}
+            {pastDeals > 0 && (
+              <span>
+                {pastDeals} past deal{pastDeals !== 1 ? "s" : ""}
+              </span>
+            )}
+          </p>
+        )}
 
         {error && (
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
