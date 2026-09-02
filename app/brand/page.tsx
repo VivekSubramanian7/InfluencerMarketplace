@@ -31,7 +31,7 @@ export default async function BrandOverviewPage({
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
-  const [profileRes, convRes, dealsRes, blockRes] = await Promise.all([
+  const [profileRes, convRes, dealsRes, blockRes, campaignRes] = await Promise.all([
     supabase.from("brand_profiles").select("company").eq("user_id", user.id).maybeSingle(),
     supabase
       .from("conversations")
@@ -44,6 +44,11 @@ export default async function BrandOverviewPage({
       .eq("brand_id", user.id)
       .order("requested_at", { ascending: false }),
     supabase.from("brand_blocklist").select("creator_id, created_at").eq("brand_id", user.id),
+    supabase
+      .from("campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("brand_id", user.id)
+      .eq("status", "open"),
   ]);
   // never onboarded — send them through the form first
   if (!profileRes.data) redirect("/brand/onboarding");
@@ -51,6 +56,7 @@ export default async function BrandOverviewPage({
   const conversations = convRes.data ?? [];
   const deals = dealsRes.data ?? [];
   const blocked = blockRes.data ?? [];
+  const openCampaigns = campaignRes.count ?? 0;
 
   const creatorIds = [
     ...new Set([
@@ -90,9 +96,17 @@ export default async function BrandOverviewPage({
           <h1 className="text-3xl font-extrabold tracking-tight">
             {profileRes.data?.company || "Your brand"}
           </h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/brand/settings">Brand settings</Link>
+              <Link href="/brand/settings">Settings</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/brand/settings#invites">Invite a creator</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/campaigns">
+                Campaigns{openCampaigns > 0 ? ` (${openCampaigns})` : ""}
+              </Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/discover">Find creators</Link>

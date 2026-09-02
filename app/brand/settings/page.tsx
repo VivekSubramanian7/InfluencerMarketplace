@@ -68,6 +68,23 @@ export default async function BrandSettingsPage({
         </Link>
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight">Brand settings</h1>
 
+        <nav className="mt-3 flex flex-wrap gap-1" aria-label="Settings sections">
+          {[
+            { href: "#import", label: "Import" },
+            { href: "#profile", label: "Profile" },
+            { href: "#products", label: "Products" },
+            { href: "#invites", label: "Invites" },
+          ].map((s) => (
+            <a
+              key={s.href}
+              href={s.href}
+              className="rounded-full border px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              {s.label}
+            </a>
+          ))}
+        </nav>
+
         {error && (
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
@@ -80,7 +97,7 @@ export default async function BrandSettingsPage({
         )}
 
         {/* ── 1. Quick import ── */}
-        <section className="mt-8 rounded-2xl bg-card p-6 shadow-card">
+        <section id="import" className="mt-8 scroll-mt-20 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Import from your website</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             We&apos;ll read your site and pre-fill your description, niches, and products.
@@ -95,7 +112,7 @@ export default async function BrandSettingsPage({
         </section>
 
         {/* ── 2. Brand profile (main form) ── */}
-        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+        <section id="profile" className="mt-6 scroll-mt-20 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Brand profile</h2>
           <p className="mt-1 mb-5 text-sm text-muted-foreground">
             How creators see your brand when you reach out or book.
@@ -134,7 +151,7 @@ export default async function BrandSettingsPage({
         </section>
 
         {/* ── 3. Products ── */}
-        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+        <section id="products" className="mt-6 scroll-mt-20 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Products</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             The products creators will feature in their videos.
@@ -190,7 +207,7 @@ export default async function BrandSettingsPage({
         </section>
 
         {/* ── 4. Invite creators ── */}
-        <section id="invites" className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+        <section id="invites" className="mt-6 scroll-mt-20 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Invite creators</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Generate a personal join link. When they sign up through it, a conversation opens automatically.

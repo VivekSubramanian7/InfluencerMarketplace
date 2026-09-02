@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased font-sans">
+    <html lang="en" className="h-full scroll-smooth antialiased font-sans">
       {/* Satoshi via Fontshare (DESIGN.md: CDN now, next/font/local for prod) */}
       <link
         rel="stylesheet"
