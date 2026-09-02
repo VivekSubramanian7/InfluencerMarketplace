@@ -96,12 +96,13 @@ export default async function BrandSettingsPage({
               profile
                 ? {
                     ...profile,
+                    // proposal always wins when present — user just re-scraped
+                    company: proposal?.company || profile.company,
                     website: ingestion?.website ?? profile.website,
-                    description: profile.description || proposal?.description || null,
-                    pref_niches:
-                      (profile.pref_niches ?? []).length > 0
-                        ? profile.pref_niches
-                        : proposal?.niches ?? [],
+                    description: proposal?.description || profile.description || null,
+                    pref_niches: proposal?.niches.length
+                      ? proposal.niches
+                      : (profile.pref_niches ?? []),
                     pref_types: profile.pref_types ?? [],
                   }
                 : proposal
