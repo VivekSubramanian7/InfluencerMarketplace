@@ -124,8 +124,8 @@ export default function LandingPage() {
                     <ArrowRightIcon size={16} />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="px-7 text-base">
-                  <Link href="/c/mayafilms">See a live storefront</Link>
+                <Button size="lg" variant="outline" className="px-7 text-base" disabled>
+                  See a live storefront
                 </Button>
               </div>
               <p className="mt-5 text-sm text-muted-foreground">
