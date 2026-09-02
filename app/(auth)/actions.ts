@@ -10,10 +10,23 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export async function signup(formData: FormData) {
   const supabase = await createServerSupabase();
   const role = formData.get("role") === "creator" ? "creator" : "brand";
+  // Preserve the goals the user picked pre-signup so the effort isn't discarded
+  // (IKEA effect) — stored on the auth user so onboarding can tailor to them.
+  const goals = String(formData.get("goals") ?? "")
+    .split(",")
+    .map((g) => g.trim())
+    .filter(Boolean)
+    .slice(0, 8);
   const { error } = await supabase.auth.signUp({
     email: String(formData.get("email")),
     password: String(formData.get("password")),
-    options: { data: { role, display_name: String(formData.get("display_name") ?? "") } },
+    options: {
+      data: {
+        role,
+        display_name: String(formData.get("display_name") ?? ""),
+        goals,
+      },
+    },
   });
   if (error) redirect(`/auth/error?message=${encodeURIComponent(error.message)}`);
 

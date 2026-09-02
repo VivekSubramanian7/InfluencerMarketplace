@@ -30,15 +30,16 @@ export function BookingConfirmButton({
           <span className="font-medium text-foreground">{offeringTitle}</span>
           {creatorHandle ? ` by @${creatorHandle}` : ""}
         </li>
-        <li>
-          Price: <span className="font-bold text-foreground">${price}</span>
+        <li className="flex items-center justify-between">
+          <span>Total</span>
+          <span className="font-bold text-foreground tabular-nums">${price}</span>
         </li>
       </ul>
       <p className="mt-2 text-xs text-muted-foreground">
         This sends a booking request to the creator. Payment is handled outside the platform.
       </p>
       <div className="mt-3 flex gap-2">
-        <Button type="submit">Confirm booking</Button>
+        <Button type="submit">Confirm booking · ${price}</Button>
         <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
           Go back
         </Button>

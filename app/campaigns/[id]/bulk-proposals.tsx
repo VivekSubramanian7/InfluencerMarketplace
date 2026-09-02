@@ -29,12 +29,16 @@ export function BulkProposals({
   nameById,
   handleById,
   convByCreator,
+  ratingByCreator = {},
+  verifiedById = {},
 }: {
   campaignId: string;
   applications: App[];
   nameById: Record<string, string | null>;
   handleById: Record<string, string>;
   convByCreator: Record<string, string>;
+  ratingByCreator?: Record<string, { avg: number; count: number }>;
+  verifiedById?: Record<string, boolean>;
 }) {
   const pending = applications.filter((a) => a.status === "pending");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -125,6 +129,23 @@ export function BulkProposals({
                     />
                   )}
                   {nameById[a.creator_id] || handle || "Creator"}
+                  {verifiedById[a.creator_id] && (
+                    <span
+                      title="Verified creator"
+                      className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber/15 px-1.5 py-0.5 text-[11px] font-semibold text-amber-foreground"
+                    >
+                      <span aria-hidden>✓</span> Verified
+                    </span>
+                  )}
+                  {ratingByCreator[a.creator_id] && (
+                    <span className="text-sm font-semibold">
+                      <span className="text-amber">★</span>{" "}
+                      {ratingByCreator[a.creator_id].avg}
+                      <span className="ml-0.5 font-normal text-muted-foreground tabular-nums">
+                        ({ratingByCreator[a.creator_id].count})
+                      </span>
+                    </span>
+                  )}
                   {handle && (
                     <Link
                       href={`/c/${handle}`}

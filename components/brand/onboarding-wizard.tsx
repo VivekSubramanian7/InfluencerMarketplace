@@ -40,13 +40,20 @@ export function OnboardingWizard({
 }) {
   const [step, setStep] = useState(1);
 
+  // Account creation already happened, so the bar never starts at 0% — the
+  // goal-gradient effect (mirrors the creator wizard). 4 phases = account + 3.
+  const TOTAL_PHASES = STEPS.length + 1;
+  const pct = Math.round((step / TOTAL_PHASES) * 100);
+
   return (
     <div>
       <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
         <span>Step {step} of 3 · {STEPS[step - 1].label}</span>
-        <span className="tabular-nums">{Math.round((step / 3) * 100)}% complete</span>
+        <span className="tabular-nums">{pct}% complete</span>
       </div>
       <div className="mt-1.5 flex gap-1">
+        {/* Leading segment = account creation (already complete) */}
+        <div className="h-2 flex-1 rounded-full bg-primary transition-colors duration-300" />
         {STEPS.map((s) => (
           <div
             key={s.number}

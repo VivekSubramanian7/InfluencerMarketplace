@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { deleteOffering, saveOffering, toggleOffering } from "./actions";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -69,9 +70,11 @@ export default async function OfferingsPage({
                 </form>
                 <form action={deleteOffering}>
                   <input type="hidden" name="id" value={o.id} />
-                  <Button type="submit" variant="outline" size="sm" className="text-destructive border-destructive/40">
-                    Delete
-                  </Button>
+                  <ConfirmSubmitButton
+                    label="Delete"
+                    confirmLabel="Delete for good"
+                    message="This removes the offering permanently."
+                  />
                 </form>
               </div>
             </li>

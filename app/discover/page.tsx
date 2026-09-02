@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PriceRange } from "@/components/price-range";
+import { SearchSuggest } from "@/components/discover/search-suggest";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -157,16 +158,14 @@ export default async function DiscoverPage({
         >
           {filters.tab === "worked" && <input type="hidden" name="tab" value="worked" />}
           <div className="flex flex-wrap gap-2">
-            <Input
-              name="q"
+            <SearchSuggest
               defaultValue={filters.q ?? ""}
-              placeholder="Search by name, handle, or bio"
-              aria-label="Search creators"
-              className="h-10 min-w-56 flex-1 rounded-full bg-background px-4"
+              recent={
+                isBrand
+                  ? savedSearches.map((s) => ({ name: s.name, href: savedHref(s.params) }))
+                  : []
+              }
             />
-            <Button type="submit" className="h-10 rounded-full px-6">
-              Search
-            </Button>
           </div>
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <input
@@ -381,17 +380,32 @@ export default async function DiscoverPage({
                           {initial}
                         </span>
                         <div className="min-w-0 pb-0.5">
-                          <p className="truncate font-bold">
-                            {c.displayName ?? `@${c.handle}`}
+                          <p className="flex items-center gap-1.5 font-bold">
+                            <span className="truncate">
+                              {c.displayName ?? `@${c.handle}`}
+                            </span>
                             {c.avgRating !== null && (
-                              <span className="ml-1.5 text-sm font-semibold">
+                              <span className="shrink-0 text-sm font-semibold">
                                 <span className="text-amber">★</span> {c.avgRating}
+                                <span className="ml-0.5 font-normal text-muted-foreground tabular-nums">
+                                  ({c.ratingCount})
+                                </span>
                               </span>
                             )}
                           </p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            @{c.handle}
-                            {c.country ? ` · ${c.country}` : ""}
+                          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <span className="truncate">
+                              @{c.handle}
+                              {c.country ? ` · ${c.country}` : ""}
+                            </span>
+                            {c.verified && (
+                              <span
+                                title="Verified creator"
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber/15 px-1.5 py-0.5 text-[11px] font-semibold text-amber-foreground"
+                              >
+                                <span aria-hidden>✓</span> Verified
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>

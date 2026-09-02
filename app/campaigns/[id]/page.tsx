@@ -125,6 +125,8 @@ export default async function CampaignPage({
             campaignId={campaign.id}
             open={campaign.status === "open" && !windowClosed}
             userId={user.id}
+            budgetMinCents={campaign.budget_min_cents}
+            budgetMaxCents={campaign.budget_max_cents}
             supabase={supabase}
           />
         ) : null}
@@ -164,13 +166,29 @@ async function OwnerPanel({
   const creatorIds = [...new Set((apps ?? []).map((a) => a.creator_id))];
   const handleById = new Map<string, string>();
   const nameById = new Map<string, string | null>();
+  const ratingByCreator = new Map<string, { avg: number; count: number }>();
+  const verifiedIds = new Set<string>();
   if (creatorIds.length > 0) {
-    const [{ data: creators }, { data: profiles }] = await Promise.all([
+    const [{ data: creators }, { data: profiles }, { data: reviews }, { data: stats }] = await Promise.all([
       supabase.from("creator_profiles").select("user_id, handle").in("user_id", creatorIds),
       supabase.from("profiles").select("id, display_name").in("id", creatorIds),
+      supabase.from("public_creator_reviews").select("creator_id, rating").in("creator_id", creatorIds),
+      supabase.from("public_creator_stats").select("creator_id, verification_status").in("creator_id", creatorIds),
     ]);
     for (const c of creators ?? []) handleById.set(c.user_id, c.handle);
     for (const p of profiles ?? []) nameById.set(p.id, p.display_name);
+    const sums = new Map<string, { sum: number; count: number }>();
+    for (const r of reviews ?? []) {
+      const cur = sums.get(r.creator_id as string);
+      if (!cur) sums.set(r.creator_id as string, { sum: r.rating as number, count: 1 });
+      else { cur.sum += r.rating as number; cur.count += 1; }
+    }
+    for (const [cid, s] of sums) {
+      ratingByCreator.set(cid, { avg: Math.round((s.sum / s.count) * 10) / 10, count: s.count });
+    }
+    for (const s of stats ?? []) {
+      if (s.verification_status === "verified") verifiedIds.add(s.creator_id as string);
+    }
   }
 
   const convByCreator = new Map<string, string>();
@@ -228,6 +246,8 @@ async function OwnerPanel({
           nameById={Object.fromEntries(nameById)}
           handleById={Object.fromEntries(handleById)}
           convByCreator={Object.fromEntries(convByCreator)}
+          ratingByCreator={Object.fromEntries(ratingByCreator)}
+          verifiedById={Object.fromEntries([...verifiedIds].map((id) => [id, true]))}
         />
       </div>
     </section>
@@ -238,11 +258,15 @@ async function CreatorPanel({
   campaignId,
   open,
   userId,
+  budgetMinCents,
+  budgetMaxCents,
   supabase,
 }: {
   campaignId: string;
   open: boolean;
   userId: string;
+  budgetMinCents: number;
+  budgetMaxCents: number;
   supabase: Supabase;
 }) {
   const { data: mine } = await supabase
@@ -323,7 +347,16 @@ async function CreatorPanel({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="proposed_price">Your price (USD)</Label>
-          <Input id="proposed_price" name="proposed_price" inputMode="decimal" required />
+          <Input
+            id="proposed_price"
+            name="proposed_price"
+            inputMode="decimal"
+            required
+            defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Suggested from the brand&rsquo;s budget — adjust to your rate.
+          </p>
         </div>
         <Button type="submit" className="mt-2 self-start">
           Submit application

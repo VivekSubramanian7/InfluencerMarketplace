@@ -12,6 +12,7 @@ export interface CreatorCard {
   offeringCount: number;
   avgRating: number | null;
   ratingCount: number;
+  verified: boolean;
 }
 
 export interface SearchScope {
@@ -101,14 +102,28 @@ export async function searchCreators(
     return { creators: [], total: count ?? 0, page, pageSize: PAGE_SIZE };
   }
 
-  const [{ data: profiles, error: pErr }, { data: offerings, error: oErr }, { data: reviews, error: rErr }] = await Promise.all([
+  const [
+    { data: profiles, error: pErr },
+    { data: offerings, error: oErr },
+    { data: reviews, error: rErr },
+    { data: statRows, error: sErr },
+  ] = await Promise.all([
     supabase.from("profiles").select("id, display_name").in("id", ids),
     supabase.from("offerings").select("creator_id, price_cents").eq("active", true).in("creator_id", ids),
     supabase.from("public_creator_reviews").select("creator_id, rating").in("creator_id", ids),
+    supabase.from("public_creator_stats").select("creator_id, verification_status").in("creator_id", ids),
   ]);
   if (pErr) throw new Error("discovery profiles query failed: " + pErr.message);
   if (oErr) throw new Error("discovery pricing query failed: " + oErr.message);
   if (rErr) throw new Error("discovery reviews query failed: " + rErr.message);
+  if (sErr) throw new Error("discovery stats query failed: " + sErr.message);
+
+  // A creator is "verified" if any connected platform account is verified.
+  const verifiedIds = new Set(
+    (statRows ?? [])
+      .filter((s) => s.verification_status === "verified")
+      .map((s) => s.creator_id as string)
+  );
 
   const ratingStats = new Map<string, { sum: number; count: number }>();
   for (const r of reviews ?? []) {
@@ -140,6 +155,7 @@ export async function searchCreators(
         ? Math.round((ratingStats.get(r.user_id as string)!.sum / ratingStats.get(r.user_id as string)!.count) * 10) / 10
         : null,
       ratingCount: ratingStats.get(r.user_id as string)?.count ?? 0,
+      verified: verifiedIds.has(r.user_id as string),
     })),
     total: count ?? 0,
     page,

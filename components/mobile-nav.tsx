@@ -67,9 +67,14 @@ export function MobileNav({
                 aria-current={active ? "page" : undefined}
               >
                 {isCentral ? (
-                  <span className="grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95">
-                    <Icon size={20} aria-hidden />
-                  </span>
+                  <>
+                    <span className="grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95">
+                      <Icon size={20} aria-hidden />
+                    </span>
+                    <span className="text-[10px] font-medium leading-tight text-foreground">
+                      {tab.label}
+                    </span>
+                  </>
                 ) : (
                   <>
                     <span className="relative">
