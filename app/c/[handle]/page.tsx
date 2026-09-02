@@ -6,6 +6,8 @@ import { isDueForSync } from "@/lib/social/staleness";
 import { syncDueForCreator } from "@/lib/social/sync";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { detectPlatform } from "@/lib/portfolio/platform";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { inviteFromStorefront } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -35,16 +37,68 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 export default async function StorefrontPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams: Promise<{ error?: string; invited?: string }>;
 }) {
   const { handle } = await params;
+  const { error: pageError, invited } = await searchParams;
   if (handle !== handle.toLowerCase()) redirect(`/c/${handle.toLowerCase()}`);
   const storefront = await getStorefront(handle.toLowerCase());
   if (!storefront) notFound();
   const { profile, offerings, portfolio, stats, reviews, avgRating, ratingCount } = storefront;
   const initial = (profile.displayName ?? profile.handle).charAt(0).toUpperCase();
   const gradient = creatorGradient(profile.handle);
+
+  const supabase = await createServerSupabase();
+  const { data: authData } = await supabase.auth.getUser();
+  const brandUserId = authData?.user?.id ?? null;
+
+  let existingConversation: { id: string } | null = null;
+  let isBlocked = false;
+  let isBrand = false;
+  let matchingCampaigns: { id: string; title: string; offering_type: string }[] = [];
+
+  if (brandUserId) {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", brandUserId)
+      .maybeSingle();
+    isBrand = profileData?.role === "brand";
+
+    if (isBrand) {
+      const [convRes, blockRes] = await Promise.all([
+        supabase
+          .from("conversations")
+          .select("id")
+          .eq("brand_id", brandUserId)
+          .eq("creator_id", profile.userId)
+          .maybeSingle(),
+        supabase
+          .from("brand_blocklist")
+          .select("creator_id")
+          .eq("brand_id", brandUserId)
+          .eq("creator_id", profile.userId)
+          .maybeSingle(),
+      ]);
+      existingConversation = convRes.data;
+      isBlocked = !!blockRes.data;
+
+      const creatorTypes = [...new Set(offerings.map((o) => o.type))];
+      if (creatorTypes.length > 0) {
+        const { data: campaigns } = await supabase
+          .from("campaigns")
+          .select("id, title, offering_type")
+          .eq("brand_id", brandUserId)
+          .eq("status", "open")
+          .in("offering_type", creatorTypes)
+          .limit(5);
+        matchingCampaigns = campaigns ?? [];
+      }
+    }
+  }
 
   // Refresh-on-view: re-sync overdue public stats after the response is
   // sent (never blocks the viewer). ISR (revalidate=300) + the 7-day
@@ -114,7 +168,63 @@ export default async function StorefrontPage({
               ))}
             </ul>
           )}
+          {isBrand && !isBlocked && (
+            <div className="mt-6">
+              {existingConversation ? (
+                <a
+                  href={`/inbox/${existingConversation.id}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-bold shadow-card transition-transform hover:scale-[1.02]"
+                  style={{ color: gradient.deep }}
+                >
+                  Open conversation →
+                </a>
+              ) : (
+                <form action={inviteFromStorefront} className="inline">
+                  <input type="hidden" name="creator_id" value={profile.userId} />
+                  <input type="hidden" name="handle" value={profile.handle} />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-bold shadow-card transition-transform hover:scale-[1.02]"
+                    style={{ color: gradient.deep }}
+                  >
+                    Invite to chat
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
         </section>
+
+        {pageError && (
+          <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {pageError}
+          </p>
+        )}
+        {invited && (
+          <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+            Invitation sent! Check your inbox.
+          </p>
+        )}
+
+        {isBrand && matchingCampaigns.length > 0 && (
+          <div className="mt-4 rounded-2xl bg-secondary/50 p-5">
+            <p className="text-sm font-medium">
+              You have {matchingCampaigns.length} open campaign{matchingCampaigns.length !== 1 ? "s" : ""} matching this creator&apos;s work:
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {matchingCampaigns.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/campaigns/${c.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-sm font-medium shadow-sm hover:border-primary/40"
+                  >
+                    {c.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <section className="mt-10">
           <h2 className="mb-5 text-xl font-bold">Audience</h2>

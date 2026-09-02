@@ -31,10 +31,16 @@ function budgetRange(minCents: number, maxCents: number) {
 export default async function CampaignsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    saved?: string;
+    clone?: string;
+    prefill_type?: string;
+    prefill_niche?: string;
+  }>;
 }) {
   const { user, role } = await requireUser("/campaigns");
-  const { error, saved } = await searchParams;
+  const { error, saved, clone, prefill_type, prefill_niche } = await searchParams;
   const supabase = await createServerSupabase();
 
   return (
@@ -60,7 +66,13 @@ export default async function CampaignsPage({
           </p>
         )}
         {role === "brand" ? (
-          <BrandCampaigns userId={user.id} supabase={supabase} />
+          <BrandCampaigns
+            userId={user.id}
+            supabase={supabase}
+            cloneId={clone}
+            prefillType={prefill_type}
+            prefillNiche={prefill_niche}
+          />
         ) : (
           <CreatorCampaigns userId={user.id} supabase={supabase} />
         )}
@@ -71,7 +83,19 @@ export default async function CampaignsPage({
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 
-async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: Supabase }) {
+async function BrandCampaigns({
+  userId,
+  supabase,
+  cloneId,
+  prefillType,
+  prefillNiche,
+}: {
+  userId: string;
+  supabase: Supabase;
+  cloneId?: string;
+  prefillType?: string;
+  prefillNiche?: string;
+}) {
   const { data: campaigns, error } = await supabase
     .from("campaigns")
     .select("id, title, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at")
@@ -80,7 +104,8 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
   if (error) throw new Error("campaigns query failed: " + error.message);
 
   const ids = (campaigns ?? []).map((c) => c.id);
-  const pendingByCampaign = new Map<string, number>();
+  type Stats = { pending: number; accepted: number; declined: number };
+  const statsByCampaign = new Map<string, Stats>();
   if (ids.length > 0) {
     const { data: apps, error: aErr } = await supabase
       .from("campaign_applications")
@@ -88,16 +113,37 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
       .in("campaign_id", ids);
     if (aErr) throw new Error("applications query failed: " + aErr.message);
     for (const a of apps ?? []) {
-      if (a.status !== "pending") continue;
-      pendingByCampaign.set(a.campaign_id, (pendingByCampaign.get(a.campaign_id) ?? 0) + 1);
+      if (a.status === "withdrawn") continue;
+      const s = statsByCampaign.get(a.campaign_id) ?? { pending: 0, accepted: 0, declined: 0 };
+      if (a.status === "pending") s.pending++;
+      else if (a.status === "accepted") s.accepted++;
+      else if (a.status === "declined") s.declined++;
+      statsByCampaign.set(a.campaign_id, s);
     }
+  }
+
+  let cloneData: {
+    title: string;
+    description: string;
+    offering_type: string;
+    budget_min_cents: number;
+    budget_max_cents: number;
+  } | null = null;
+  if (cloneId) {
+    const { data } = await supabase
+      .from("campaigns")
+      .select("title, description, offering_type, budget_min_cents, budget_max_cents")
+      .eq("id", cloneId)
+      .eq("brand_id", userId)
+      .maybeSingle();
+    cloneData = data;
   }
 
   return (
     <>
       <ul className="mt-6 mb-10 flex flex-col gap-2">
         {(campaigns ?? []).map((c) => {
-          const pending = pendingByCampaign.get(c.id) ?? 0;
+          const stats = statsByCampaign.get(c.id);
           return (
             <li key={c.id}>
               <Link
@@ -112,7 +158,17 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
                   </span>
                 </span>
                 <span className="flex shrink-0 items-center gap-4">
-                  {pending > 0 && <Badge>{pending} pending</Badge>}
+                  {stats && (stats.pending > 0 || stats.accepted > 0 || stats.declined > 0) && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {[
+                        stats.pending > 0 && `${stats.pending} pending`,
+                        stats.accepted > 0 && `${stats.accepted} accepted`,
+                        stats.declined > 0 && `${stats.declined} declined`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  )}
                   <Badge variant="secondary">{c.status}</Badge>
                   <span className="font-extrabold tabular-nums text-primary">
                     {budgetRange(c.budget_min_cents, c.budget_max_cents)}
@@ -129,11 +185,17 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
         )}
       </ul>
 
-      <h2 className="text-lg font-bold">Start a campaign</h2>
+      <h2 className="text-lg font-bold">{cloneData ? "Clone campaign" : "Start a campaign"}</h2>
       <form action={createCampaign} className="mt-3 flex max-w-xl flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" name="title" required placeholder="Spring launch, honest review videos" />
+          <Input
+            id="title"
+            name="title"
+            required
+            defaultValue={cloneData?.title ?? ""}
+            placeholder="Spring launch, honest review videos"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="description">What you&apos;re looking for</Label>
@@ -142,6 +204,10 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
             name="description"
             rows={5}
             required
+            defaultValue={
+              cloneData?.description ??
+              (prefillNiche ? `Looking for ${prefillNiche} creators to…` : "")
+            }
             placeholder="The product, the audience you want to reach, and what a great video looks like to you."
           />
         </div>
@@ -151,7 +217,7 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
             id="type"
             name="type"
             className="h-10 rounded-lg border bg-background px-3 text-sm"
-            defaultValue="dedicated_video"
+            defaultValue={cloneData?.offering_type ?? prefillType ?? "dedicated_video"}
           >
             {Object.entries(TYPE_LABELS).map(([v, label]) => (
               <option key={v} value={v}>
@@ -163,11 +229,23 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="budget_min">Budget from (USD)</Label>
-            <Input id="budget_min" name="budget_min" inputMode="decimal" required />
+            <Input
+              id="budget_min"
+              name="budget_min"
+              inputMode="decimal"
+              required
+              defaultValue={cloneData ? (cloneData.budget_min_cents / 100).toFixed(2) : ""}
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="budget_max">Budget to (USD)</Label>
-            <Input id="budget_max" name="budget_max" inputMode="decimal" required />
+            <Input
+              id="budget_max"
+              name="budget_max"
+              inputMode="decimal"
+              required
+              defaultValue={cloneData ? (cloneData.budget_max_cents / 100).toFixed(2) : ""}
+            />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -175,7 +253,7 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
           <Input id="apply_by" name="apply_by" type="date" />
         </div>
         <Button type="submit" className="mt-2">
-          Start campaign
+          {cloneData ? "Create from template" : "Start campaign"}
         </Button>
       </form>
     </>

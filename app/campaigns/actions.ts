@@ -74,3 +74,37 @@ export async function setCampaignStatus(formData: FormData) {
   }
   redirect(`/campaigns/${id}?saved=1`);
 }
+
+export async function editCampaign(formData: FormData) {
+  const { user } = await requireRole("brand");
+  const supabase = await createServerSupabase();
+  const id = String(formData.get("id") ?? "");
+
+  const title = parseText(String(formData.get("title") ?? ""), 80);
+  const description = parseText(String(formData.get("description") ?? ""), 2000);
+  const budgetMin = parsePriceCents(String(formData.get("budget_min") ?? ""));
+  const budgetMax = parsePriceCents(String(formData.get("budget_max") ?? ""));
+  const applyBy = parseApplyBy(String(formData.get("apply_by") ?? ""));
+
+  if (!title || !description || !budgetMin || !budgetMax || budgetMax < budgetMin || !applyBy.ok) {
+    redirect(`/campaigns/${id}?error=` + encodeURIComponent(
+      "Check the form: title (≤80), description (≤2000), budget $1–$1,000,000 with max ≥ min, and a valid date"));
+  }
+
+  const { error } = await supabase
+    .from("campaigns")
+    .update({
+      title,
+      description,
+      budget_min_cents: budgetMin,
+      budget_max_cents: budgetMax,
+      apply_by: applyBy.value,
+    })
+    .eq("id", id)
+    .eq("brand_id", user.id);
+
+  if (error) {
+    redirect(`/campaigns/${id}?error=` + encodeURIComponent(friendlyDbError(error)));
+  }
+  redirect(`/campaigns/${id}?saved=1`);
+}

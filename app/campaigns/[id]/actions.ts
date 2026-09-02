@@ -105,9 +105,12 @@ export async function decideApplication(formData: FormData) {
 
   // RLS restricts the update to campaigns this brand owns; the update trigger
   // enforces the pending → declined transition.
+  const reasonRaw = String(formData.get("decline_reason") ?? "").trim();
+  const declineReason = reasonRaw.length > 0 ? reasonRaw.slice(0, 500) : null;
+
   const { data: declined, error } = await supabase
     .from("campaign_applications")
-    .update({ status: "declined" })
+    .update({ status: "declined", decline_reason: declineReason })
     .eq("id", id)
     .select("creator_id")
     .maybeSingle();
@@ -121,5 +124,67 @@ export async function decideApplication(formData: FormData) {
     title: "Your campaign application was declined",
     href: `/campaigns/${campaignId}`,
   });
+  redirect(`/campaigns/${campaignId}?saved=1`);
+}
+
+export async function bulkDecideApplications(formData: FormData) {
+  await requireRole("brand");
+  const supabase = await createServerSupabase();
+  const campaignId = String(formData.get("campaign_id") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  const ids = formData.getAll("application_ids").map(String).filter(Boolean);
+  const reasonRaw = String(formData.get("decline_reason") ?? "").trim();
+  const declineReason = reasonRaw.length > 0 ? reasonRaw.slice(0, 500) : null;
+
+  if (ids.length === 0 || (decision !== "accepted" && decision !== "declined")) {
+    redirect(`/campaigns/${campaignId}`);
+  }
+
+  const errors: string[] = [];
+
+  if (decision === "accepted") {
+    for (const id of ids) {
+      const { error } = await supabase.rpc("accept_campaign_application", {
+        p_application_id: id,
+      });
+      if (error) errors.push(error.message);
+      else {
+        const { data: app } = await supabase
+          .from("campaign_applications").select("creator_id").eq("id", id).maybeSingle();
+        if (app) {
+          await notify({
+            userId: app.creator_id,
+            kind: "application_response",
+            title: "Your campaign application was accepted — the deal has started",
+            href: `/campaigns/${campaignId}`,
+            email: true,
+          });
+        }
+      }
+    }
+  } else {
+    for (const id of ids) {
+      const { data: declined, error } = await supabase
+        .from("campaign_applications")
+        .update({ status: "declined", decline_reason: declineReason })
+        .eq("id", id)
+        .select("creator_id")
+        .maybeSingle();
+      if (error) errors.push(error.message);
+      else if (declined) {
+        await notify({
+          userId: declined.creator_id,
+          kind: "application_response",
+          title: "Your campaign application was declined",
+          href: `/campaigns/${campaignId}`,
+        });
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    redirect(`/campaigns/${campaignId}?error=` +
+      encodeURIComponent(`${errors.length} application(s) failed: ${errors[0]}`));
+  }
   redirect(`/campaigns/${campaignId}?saved=1`);
 }

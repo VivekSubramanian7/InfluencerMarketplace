@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { BrandProfileForm } from "@/components/brand/brand-profile-form";
-import { WebsiteIngest } from "@/components/brand/website-ingest";
+import { OnboardingWizard } from "@/components/brand/onboarding-wizard";
 import type { IngestProposal } from "@/lib/brand/ingest";
+import type { BrandProfileDefaults } from "@/components/brand/brand-profile-form";
 import Link from "next/link";
 
 export default async function BrandOnboardingPage({
@@ -15,8 +15,6 @@ export default async function BrandOnboardingPage({
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
-  // brand_profiles row existence = onboarded (creator-wizard precedent:
-  // progress derived from data, no tracking column)
   const { data: existing } = await supabase
     .from("brand_profiles")
     .select("user_id")
@@ -31,34 +29,40 @@ export default async function BrandOnboardingPage({
     .maybeSingle();
   const proposal = (ingestion?.payload as IngestProposal | undefined) ?? null;
 
+  const defaults: BrandProfileDefaults | null = proposal
+    ? {
+        company: proposal.company || null,
+        website: ingestion?.website ?? null,
+        description: proposal.description || null,
+        notes: proposal.tone ? `Tone of voice: ${proposal.tone}` : null,
+        outreach_template: null,
+        pref_niches: proposal.niches,
+        pref_types: [],
+        pref_types_other: null,
+        guidelines_path: null,
+        rules_path: null,
+      }
+    : null;
+
+  const productsJson =
+    proposal && proposal.products.length > 0
+      ? JSON.stringify(proposal.products)
+      : null;
+
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-10">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Brand setup</span>
-            <span className="tabular-nums">33% complete</span>
-          </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-              style={{ width: "33%" }}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="mt-6 flex items-baseline justify-between gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tight">Tell us about your brand</h1>
+      <div className="flex items-baseline justify-between gap-4">
+        <h1 className="text-3xl font-extrabold tracking-tight">Brand setup</h1>
         <Link
           href="/discover"
           className="shrink-0 text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
-          Do this later → Discover
+          Skip → Discover
         </Link>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        This shapes which creators we suggest, and gives the creators you work
-        with your guidelines up front. Everything can be changed later in Brand
+        This shapes which creators we suggest and gives the creators you work
+        with your guidelines up front. Everything can be changed later in
         settings.
       </p>
       {error && (
@@ -66,34 +70,12 @@ export default async function BrandOnboardingPage({
           {error}
         </p>
       )}
-      <div className="mt-6 rounded-xl border p-4">
-        <h2 className="text-sm font-semibold">Start with your website</h2>
-        <div className="mt-2">
-          <WebsiteIngest from="onboarding" website={ingestion?.website ?? null} proposal={proposal} />
-        </div>
-      </div>
       <div className="mt-6">
-        <BrandProfileForm
-          defaults={
-            proposal
-              ? {
-                  company: proposal.company || null,
-                  website: ingestion?.website ?? null,
-                  description: proposal.description || null,
-                  notes: proposal.tone ? `Tone of voice: ${proposal.tone}` : null,
-                  outreach_template: null,
-                  pref_niches: proposal.niches,
-                  pref_types: [],
-                  pref_types_other: null,
-                  guidelines_path: null,
-                  rules_path: null,
-                }
-              : null
-          }
-          from="onboarding"
-          productsJson={
-            proposal && proposal.products.length > 0 ? JSON.stringify(proposal.products) : null
-          }
+        <OnboardingWizard
+          defaults={defaults}
+          proposal={proposal}
+          website={ingestion?.website ?? null}
+          productsJson={productsJson}
         />
       </div>
     </main>

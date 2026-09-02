@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { applyToCampaign, withdrawApplication, decideApplication } from "./actions";
+import { applyToCampaign, withdrawApplication } from "./actions";
 import { setCampaignStatus } from "../actions";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { EditCampaignForm } from "./edit-campaign-form";
+import { BulkProposals } from "./bulk-proposals";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -35,11 +37,11 @@ export default async function CampaignPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; invited?: string }>;
 }) {
   const { id } = await params;
   const { user, role } = await requireUser(`/campaigns/${id}`);
-  const { error, saved } = await searchParams;
+  const { error, saved, invited } = await searchParams;
   const supabase = await createServerSupabase();
 
   const { data: campaign } = await supabase
@@ -88,13 +90,36 @@ export default async function CampaignPage({
             Saved.
           </p>
         )}
+        {invited && (
+          <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+            Invitation sent! Check your inbox.
+          </p>
+        )}
 
         <p className="mt-6 max-w-prose whitespace-pre-wrap text-[15px] leading-relaxed">
           {campaign.description}
         </p>
 
+        {isOwner && (
+          <Link
+            href={`/campaigns?clone=${campaign.id}`}
+            className="mt-4 inline-block text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Use as template →
+          </Link>
+        )}
+
         {isOwner ? (
-          <OwnerPanel campaignId={campaign.id} status={campaign.status} supabase={supabase} />
+          <OwnerPanel
+            campaignId={campaign.id}
+            status={campaign.status}
+            title={campaign.title}
+            description={campaign.description}
+            budgetMinCents={campaign.budget_min_cents}
+            budgetMaxCents={campaign.budget_max_cents}
+            applyBy={campaign.apply_by}
+            supabase={supabase}
+          />
         ) : role === "creator" ? (
           <CreatorPanel
             campaignId={campaign.id}
@@ -113,15 +138,25 @@ type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 async function OwnerPanel({
   campaignId,
   status,
+  title,
+  description,
+  budgetMinCents,
+  budgetMaxCents,
+  applyBy,
   supabase,
 }: {
   campaignId: string;
   status: string;
+  title: string;
+  description: string;
+  budgetMinCents: number;
+  budgetMaxCents: number;
+  applyBy: string | null;
   supabase: Supabase;
 }) {
   const { data: apps, error } = await supabase
     .from("campaign_applications")
-    .select("id, creator_id, pitch, proposed_price_cents, status, deal_id, created_at")
+    .select("id, creator_id, pitch, proposed_price_cents, status, deal_id, decline_reason, created_at")
     .eq("campaign_id", campaignId)
     .order("created_at", { ascending: true });
   if (error) throw new Error("applications query failed: " + error.message);
@@ -138,6 +173,20 @@ async function OwnerPanel({
     for (const p of profiles ?? []) nameById.set(p.id, p.display_name);
   }
 
+  const convByCreator = new Map<string, string>();
+  if (creatorIds.length > 0) {
+    const { data: authUser } = await supabase.auth.getUser();
+    const brandId = authUser.user?.id;
+    if (brandId) {
+      const { data: convs } = await supabase
+        .from("conversations")
+        .select("id, creator_id")
+        .eq("brand_id", brandId)
+        .in("creator_id", creatorIds);
+      for (const c of convs ?? []) convByCreator.set(c.creator_id, c.id);
+    }
+  }
+
   const visible = (apps ?? []).filter((a) => a.status !== "withdrawn");
 
   return (
@@ -152,71 +201,35 @@ async function OwnerPanel({
           </Button>
         </form>
       </div>
-      <ul className="mt-4 flex flex-col gap-3">
-        {visible.map((a) => {
-          const handle = handleById.get(a.creator_id);
-          return (
-            <li key={a.id} className="rounded-xl border p-5">
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <span className="font-bold">
-                  {nameById.get(a.creator_id) || handle || "Creator"}
-                  {handle && (
-                    <Link
-                      href={`/c/${handle}`}
-                      className="ml-2 text-sm font-medium text-muted-foreground underline-offset-2 hover:underline"
-                    >
-                      @{handle}
-                    </Link>
-                  )}
-                </span>
-                <span className="flex shrink-0 items-center gap-3">
-                  <Badge variant="secondary">{APPLICATION_LABELS[a.status] ?? a.status}</Badge>
-                  <span className="font-extrabold tabular-nums text-primary">
-                    ${(a.proposed_price_cents / 100).toFixed(2)}
-                  </span>
-                </span>
-              </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm">{a.pitch}</p>
-              {a.status === "pending" && (
-                <div className="mt-3 flex gap-2">
-                  <form action={decideApplication}>
-                    <input type="hidden" name="campaign_id" value={campaignId} />
-                    <input type="hidden" name="id" value={a.id} />
-                    <input type="hidden" name="decision" value="accepted" />
-                    <Button type="submit" size="sm">Accept</Button>
-                  </form>
-                  <form action={decideApplication}>
-                    <input type="hidden" name="campaign_id" value={campaignId} />
-                    <input type="hidden" name="id" value={a.id} />
-                    <input type="hidden" name="decision" value="declined" />
-                    <Button type="submit" variant="outline" size="sm">Decline</Button>
-                  </form>
-                </div>
-              )}
-              {a.status === "accepted" && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {a.deal_id ? (
-                    <>
-                      Accepted at their proposed price.{" "}
-                      <Link href={`/deals/${a.deal_id}`} className="font-medium underline underline-offset-2">
-                        open the deal
-                      </Link>
-                      .
-                    </>
-                  ) : (
-                    "Accepted."
-                  )}
-                </p>
-              )}
-            </li>
-          );
-        })}
-        {visible.length === 0 && (
-          <li className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No applications yet.
-          </li>
-        )}
-      </ul>
+      {status === "open" && (
+        <EditCampaignForm
+          campaign={{
+            id: campaignId,
+            title,
+            description,
+            budget_min_cents: budgetMinCents,
+            budget_max_cents: budgetMaxCents,
+            apply_by: applyBy,
+          }}
+        />
+      )}
+      <div className="mt-4">
+        <BulkProposals
+          campaignId={campaignId}
+          applications={visible.map((a) => ({
+            id: a.id,
+            creator_id: a.creator_id,
+            pitch: a.pitch,
+            proposed_price_cents: a.proposed_price_cents,
+            status: a.status,
+            deal_id: a.deal_id,
+            decline_reason: a.decline_reason,
+          }))}
+          nameById={Object.fromEntries(nameById)}
+          handleById={Object.fromEntries(handleById)}
+          convByCreator={Object.fromEntries(convByCreator)}
+        />
+      </div>
     </section>
   );
 }
@@ -234,7 +247,7 @@ async function CreatorPanel({
 }) {
   const { data: mine } = await supabase
     .from("campaign_applications")
-    .select("id, pitch, proposed_price_cents, status, deal_id")
+    .select("id, pitch, proposed_price_cents, status, deal_id, decline_reason")
     .eq("campaign_id", campaignId)
     .eq("creator_id", userId)
     .maybeSingle();
@@ -252,6 +265,11 @@ async function CreatorPanel({
           </span>
         </div>
         <p className="mt-2 whitespace-pre-wrap text-sm">{mine.pitch}</p>
+        {mine.status === "declined" && mine.decline_reason && (
+          <p className="mt-2 rounded-lg bg-secondary/50 px-3 py-2 text-sm text-muted-foreground">
+            <span className="font-medium">Brand feedback:</span> {mine.decline_reason}
+          </p>
+        )}
         {mine.status === "accepted" && (
           <p className="mt-3 text-sm text-ok">
             {mine.deal_id ? (

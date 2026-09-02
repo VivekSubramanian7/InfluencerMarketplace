@@ -31,7 +31,8 @@ export default async function BrandOverviewPage({
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
-  const [profileRes, convRes, dealsRes, blockRes, campaignRes] = await Promise.all([
+  const [profileRes, convRes, dealsRes, blockRes, productCountRes, openCampaignRes, campaignCountRes] =
+    await Promise.all([
     supabase.from("brand_profiles").select("company").eq("user_id", user.id).maybeSingle(),
     supabase
       .from("conversations")
@@ -45,10 +46,18 @@ export default async function BrandOverviewPage({
       .order("requested_at", { ascending: false }),
     supabase.from("brand_blocklist").select("creator_id, created_at").eq("brand_id", user.id),
     supabase
+      .from("brand_products")
+      .select("id", { count: "exact", head: true })
+      .eq("brand_id", user.id),
+    supabase
       .from("campaigns")
       .select("id", { count: "exact", head: true })
       .eq("brand_id", user.id)
       .eq("status", "open"),
+    supabase
+      .from("campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("brand_id", user.id),
   ]);
   // never onboarded — send them through the form first
   if (!profileRes.data) redirect("/brand/onboarding");
@@ -56,7 +65,9 @@ export default async function BrandOverviewPage({
   const conversations = convRes.data ?? [];
   const deals = dealsRes.data ?? [];
   const blocked = blockRes.data ?? [];
-  const openCampaigns = campaignRes.count ?? 0;
+  const productCount = productCountRes.count ?? 0;
+  const openCampaigns = openCampaignRes.count ?? 0;
+  const campaignCount = campaignCountRes.count ?? 0;
 
   const creatorIds = [
     ...new Set([
@@ -88,6 +99,36 @@ export default async function BrandOverviewPage({
     </div>
   );
 
+  const checklist = [
+    {
+      label: "Complete your profile",
+      done: true,
+      href: "/brand/settings#profile",
+    },
+    {
+      label: "Add your first product",
+      done: productCount > 0,
+      href: "/brand/settings#products",
+    },
+    {
+      label: "Reach out to a creator",
+      done: conversations.length > 0,
+      href: "/discover",
+    },
+    {
+      label: "Post a campaign",
+      done: campaignCount > 0,
+      href: "/campaigns",
+    },
+    {
+      label: "Close your first deal",
+      done: completed.length > 0,
+      href: "/deals",
+    },
+  ];
+  const allDone = checklist.every((c) => c.done);
+  const doneCount = checklist.filter((c) => c.done).length;
+
   return (
     <>
       <SiteNav role={role} />
@@ -118,6 +159,40 @@ export default async function BrandOverviewPage({
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
           </p>
+        )}
+
+        {!allDone && (
+          <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-base font-bold">Getting started</h2>
+              <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                {doneCount} of {checklist.length}
+              </span>
+            </div>
+            <ul className="mt-3 flex flex-col gap-2">
+              {checklist.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-secondary"
+                  >
+                    <span
+                      className={`grid size-5 shrink-0 place-items-center rounded-full border text-xs ${
+                        item.done
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted-foreground/30"
+                      }`}
+                    >
+                      {item.done && "✓"}
+                    </span>
+                    <span className={item.done ? "text-muted-foreground line-through" : "font-medium"}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <div className="card-grid mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

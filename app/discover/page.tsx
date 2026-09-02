@@ -284,6 +284,19 @@ export default async function DiscoverPage({
           )}
         </div>
 
+        {isBrand && filters.type && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Not finding the right fit?{" "}
+            <Link
+              href={`/campaigns?prefill_type=${filters.type}${filters.niche ? `&prefill_niche=${encodeURIComponent(filters.niche)}` : ""}`}
+              className="font-medium underline underline-offset-2 hover:text-foreground"
+            >
+              Post a campaign
+            </Link>{" "}
+            and let creators come to you.
+          </p>
+        )}
+
         {creators.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed p-12 text-center">
             <p className="text-lg font-semibold">
@@ -299,6 +312,13 @@ export default async function DiscoverPage({
             <Button asChild variant="outline" className="mt-4">
               <Link href="/discover">Clear all filters</Link>
             </Button>
+            {isBrand && (
+              <Button asChild className="mt-2">
+                <Link href={`/campaigns?prefill_type=${filters.type ?? ""}${filters.niche ? `&prefill_niche=${encodeURIComponent(filters.niche)}` : ""}`}>
+                  Post a campaign instead
+                </Link>
+              </Button>
+            )}
           </div>
         ) : (
           <form action={isBrand && filters.tab === "new" ? sendReachouts : undefined}>
@@ -315,6 +335,23 @@ export default async function DiscoverPage({
                 const gradient = creatorGradient(c.handle);
                 return (
                   <li key={c.userId} className="relative">
+                    {isBrand && filters.tab === "new" && (
+                      <form
+                        action={sendReachouts}
+                        className="absolute left-3 top-3 z-10"
+                      >
+                        <input type="hidden" name="creator_id" value={c.userId} />
+                        <button
+                          type="submit"
+                          aria-label={`Invite ${c.displayName ?? c.handle} to chat`}
+                          className="grid size-8 place-items-center rounded-full bg-white/90 shadow-card text-muted-foreground transition-all hover:scale-110 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          </svg>
+                        </button>
+                      </form>
+                    )}
                     {isBrand && filters.tab === "new" && (
                       <label className="absolute right-3 top-3 z-10 grid size-8 cursor-pointer place-items-center rounded-full bg-white/90 shadow-card transition-transform hover:scale-110">
                         <input
