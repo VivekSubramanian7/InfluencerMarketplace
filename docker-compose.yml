@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=http://host.docker.internal:54321
+    env_file:
+      - path: .env.local
+        required: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
