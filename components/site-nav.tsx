@@ -64,7 +64,7 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
             <Link
               href="/notifications"
               aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
-              className="relative hidden size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:grid"
+              className="relative grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               <BellIcon size={18} aria-hidden />
               {unread > 0 && (

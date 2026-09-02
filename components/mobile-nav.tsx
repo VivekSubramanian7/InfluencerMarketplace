@@ -7,7 +7,6 @@ import {
   SearchIcon,
   MessageIcon,
   HandshakeIcon,
-  CampaignsIcon,
   HomeIcon,
   BellIcon,
   SparklesIcon,
@@ -24,7 +23,7 @@ const CREATOR_TABS = [
 const BRAND_TABS = [
   { href: "/brand", label: "Home", icon: HomeIcon },
   { href: "/discover", label: "Discover", icon: SearchIcon },
-  { href: "/campaigns/new", label: "New", icon: SparklesIcon, central: true },
+  { href: "/inbox", label: "Inbox", icon: MessageIcon },
   { href: "/deals", label: "Deals", icon: HandshakeIcon },
   { href: "/notifications", label: "Alerts", icon: BellIcon },
 ] as const;
@@ -79,7 +78,7 @@ export function MobileNav({
                         strokeWidth={active ? 2.5 : 1.5}
                         aria-hidden
                       />
-                      {tab.label === "Alerts" && unread > 0 && (
+                      {(tab.label === "Alerts" || tab.label === "Inbox") && unread > 0 && (
                         <span
                           aria-hidden
                           className="absolute -right-1.5 -top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground tabular-nums"

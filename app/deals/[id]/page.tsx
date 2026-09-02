@@ -50,6 +50,28 @@ export default async function DealPage({
     supabase.from("creator_profiles").select("handle").eq("user_id", deal.creator_id).maybeSingle(),
   ]);
 
+  let conversationMessages: { id: string; sender_id: string; body: string; created_at: string }[] = [];
+  {
+    const offerEvent = (events ?? []).find((e) => e.action === "offer_accepted");
+    if (offerEvent) {
+      const { data: fullEvent } = await supabase
+        .from("deal_events")
+        .select("metadata")
+        .eq("deal_id", id)
+        .eq("action", "offer_accepted")
+        .maybeSingle();
+      const convId = fullEvent?.metadata?.conversation_id;
+      if (convId) {
+        const { data } = await supabase
+          .from("messages")
+          .select("id, sender_id, body, created_at")
+          .eq("conversation_id", convId)
+          .order("created_at");
+        conversationMessages = data ?? [];
+      }
+    }
+  }
+
   const actions = role === "admin" ? [] :
     actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode);
 
@@ -187,6 +209,39 @@ export default async function DealPage({
             )}
           </div>
         </section>
+      )}
+
+      {conversationMessages.length > 0 && (
+        <details className="mt-6 rounded-xl border p-5">
+          <summary className="cursor-pointer text-base font-bold">
+            Pre-deal discussion
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {conversationMessages.length} message{conversationMessages.length !== 1 ? "s" : ""}
+            </span>
+          </summary>
+          <ul className="mt-3 flex flex-col gap-2">
+            {conversationMessages.map((m) => (
+              <li
+                key={m.id}
+                className={`max-w-[85%] rounded-lg p-3 text-sm ${
+                  m.sender_id === user.id
+                    ? "self-end bg-primary/10 text-foreground"
+                    : "self-start bg-secondary"
+                }`}
+              >
+                <p className="whitespace-pre-line break-words">{m.body}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {new Date(m.created_at).toLocaleString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            Deal started
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        </details>
       )}
 
       <DealMessages dealId={deal.id} userId={user.id} />

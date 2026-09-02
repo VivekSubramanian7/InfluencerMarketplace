@@ -116,6 +116,16 @@ export default async function ConversationPage({
                 @{creatorProfile.handle}
               </Link>
             )}
+            {iAmBrand && conv.status === "accepted" && hasPendingOffer && (
+              <Badge variant="secondary">
+                Offer pending — ${((offers ?? []).find((o) => o.status === "pending")?.price_cents ?? 0) / 100}
+              </Badge>
+            )}
+            {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (offerings ?? []).length > 0 && (
+              <a href="#offer-section" className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90">
+                Make an offer
+              </a>
+            )}
             <Badge variant="secondary">
               {conv.status === "invited" ? "Invite pending" : conv.status === "declined" ? "Declined" : "Active"}
             </Badge>
@@ -272,7 +282,7 @@ export default async function ConversationPage({
         )}
 
         {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (
-          <section className="mt-6 rounded-xl border p-5">
+          <section id="offer-section" className="mt-6 rounded-2xl bg-card p-6 shadow-card scroll-mt-20">
             <h2 className="text-base font-bold">Send an offer</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Agree on the work in chat, then put a price on it. Accepting

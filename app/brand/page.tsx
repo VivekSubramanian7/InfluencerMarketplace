@@ -2,6 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { actionsFor } from "@/lib/deals/ui-actions";
+import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
+import { performDealAction } from "@/app/deals/[id]/actions";
 import { unblockCreator } from "./actions";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +40,7 @@ export default async function BrandOverviewPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("deals")
-      .select("id, creator_id, offering_title, price_cents, status, requested_at")
+      .select("id, creator_id, offering_title, price_cents, status, requested_at, payment_mode")
       .eq("brand_id", user.id)
       .order("requested_at", { ascending: false }),
     supabase.from("brand_blocklist").select("creator_id, created_at").eq("brand_id", user.id),
@@ -151,25 +154,45 @@ export default async function BrandOverviewPage({
             <p className="mt-3 text-sm text-muted-foreground">Nothing in flight.</p>
           ) : (
             <ul className="mt-3 flex flex-col gap-2">
-              {inProgress.map((d) => (
-                <li key={d.id}>
-                  <Link
-                    href={`/deals/${d.id}`}
-                    className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
-                  >
-                    <span className="min-w-0 truncate">
-                      <span className="font-medium">{creatorLabel(d.creator_id)}</span>
-                      <span className="text-muted-foreground"> · {d.offering_title}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-3">
-                      <Badge variant="secondary">{DEAL_LABELS[d.status] ?? d.status}</Badge>
-                      <span className="font-extrabold tabular-nums text-primary">
-                        ${(d.price_cents / 100).toFixed(2)}
+              {inProgress.map((d) => {
+                const dealActions = actionsFor(
+                  d.status as DealStatus,
+                  "brand",
+                  (d as { payment_mode?: PaymentMode }).payment_mode ?? "off_platform"
+                );
+                const quickAction = dealActions.find(
+                  (a) => !a.confirm && !a.needsUrl && ["approve"].includes(a.action)
+                );
+
+                return (
+                  <li key={d.id} className="flex items-center gap-2">
+                    <Link
+                      href={`/deals/${d.id}`}
+                      className="deal-row flex flex-1 items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                    >
+                      <span className="min-w-0 truncate">
+                        <span className="font-medium">{creatorLabel(d.creator_id)}</span>
+                        <span className="text-muted-foreground"> · {d.offering_title}</span>
                       </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
+                      <span className="flex shrink-0 items-center gap-3">
+                        <Badge variant="secondary">{DEAL_LABELS[d.status] ?? d.status}</Badge>
+                        <span className="font-extrabold tabular-nums text-primary">
+                          ${(d.price_cents / 100).toFixed(2)}
+                        </span>
+                      </span>
+                    </Link>
+                    {quickAction && (
+                      <form action={performDealAction}>
+                        <input type="hidden" name="deal_id" value={d.id} />
+                        <input type="hidden" name="action" value={quickAction.action} />
+                        <Button type="submit" size="sm">
+                          {quickAction.label}
+                        </Button>
+                      </form>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
