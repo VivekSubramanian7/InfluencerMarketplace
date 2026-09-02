@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { SiteNav } from "@/components/site-nav";
+import { BellIcon } from "@/components/ui/icons";
 
 export default async function NotificationsPage() {
   const { user, role } = await requireUser("/notifications");
@@ -31,7 +32,7 @@ export default async function NotificationsPage() {
         <h1 className="text-3xl font-extrabold tracking-tight">Notifications</h1>
         {rows.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-            <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">🔔</span>
+            <span aria-hidden className="mx-auto mb-3 block w-fit text-muted-foreground/40"><BellIcon size={36} /></span>
             <p className="font-semibold text-foreground">All caught up</p>
             <p className="mt-1">Invites, offers, and deal updates land here.</p>
           </div>

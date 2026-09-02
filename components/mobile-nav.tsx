@@ -3,30 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Search,
-  MessageSquare,
-  Handshake,
-  Megaphone,
-  Home,
-  Bell,
-  Plus,
-} from "lucide-react";
+  DashboardIcon,
+  SearchIcon,
+  MessageIcon,
+  HandshakeIcon,
+  CampaignsIcon,
+  HomeIcon,
+  BellIcon,
+  SparklesIcon,
+} from "@/components/ui/icons";
 
 const CREATOR_TABS = [
-  { href: "/dashboard", label: "Studio", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare },
-  { href: "/dashboard/offerings/new", label: "New", icon: Plus, central: true },
-  { href: "/deals", label: "Deals", icon: Handshake },
-  { href: "/notifications", label: "Alerts", icon: Bell },
+  { href: "/dashboard", label: "Studio", icon: DashboardIcon },
+  { href: "/inbox", label: "Inbox", icon: MessageIcon },
+  { href: "/dashboard/offerings/new", label: "New", icon: SparklesIcon, central: true },
+  { href: "/deals", label: "Deals", icon: HandshakeIcon },
+  { href: "/notifications", label: "Alerts", icon: BellIcon },
 ] as const;
 
 const BRAND_TABS = [
-  { href: "/brand", label: "Home", icon: Home },
-  { href: "/discover", label: "Discover", icon: Search },
-  { href: "/campaigns/new", label: "New", icon: Plus, central: true },
-  { href: "/deals", label: "Deals", icon: Handshake },
-  { href: "/notifications", label: "Alerts", icon: Bell },
+  { href: "/brand", label: "Home", icon: HomeIcon },
+  { href: "/discover", label: "Discover", icon: SearchIcon },
+  { href: "/campaigns/new", label: "New", icon: SparklesIcon, central: true },
+  { href: "/deals", label: "Deals", icon: HandshakeIcon },
+  { href: "/notifications", label: "Alerts", icon: BellIcon },
 ] as const;
 
 export function MobileNav({
@@ -69,15 +69,14 @@ export function MobileNav({
               >
                 {isCentral ? (
                   <span className="grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95">
-                    <Icon className="size-5 stroke-[2.5]" aria-hidden />
+                    <Icon size={20} aria-hidden />
                   </span>
                 ) : (
                   <>
                     <span className="relative">
                       <Icon
-                        className={`size-6 transition-all ${
-                          active ? "stroke-[2.5]" : "stroke-[1.5]"
-                        }`}
+                        size={24}
+                        strokeWidth={active ? 2.5 : 1.5}
                         aria-hidden
                       />
                       {tab.label === "Alerts" && unread > 0 && (

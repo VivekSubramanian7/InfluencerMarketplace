@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { CheckedIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +98,7 @@ export function SignupForm({
                     : "border-2 border-border"
                 }`}
               >
-                {goals.has(g) && <Check className="size-3" />}
+                {goals.has(g) && <CheckedIcon size={12} />}
               </span>
               {g}
             </button>

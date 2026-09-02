@@ -123,12 +123,26 @@ export default async function DiscoverPage({
     <>
       <SiteNav role={role} />
       <main className="mx-auto w-full max-w-6xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          Find video creators
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Real offerings, transparent prices, verified-or-labeled stats.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              Find video creators
+            </h1>
+            <p className="mt-1 text-muted-foreground">
+              Real offerings, transparent prices, verified-or-labeled stats.
+            </p>
+          </div>
+          {isBrand && (
+            <div className="flex items-center gap-1 rounded-full border bg-secondary/50 p-1">
+              <Link href={tabHref("new")} className={tabClass(filters.tab === "new")}>
+                New creators
+              </Link>
+              <Link href={tabHref("worked")} className={tabClass(filters.tab === "worked")}>
+                Worked with
+              </Link>
+            </div>
+          )}
+        </div>
 
         {error && (
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -136,56 +150,10 @@ export default async function DiscoverPage({
           </p>
         )}
 
-        {isBrand && (
-          <div className="mt-6 flex items-center gap-1 rounded-full border bg-secondary/50 p-1 w-fit">
-            <Link href={tabHref("new")} className={tabClass(filters.tab === "new")}>
-              New creators
-            </Link>
-            <Link href={tabHref("worked")} className={tabClass(filters.tab === "worked")}>
-              Worked with
-            </Link>
-          </div>
-        )}
-
-        {/* Quick-filter suggestions when no search active */}
-        {!filters.q && !filters.niche && !filters.country && !filters.type &&
-          filters.minPriceCents === null && filters.maxPriceCents === null && (
-          <div className="mt-4 rounded-2xl border border-dashed bg-secondary/30 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Popular niches</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {["gaming", "food", "beauty", "tech", "fitness", "lifestyle", "fashion", "finance"].map((n) => (
-                <Link
-                  key={n}
-                  href={`/discover?niche=${n}`}
-                  className="rounded-full border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary hover:text-primary-foreground"
-                >
-                  {n}
-                </Link>
-              ))}
-            </div>
-            {isBrand && savedSearches.length > 0 && (
-              <>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your saved searches</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {savedSearches.map((s) => (
-                    <Link
-                      key={s.id}
-                      href={savedHref(s.params)}
-                      className="rounded-full border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary hover:text-primary-foreground"
-                    >
-                      {s.name}
-                    </Link>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Search band: Heepsy's filter-chip pattern, Clipline's skin */}
+        {/* ── Search ── */}
         <form
           method="get"
-          className="mt-4 rounded-2xl border bg-secondary/50 p-4"
+          className="mt-6 rounded-2xl bg-card p-5 shadow-card"
         >
           {filters.tab === "worked" && <input type="hidden" name="tab" value="worked" />}
           <div className="flex flex-wrap gap-2">
@@ -200,7 +168,7 @@ export default async function DiscoverPage({
               Search
             </Button>
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap items-end gap-2">
             <input
               name="niche"
               defaultValue={filters.niche ?? ""}
@@ -228,7 +196,7 @@ export default async function DiscoverPage({
                 </option>
               ))}
             </select>
-            <div className="w-full min-w-48 max-w-64 pt-1">
+            <div className="min-w-48 max-w-64 flex-1">
               <PriceRange
                 defaultMin={filters.minPriceCents ? filters.minPriceCents / 100 : null}
                 defaultMax={filters.maxPriceCents ? filters.maxPriceCents / 100 : null}
@@ -246,10 +214,26 @@ export default async function DiscoverPage({
           )}
         </form>
 
+        {/* ── Quick filters / saved searches (shown when no search active) ── */}
+        {!filters.q && !filters.niche && !filters.country && !filters.type &&
+          filters.minPriceCents === null && filters.maxPriceCents === null && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {["gaming", "food", "beauty", "tech", "fitness", "lifestyle", "fashion", "finance"].map((n) => (
+              <Link
+                key={n}
+                href={`/discover?niche=${n}`}
+                className="rounded-full border bg-card px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                {n}
+              </Link>
+            ))}
+          </div>
+        )}
+
         {isBrand && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {savedSearches.map((s) => (
-              <span key={s.id} className="flex items-center gap-1 rounded-full border bg-background pl-3 pr-1 py-1 text-sm">
+              <span key={s.id} className="flex items-center gap-1 rounded-full border bg-card pl-3 pr-1 py-1 text-sm shadow-sm">
                 <Link href={savedHref(s.params)} className="font-medium hover:underline underline-offset-2">
                   {s.name}
                 </Link>
@@ -285,11 +269,20 @@ export default async function DiscoverPage({
           </div>
         )}
 
-        <p className="mt-6 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground tabular-nums">{total}</span>{" "}
-          creator{total === 1 ? "" : "s"}
-          {isBrand && filters.tab === "worked" ? " you've worked with" : " found"}
-        </p>
+        {/* ── Results ── */}
+        <div className="mt-8 flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground tabular-nums">{total}</span>{" "}
+            creator{total === 1 ? "" : "s"}
+            {isBrand && filters.tab === "worked" ? " you've worked with" : " found"}
+          </p>
+          {isBrand && filters.tab === "new" && creators.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Tick creators to invite with your{" "}
+              <Link href="/brand/settings" className="font-medium underline underline-offset-2">reachout template</Link>
+            </p>
+          )}
+        </div>
 
         {creators.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed p-12 text-center">
@@ -310,15 +303,7 @@ export default async function DiscoverPage({
         ) : (
           <form action={isBrand && filters.tab === "new" ? sendReachouts : undefined}>
             {isBrand && filters.tab === "new" && (
-              <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border bg-secondary/40 px-4 py-3">
-                <p className="text-sm text-muted-foreground">
-                  Tick creators and invite them with your reachout template
-                  (set it in{" "}
-                  <Link href="/brand/settings" className="font-medium underline underline-offset-2">
-                    Brand settings
-                  </Link>
-                  ).
-                </p>
+              <div className="sticky top-0 z-10 -mx-6 flex items-center justify-end bg-background/95 px-6 py-2 backdrop-blur-sm">
                 <Button type="submit" size="sm" className="shrink-0">
                   Invite selected
                 </Button>

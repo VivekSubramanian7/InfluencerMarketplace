@@ -39,40 +39,38 @@ export function BrandProfileForm({
   productsJson?: string | null;
 }) {
   return (
-    <form action={saveBrandProfile} className="flex flex-col gap-5">
+    <form action={saveBrandProfile} className="flex flex-col gap-0">
       <input type="hidden" name="from" value={from} />
       {productsJson && <ProposedProducts initial={JSON.parse(productsJson)} />}
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="company">Company name</Label>
-        <Input id="company" name="company" defaultValue={defaults?.company ?? ""} placeholder="Acme Skincare" />
+      {/* ── Basics ── */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="company">Company name</Label>
+          <Input id="company" name="company" defaultValue={defaults?.company ?? ""} placeholder="Acme Skincare" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="website">Website</Label>
+          <Input id="website" name="website" type="url" defaultValue={defaults?.website ?? ""} placeholder="https://acme.com" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="description">What your brand is about</Label>
+          <Textarea
+            id="description"
+            name="description"
+            rows={3}
+            maxLength={2000}
+            defaultValue={defaults?.description ?? ""}
+            placeholder="What you sell, who it's for, and the tone you go for."
+          />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="website">Website</Label>
-        <Input id="website" name="website" type="url" defaultValue={defaults?.website ?? ""} placeholder="https://acme.com" />
-        <p className="text-xs text-muted-foreground">
-          For now we use this as a reference for creators. Automatic product and
-          brand-description extraction is coming.
-        </p>
-      </div>
+      <hr className="my-6 border-border" />
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="description">What your brand is about</Label>
-        <Textarea
-          id="description"
-          name="description"
-          rows={3}
-          maxLength={2000}
-          defaultValue={defaults?.description ?? ""}
-          placeholder="What you sell, who it's for, and the tone you go for."
-        />
-      </div>
-
-      <fieldset className="flex flex-col gap-3 rounded-xl border p-4">
-        <legend className="px-1 text-sm font-semibold">
-          What kind of creators should we suggest?
-        </legend>
+      {/* ── Creator matching ── */}
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-semibold text-muted-foreground">Creator matching</p>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="pref_niches">Content niches (comma-separated, up to 8)</Label>
           <Input
@@ -100,67 +98,74 @@ export function BrandProfileForm({
           </div>
           <OtherFormatField defaultValue={defaults?.pref_types_other ?? ""} />
         </div>
-      </fieldset>
+      </div>
 
-      <fieldset className="flex flex-col gap-3 rounded-xl border p-4">
-        <legend className="px-1 text-sm font-semibold">Documents for creators</legend>
+      <hr className="my-6 border-border" />
+
+      {/* ── Outreach & docs ── */}
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-semibold text-muted-foreground">Outreach &amp; documents</p>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="guidelines">
-            Brand guidelines{defaults?.guidelines_path ? " (uploaded, choose a file to replace)" : ""}
-          </Label>
-          <input
-            id="guidelines"
-            name="guidelines"
-            type="file"
-            accept=".pdf,.doc,.docx,.txt,.md"
-            className="text-sm file:mr-3 file:rounded-full file:border file:bg-background file:px-4 file:py-1.5 file:text-sm file:font-medium"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rules">
-            Your rules for influencers{defaults?.rules_path ? " (uploaded, choose a file to replace)" : ""}
-          </Label>
-          <input
-            id="rules"
-            name="rules"
-            type="file"
-            accept=".pdf,.doc,.docx,.txt,.md"
-            className="text-sm file:mr-3 file:rounded-full file:border file:bg-background file:px-4 file:py-1.5 file:text-sm file:font-medium"
+          <Label htmlFor="outreach_template">Message template</Label>
+          <Textarea
+            id="outreach_template"
+            name="outreach_template"
+            rows={3}
+            maxLength={2000}
+            defaultValue={defaults?.outreach_template ?? ""}
+            placeholder="Hi! We love your work and would like to collaborate on…"
           />
           <p className="text-xs text-muted-foreground">
-            Shared automatically with every creator you work with. PDF, Word, or text, up to 10 MB.
+            Sent when you reach out to creators from Discover.
           </p>
         </div>
-      </fieldset>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="outreach_template">Reachout message template</Label>
-        <Textarea
-          id="outreach_template"
-          name="outreach_template"
-          rows={4}
-          maxLength={2000}
-          defaultValue={defaults?.outreach_template ?? ""}
-          placeholder="Hi! We love your work and would like to collaborate on…"
-        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="guidelines">
+              Brand guidelines{defaults?.guidelines_path ? " (replace)" : ""}
+            </Label>
+            <input
+              id="guidelines"
+              name="guidelines"
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.md"
+              className="text-sm file:mr-3 file:rounded-full file:border file:bg-background file:px-4 file:py-1.5 file:text-sm file:font-medium"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rules">
+              Rules for influencers{defaults?.rules_path ? " (replace)" : ""}
+            </Label>
+            <input
+              id="rules"
+              name="rules"
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.md"
+              className="text-sm file:mr-3 file:rounded-full file:border file:bg-background file:px-4 file:py-1.5 file:text-sm file:font-medium"
+            />
+          </div>
+        </div>
         <p className="text-xs text-muted-foreground">
-          Sent as the invitation when you reach out to creators from Discover.
+          Shared with every creator you work with. PDF, Word, or text, up to 10 MB.
         </p>
       </div>
 
+      <hr className="my-6 border-border" />
+
+      {/* ── Notes ── */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Anything else</Label>
         <Textarea
           id="notes"
           name="notes"
-          rows={3}
+          rows={2}
           maxLength={4000}
           defaultValue={defaults?.notes ?? ""}
           placeholder="Anything creators or our matching should know, in your own words."
         />
       </div>
 
-      <SubmitButton className="mt-1 self-start" pendingLabel="Saving…">
+      <SubmitButton className="mt-5 self-start" pendingLabel="Saving…">
         {from === "onboarding" ? "Save and start discovering" : "Save changes"}
       </SubmitButton>
     </form>

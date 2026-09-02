@@ -5,6 +5,7 @@ import { respondInvite } from "./actions";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MessageIcon } from "@/components/ui/icons";
 
 const STATUS_LABELS: Record<string, string> = {
   invited: "Invite pending",
@@ -104,7 +105,7 @@ export default async function InboxPage({
           <h2 className="text-lg font-bold">Conversations</h2>
           {rest.length === 0 ? (
             <div className="mt-3 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-              <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">💬</span>
+              <span aria-hidden className="mx-auto mb-3 block w-fit text-muted-foreground/40"><MessageIcon size={36} /></span>
               <p className="font-semibold text-foreground">No conversations yet</p>
               <p className="mt-1">
                 {role === "brand" ? (

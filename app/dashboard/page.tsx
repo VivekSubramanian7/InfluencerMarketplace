@@ -5,6 +5,7 @@ import { SiteNav } from "@/components/site-nav";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SendIcon } from "@/components/ui/icons";
 
 const ACTIVE_STATUSES = [
   "requested", "funded", "accepted", "in_production",
@@ -131,7 +132,7 @@ export default async function DashboardPage() {
             </div>
             {recentDeals.length === 0 ? (
               <div className="mt-4 rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-                <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">📬</span>
+                <span aria-hidden className="mx-auto mb-3 block w-fit text-muted-foreground/40"><SendIcon size={36} /></span>
                 <p className="font-semibold text-foreground">No bookings yet.</p>
                 <p className="mt-1">
                   Share your storefront link. Every booking lands here with a brief,

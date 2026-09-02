@@ -79,24 +79,32 @@ export default async function BrandSettingsPage({
           </p>
         )}
 
-        <div className="mt-6 rounded-xl border p-4">
-          <h2 className="text-sm font-semibold">Read from your website</h2>
-          <div className="mt-2">
+        {/* ── 1. Quick import ── */}
+        <section className="mt-8 rounded-2xl bg-card p-6 shadow-card">
+          <h2 className="text-base font-bold">Import from your website</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We&apos;ll read your site and pre-fill your description, niches, and products.
+          </p>
+          <div className="mt-3">
             <WebsiteIngest
               from="settings"
               website={ingestion?.website ?? profile?.website ?? null}
               proposal={proposal}
             />
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6">
+        {/* ── 2. Brand profile (main form) ── */}
+        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+          <h2 className="text-base font-bold">Brand profile</h2>
+          <p className="mt-1 mb-5 text-sm text-muted-foreground">
+            How creators see your brand when you reach out or book.
+          </p>
           <BrandProfileForm
             defaults={
               profile
                 ? {
                     ...profile,
-                    // proposal always wins when present — user just re-scraped
                     company: proposal?.company || profile.company,
                     website: ingestion?.website ?? profile.website,
                     description: proposal?.description || profile.description || null,
@@ -123,16 +131,16 @@ export default async function BrandSettingsPage({
             from="settings"
             productsJson={proposedProducts.length > 0 ? JSON.stringify(proposedProducts) : null}
           />
-        </div>
+        </section>
 
-        <section className="mt-12">
-          <h2 className="text-lg font-bold">Products</h2>
+        {/* ── 3. Products ── */}
+        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+          <h2 className="text-base font-bold">Products</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            The products creators will feature. Added manually for now;
-            extraction will propose these automatically later.
+            The products creators will feature in their videos.
           </p>
           {(products ?? []).length > 0 && (
-            <ul className="mt-3 flex flex-col gap-2">
+            <ul className="mt-4 flex flex-col gap-2">
               {(products ?? []).map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-4 rounded-xl border p-4">
                   <span className="min-w-0">
@@ -159,31 +167,35 @@ export default async function BrandSettingsPage({
               ))}
             </ul>
           )}
-          <form action={addProduct} className="mt-4 flex flex-col gap-3 rounded-xl border p-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-name">Product name</Label>
-              <Input id="product-name" name="name" required maxLength={120} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-url">Product URL (optional)</Label>
-              <Input id="product-url" name="url" type="url" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="product-description">Short description (optional)</Label>
-              <Input id="product-description" name="description" maxLength={500} />
-            </div>
-            <Button type="submit" size="sm" className="self-start">Add product</Button>
-          </form>
+          <details className="mt-4 group">
+            <summary className="cursor-pointer text-sm font-medium text-primary hover:underline">
+              + Add a product
+            </summary>
+            <form action={addProduct} className="mt-3 flex flex-col gap-3 rounded-xl border p-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-name">Product name</Label>
+                <Input id="product-name" name="name" required maxLength={120} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-url">Product URL (optional)</Label>
+                <Input id="product-url" name="url" type="url" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="product-description">Short description (optional)</Label>
+                <Input id="product-description" name="description" maxLength={500} />
+              </div>
+              <Button type="submit" size="sm" className="self-start">Add product</Button>
+            </form>
+          </details>
         </section>
 
-        <section id="invites" className="mt-12">
-          <h2 className="text-lg font-bold">Invite influencers who aren&apos;t on Clipline</h2>
+        {/* ── 4. Invite creators ── */}
+        <section id="invites" className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+          <h2 className="text-base font-bold">Invite creators</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            We generate a personal join link. Send it however you already talk
-            to them. When they sign up through it, a conversation with you
-            opens automatically.
+            Generate a personal join link. When they sign up through it, a conversation opens automatically.
           </p>
-          <form action={createInvite} className="mt-3 flex gap-2">
+          <form action={createInvite} className="mt-4 flex gap-2">
             <Input
               name="contact"
               required
@@ -197,18 +209,18 @@ export default async function BrandSettingsPage({
           {(invites ?? []).length > 0 && (
             <ul className="mt-4 flex flex-col gap-3">
               {(invites ?? []).map((i) => (
-                <li key={i.id} className="rounded-xl border p-4">
-                  <div className="flex items-center justify-between gap-3">
+                <li key={i.id} className="flex items-center justify-between gap-3 rounded-xl border p-4">
+                  <div className="min-w-0">
                     <span className="font-medium">{i.contact}</span>
-                    <Badge variant="secondary">
-                      {i.status === "claimed" ? "Joined" : "Waiting"}
-                    </Badge>
+                    {i.status === "pending" && (
+                      <CopyInviteMessage
+                        text={`${template}\n\nJoin me on Clipline: ${origin}/signup?invite=${i.token}`}
+                      />
+                    )}
                   </div>
-                  {i.status === "pending" && (
-                    <CopyInviteMessage
-                      text={`${template}\n\nJoin me on Clipline: ${origin}/signup?invite=${i.token}`}
-                    />
-                  )}
+                  <Badge variant="secondary">
+                    {i.status === "claimed" ? "Joined" : "Waiting"}
+                  </Badge>
                 </li>
               ))}
             </ul>

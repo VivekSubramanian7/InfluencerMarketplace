@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { CheckedIcon } from "@/components/ui/icons";
 import { WIZARD_STEPS, WizardStep, stepIndex } from "@/lib/onboarding/steps";
 
 const STEP_LABELS: Record<WizardStep, string> = {
@@ -57,7 +57,7 @@ export function WizardShell({
                   : "text-muted-foreground"
             }`}
           >
-            {i < idx && <Check className="size-3" aria-hidden />}
+            {i < idx && <CheckedIcon size={12} aria-hidden />}
             <span className="hidden sm:inline">{STEP_LABELS[s].split(" ").slice(0, 2).join(" ")}</span>
             <span className="sm:hidden">{i + 1}</span>
           </li>

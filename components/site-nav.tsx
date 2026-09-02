@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, LogOut } from "lucide-react";
+import { BellIcon, LogOutIcon } from "@/components/ui/icons";
 import { logout } from "@/app/(auth)/actions";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
               aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
               className="relative hidden size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:grid"
             >
-              <Bell className="size-4.5" aria-hidden />
+              <BellIcon size={18} aria-hidden />
               {unread > 0 && (
                 <span
                   aria-hidden
@@ -78,7 +78,7 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
             </Link>
             <form action={logout}>
               <Button variant="ghost" size="icon-sm" className="rounded-full text-muted-foreground">
-                <LogOut className="size-4" aria-hidden />
+                <LogOutIcon size={16} aria-hidden />
                 <span className="sr-only">Log out</span>
               </Button>
             </form>

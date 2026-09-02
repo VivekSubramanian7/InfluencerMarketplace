@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Check, Clock, Star, Shield } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CheckedIcon,
+  ClockIcon,
+  StarIcon,
+  LockIcon,
+} from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,7 +23,7 @@ function DealPanel() {
           Deal · 60s vertical feature
         </p>
         <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-          <Clock className="size-3" aria-hidden />
+          <ClockIcon size={12} aria-hidden />
           3d auto-approve
         </span>
       </div>
@@ -32,7 +38,7 @@ function DealPanel() {
                   : "border-2 border-amber text-amber"
               }`}
             >
-              {step.done ? <Check className="size-3.5" /> : i + 1}
+              {step.done ? <CheckedIcon size={14} /> : i + 1}
             </span>
             <span
               className={
@@ -60,10 +66,10 @@ function DealPanel() {
   );
 }
 
-function TrustBadge({ icon: Icon, label }: { icon: typeof Star; label: string }) {
+function TrustBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-white px-4 py-2 text-sm font-medium shadow-card">
-      <Icon className="size-4 text-muted-foreground" aria-hidden />
+      <span className="text-muted-foreground" aria-hidden>{icon}</span>
       {label}
     </span>
   );
@@ -96,8 +102,8 @@ export default function LandingPage() {
           <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-[1.15fr_0.85fr] md:py-28">
             <div>
               <div className="mb-6 flex flex-wrap gap-2">
-                <TrustBadge icon={Shield} label="Anti-ghosting timers" />
-                <TrustBadge icon={Star} label="Mutual reviews" />
+                <TrustBadge icon={<LockIcon size={16} />} label="Anti-ghosting timers" />
+                <TrustBadge icon={<StarIcon size={16} />} label="Mutual reviews" />
               </div>
               <h1 className="text-[clamp(2.6rem,6.5vw,4.5rem)] font-black leading-[1.02] tracking-[-0.035em]">
                 Book video creators.
@@ -115,7 +121,7 @@ export default function LandingPage() {
                 <Button asChild size="lg" className="gap-2 px-7 text-base">
                   <Link href="/signup">
                     Get started free
-                    <ArrowRight className="size-4" />
+                    <ArrowRightIcon size={16} />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="px-7 text-base">
@@ -169,7 +175,7 @@ export default function LandingPage() {
                         aria-hidden
                         className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
                       >
-                        <Check className="size-3" />
+                        <CheckedIcon size={12} />
                       </span>
                       {t}
                     </li>
@@ -230,7 +236,7 @@ export default function LandingPage() {
             >
               <Link href="/signup">
                 Don&rsquo;t miss out, sign up free
-                <ArrowRight className="size-4" />
+                <ArrowRightIcon size={16} />
               </Link>
             </Button>
           </div>
