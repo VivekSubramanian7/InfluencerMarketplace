@@ -45,7 +45,7 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
       <nav className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2.5">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-lg font-black tracking-tight">
+            <Link href={links[0].href} className="text-lg font-black tracking-tight">
               Clipline
             </Link>
             <div className="hidden items-center gap-0.5 rounded-full bg-secondary/60 p-1 md:flex">
