@@ -74,7 +74,7 @@ export default async function CampaignPage({
         <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
           {brandProfile?.company || brandName?.display_name || "A brand"} ·{" "}
           {TYPE_LABELS[campaign.offering_type] ?? campaign.offering_type}
-          {campaign.apply_by ? ` · apply by ${campaign.apply_by}` : ""}
+          {campaign.apply_by ? ` · Apply by ${campaign.apply_by}` : ""}
           <Badge variant="secondary">{campaign.status === "open" && !windowClosed ? "open" : "closed"}</Badge>
         </p>
 
@@ -143,7 +143,7 @@ async function OwnerPanel({
   return (
     <section className="mt-10">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-bold">Applications</h2>
+        <h2 className="text-lg font-bold">Proposals</h2>
         <form action={setCampaignStatus}>
           <input type="hidden" name="id" value={campaignId} />
           <input type="hidden" name="status" value={status === "open" ? "closed" : "open"} />

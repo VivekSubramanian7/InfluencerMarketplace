@@ -27,8 +27,8 @@ export function WebsiteIngest({
           aria-label="Website to read"
           className="min-w-64 flex-1"
         />
-        <SubmitButton variant="outline" pendingLabel="Reading your site…">
-          Read my website
+        <SubmitButton variant="outline" pendingLabel="Scanning…">
+          Scan website
         </SubmitButton>
       </form>
       {proposal ? (

@@ -231,7 +231,7 @@ export default async function DealPage({
           .includes(deal.status) && (
         <form action={markPaid} className="mt-6">
           <input type="hidden" name="deal_id" value={deal.id} />
-          <Button type="submit" variant="outline" size="sm">Mark as paid</Button>
+          <Button type="submit" variant="outline" size="sm">Confirm payment sent</Button>
         </form>
       )}
 

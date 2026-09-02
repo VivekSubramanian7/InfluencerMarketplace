@@ -162,7 +162,7 @@ export default async function StorefrontPage({
                     </>
                   ) : (
                     <p className="mt-2 text-sm text-muted-foreground">
-                      {s.verificationStatus === "failed" ? "Stats unavailable" : "Stats syncing…"}
+                      {s.verificationStatus === "failed" ? "Stats unavailable" : "Audience metrics verifying…"}
                     </p>
                   )}
                 </li>
