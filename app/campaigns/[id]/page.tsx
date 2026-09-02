@@ -197,7 +197,7 @@ async function OwnerPanel({
                 <p className="mt-3 text-sm text-muted-foreground">
                   {a.deal_id ? (
                     <>
-                      Accepted at their proposed price —{" "}
+                      Accepted at their proposed price.{" "}
                       <Link href={`/deals/${a.deal_id}`} className="font-medium underline underline-offset-2">
                         open the deal
                       </Link>
@@ -256,7 +256,7 @@ async function CreatorPanel({
           <p className="mt-3 text-sm text-ok">
             {mine.deal_id ? (
               <>
-                Accepted at your price —{" "}
+                Accepted at your price!{" "}
                 <Link href={`/deals/${mine.deal_id}`} className="font-medium underline underline-offset-2">
                   open the deal
                 </Link>
@@ -300,7 +300,7 @@ async function CreatorPanel({
             name="pitch"
             rows={5}
             required
-            placeholder="Why you're the right creator for this — your angle, your audience, relevant work."
+            placeholder="Why you're the right creator for this: your angle, your audience, relevant work."
           />
         </div>
         <div className="flex flex-col gap-1.5">

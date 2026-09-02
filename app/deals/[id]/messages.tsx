@@ -27,7 +27,7 @@ export async function DealMessages({ dealId, userId }: { dealId: string; userId:
           </li>
         ))}
         {(messages ?? []).length === 0 && (
-          <li className="text-sm text-muted-foreground">No messages yet — say hello.</li>
+          <li className="text-sm text-muted-foreground">No messages yet. Say hello!</li>
         )}
       </ul>
       <form action={sendMessage} className="flex gap-2">

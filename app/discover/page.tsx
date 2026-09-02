@@ -10,6 +10,7 @@ import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PriceRange } from "@/components/price-range";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -227,26 +228,16 @@ export default async function DiscoverPage({
                 </option>
               ))}
             </select>
-            <input
-              name="min_price"
-              defaultValue={filters.minPriceCents ? filters.minPriceCents / 100 : ""}
-              placeholder="Min $"
-              inputMode="numeric"
-              aria-label="Minimum price"
-              className={`${chip} w-24`}
-            />
-            <input
-              name="max_price"
-              defaultValue={filters.maxPriceCents ? filters.maxPriceCents / 100 : ""}
-              placeholder="Max $"
-              inputMode="numeric"
-              aria-label="Maximum price"
-              className={`${chip} w-24`}
-            />
+            <div className="w-full min-w-48 max-w-64 pt-1">
+              <PriceRange
+                defaultMin={filters.minPriceCents ? filters.minPriceCents / 100 : null}
+                defaultMax={filters.maxPriceCents ? filters.maxPriceCents / 100 : null}
+              />
+            </div>
           </div>
           {usedPrefDefaults && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Filtered from your brand preferences —{" "}
+              Filtered from your brand preferences.{" "}
               <Link href="/discover?tab=new&page=1" className="underline underline-offset-2">
                 show everyone
               </Link>
@@ -370,6 +361,11 @@ export default async function DiscoverPage({
                         <div className="min-w-0 pb-0.5">
                           <p className="truncate font-bold">
                             {c.displayName ?? `@${c.handle}`}
+                            {c.avgRating !== null && (
+                              <span className="ml-1.5 text-sm font-semibold">
+                                <span className="text-amber">★</span> {c.avgRating}
+                              </span>
+                            )}
                           </p>
                           <p className="truncate text-sm text-muted-foreground">
                             @{c.handle}
@@ -406,13 +402,6 @@ export default async function DiscoverPage({
                             </p>
                           ) : (
                             <p className="text-sm text-muted-foreground">No offerings listed</p>
-                          )}
-                          {c.avgRating !== null && (
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              <span className="text-amber">★</span>{" "}
-                              <span className="font-semibold text-foreground">{c.avgRating}</span>{" "}
-                              ({c.ratingCount} review{c.ratingCount === 1 ? "" : "s"})
-                            </p>
                           )}
                         </div>
                         <span

@@ -35,7 +35,7 @@ export default async function OnboardingHighlightsPage({
   return (
     <WizardShell step="highlights" skip={false}>
       <p className="mt-2 text-sm text-muted-foreground">
-        Link the videos you&apos;re proudest of — they show as your recent work on the storefront.
+        Link the videos you&apos;re proudest of. They show as your recent work on the storefront.
       </p>
       {error && (
         <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -44,7 +44,7 @@ export default async function OnboardingHighlightsPage({
       )}
       {saved && (
         <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
-          Highlight added — add another or continue.
+          Highlight added! Add another or continue.
         </p>
       )}
 
@@ -65,7 +65,7 @@ export default async function OnboardingHighlightsPage({
         ))}
         {(items ?? []).length === 0 && (
           <li className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No highlights yet — paste your first video link below.
+            No highlights yet. Paste your first video link below.
           </li>
         )}
       </ul>
@@ -91,7 +91,7 @@ export default async function OnboardingHighlightsPage({
         <p className="text-sm text-muted-foreground">
           {(items ?? []).length > 0
             ? `${(items ?? []).length} ${(items ?? []).length === 1 ? "highlight" : "highlights"} added`
-            : "Nothing added yet — you can do this later"}
+            : "Nothing added yet, you can do this later"}
         </p>
         <Button asChild>
           <Link href="/onboarding/publish">Continue → Go live</Link>

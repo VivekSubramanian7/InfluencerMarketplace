@@ -128,7 +128,7 @@ export default async function BrandSettingsPage({
         <section className="mt-12">
           <h2 className="text-lg font-bold">Products</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            The products creators will feature. Added manually for now — website
+            The products creators will feature. Added manually for now;
             extraction will propose these automatically later.
           </p>
           {(products ?? []).length > 0 && (
@@ -180,7 +180,7 @@ export default async function BrandSettingsPage({
           <h2 className="text-lg font-bold">Invite influencers who aren&apos;t on Clipline</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             We generate a personal join link. Send it however you already talk
-            to them — when they sign up through it, a conversation with you
+            to them. When they sign up through it, a conversation with you
             opens automatically.
           </p>
           <form action={createInvite} className="mt-3 flex gap-2">

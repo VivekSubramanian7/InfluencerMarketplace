@@ -21,7 +21,7 @@ export default async function SignupPage({
               Don&apos;t let your next collab die in DMs.
             </p>
             <p className="mt-3 text-sm text-primary-foreground/60">
-              Free for creators — you keep 100% of your rate.
+              Free for creators. You keep 100% of your rate.
             </p>
           </div>
           <p className="text-xs text-primary-foreground/40">

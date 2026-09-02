@@ -11,7 +11,7 @@ const DEAL_LABELS: Record<string, string> = {
   requested: "Awaiting creator", funded: "Funded",
   accepted: "Accepted", in_production: "In production",
   submitted: "Preview submitted", revision_requested: "Changes requested",
-  published: "Published — awaiting approval", completed: "Completed",
+  published: "Published, awaiting approval", completed: "Completed",
   cancelled: "Cancelled", disputed: "Disputed",
 };
 const INVITE_LABELS: Record<string, string> = {
@@ -119,7 +119,7 @@ export default async function BrandOverviewPage({
           </div>
           {conversations.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">
-              No reachouts yet — select creators in{" "}
+              No reachouts yet. Select creators in{" "}
               <Link href="/discover" className="font-medium underline underline-offset-2">Discover</Link>{" "}
               to invite them.
             </p>

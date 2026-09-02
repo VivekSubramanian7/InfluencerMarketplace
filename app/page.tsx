@@ -8,7 +8,7 @@ function DealPanel() {
     { label: "Booked with brief", done: true },
     { label: "Creator accepted", done: true },
     { label: "Preview submitted", done: true },
-    { label: "Published — awaiting approval", done: false },
+    { label: "Published, awaiting approval", done: false },
   ];
   return (
     <div className="relative w-full max-w-md rounded-3xl bg-band p-7 text-band-foreground shadow-2xl ring-1 ring-white/10">
@@ -47,7 +47,7 @@ function DealPanel() {
       <div className="mt-6 rounded-xl bg-white/[0.07] p-4 text-sm backdrop-blur-sm">
         <p className="font-semibold">Auto-approve in 3 days</p>
         <p className="mt-0.5 text-band-foreground/70">
-          Ghosting isn&rsquo;t possible — timers keep both sides honest.
+          Ghosting isn&rsquo;t possible. Timers keep both sides honest.
         </p>
       </div>
       <div className="mt-5 flex items-center justify-between">
@@ -108,7 +108,7 @@ export default function LandingPage() {
               </h1>
               <p className="mt-7 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
                 Creators list real offerings at real prices. Brands book with a
-                brief and track every deal from accepted to published — with
+                brief and track every deal from accepted to published, with
                 anti-ghosting timers and reviews on both sides.
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
@@ -123,7 +123,7 @@ export default function LandingPage() {
                 </Button>
               </div>
               <p className="mt-5 text-sm text-muted-foreground">
-                Free for creators — you keep 100% of your rate.
+                Free for creators. You keep 100% of your rate.
               </p>
             </div>
             <div className="relative flex justify-center md:justify-end">
@@ -142,14 +142,14 @@ export default function LandingPage() {
                 title: "For creators",
                 desc: "A storefront that makes you look like a business, not a DM. Set your formats and prices once; every booking arrives with a structured brief, a deadline, and a revision cap you chose.",
                 points: [
-                  "Productized offerings — dedicated videos, integrations, UGC",
+                  "Productized offerings: dedicated videos, integrations, UGC",
                   "A deal pipeline instead of spreadsheet archaeology",
                   "Reviews that compound into your public rating",
                 ],
               },
               {
                 title: "For brands",
-                desc: "Find vetted video creators by niche, country, format, and budget. Book in two minutes with a brief the creator can actually execute — then watch the deal move, step by step.",
+                desc: "Find vetted video creators by niche, country, format, and budget. Book in two minutes with a brief the creator can actually execute, then watch the deal move step by step.",
                 points: [
                   "Transparent pricing on every storefront",
                   "Preview before publish, revisions built in",
@@ -229,7 +229,7 @@ export default function LandingPage() {
               className="gap-2 bg-white px-8 text-base text-primary hover:bg-white/90"
             >
               <Link href="/signup">
-                Don&rsquo;t miss out — sign up free
+                Don&rsquo;t miss out, sign up free
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -240,7 +240,7 @@ export default function LandingPage() {
       <footer className="border-t">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
           <span className="font-bold text-foreground">Clipline</span>
-          <nav className="flex gap-6">
+          <nav className="flex flex-wrap gap-x-6 gap-y-2">
             <Link className="transition-colors hover:text-foreground" href="/discover">
               Find creators
             </Link>
@@ -249,6 +249,15 @@ export default function LandingPage() {
             </Link>
             <Link className="transition-colors hover:text-foreground" href="/login">
               Log in
+            </Link>
+            <Link className="transition-colors hover:text-foreground" href="/legal/terms">
+              Terms
+            </Link>
+            <Link className="transition-colors hover:text-foreground" href="/legal/privacy">
+              Privacy
+            </Link>
+            <Link className="transition-colors hover:text-foreground" href="/legal/refunds">
+              Refunds
             </Link>
           </nav>
         </div>

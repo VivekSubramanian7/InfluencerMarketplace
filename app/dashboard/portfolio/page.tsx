@@ -41,7 +41,7 @@ export default async function PortfolioPage({
           <div>
             <h1 className="text-3xl font-black tracking-tight">Your portfolio</h1>
             <p className="mt-1 text-muted-foreground">
-              Link your best work from YouTube, TikTok, or Instagram — brands see
+              Link your best work from YouTube, TikTok, or Instagram. Brands see
               these on your storefront.
             </p>
           </div>
@@ -70,7 +70,7 @@ export default async function PortfolioPage({
         <section className="mt-8 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="font-bold">Add a video</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Paste any video link — we detect the platform automatically.
+            Paste any video link and we detect the platform automatically.
           </p>
           <form action={addPortfolioItem} className="mt-4 flex flex-col gap-4 md:flex-row md:items-end">
             <div className="flex flex-1 flex-col gap-1.5">
@@ -97,7 +97,7 @@ export default async function PortfolioPage({
           <div className="mt-8 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
             <p className="font-semibold text-foreground">No videos yet.</p>
             <p className="mt-1">
-              Your portfolio is the first thing brands look at — add your three
+              Your portfolio is the first thing brands look at. Add your three
               strongest videos to start.
             </p>
           </div>

@@ -49,7 +49,7 @@ export default async function OnboardingSocialsPage({
       )}
       {added && (
         <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
-          {SOCIAL_PLATFORM_LABELS[added as SocialPlatform] ?? added} added — stats are syncing.
+          {SOCIAL_PLATFORM_LABELS[added as SocialPlatform] ?? added} added! Stats are syncing.
         </p>
       )}
 
@@ -84,7 +84,7 @@ export default async function OnboardingSocialsPage({
         ))}
         {(accounts ?? []).length === 0 && (
           <li className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No socials yet — add your first below.
+            No socials yet. Add your first below.
           </li>
         )}
       </ul>
@@ -104,7 +104,7 @@ export default async function OnboardingSocialsPage({
                 {SOCIAL_PLATFORMS.map((p) => (
                   <option key={p} value={p}>
                     {SOCIAL_PLATFORM_LABELS[p]}
-                    {existingByPlatform.has(p) ? ` — replaces @${existingByPlatform.get(p)}` : ""}
+                    {existingByPlatform.has(p) ? ` (replaces @${existingByPlatform.get(p)})` : ""}
                   </option>
                 ))}
               </select>
@@ -124,7 +124,7 @@ export default async function OnboardingSocialsPage({
         <p className="text-sm text-muted-foreground">
           {(accounts ?? []).length > 0
             ? `${(accounts ?? []).length} ${(accounts ?? []).length === 1 ? "account" : "accounts"} added`
-            : "Nothing added yet — you can do this later"}
+            : "Nothing added yet, you can do this later"}
         </p>
         <Button asChild>
           <Link href="/onboarding/offerings">Continue → What you offer</Link>

@@ -189,7 +189,7 @@ export default async function ConversationPage({
                         <input type="hidden" name="offer_id" value={o.id} />
                         <input type="hidden" name="conversation_id" value={conv.id} />
                         <input type="hidden" name="response" value="accepted" />
-                        <Button type="submit" size="sm">Accept — start the deal</Button>
+                        <Button type="submit" size="sm">Accept and start the deal</Button>
                       </form>
                       <form action={respondOffer}>
                         <input type="hidden" name="offer_id" value={o.id} />
@@ -239,7 +239,7 @@ export default async function ConversationPage({
                 </li>
               ))}
               {(messages ?? []).length === 0 && (
-                <li className="text-sm text-muted-foreground">No messages yet — say hello.</li>
+                <li className="text-sm text-muted-foreground">No messages yet. Say hello!</li>
               )}
             </ul>
             <form action={sendThreadMessage} className="flex flex-col gap-2">
@@ -265,7 +265,7 @@ export default async function ConversationPage({
             )}
             {draft && (
               <p className="mt-2 text-xs text-muted-foreground">
-                AI draft in your voice — edit freely. Nothing sends until you press Send.
+                AI draft in your voice. Edit freely, nothing sends until you press Send.
               </p>
             )}
           </section>
@@ -295,7 +295,7 @@ export default async function ConversationPage({
                   >
                     {(offerings ?? []).map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.title} — listed ${(o.price_cents / 100).toFixed(0)}
+                        {o.title} (listed ${(o.price_cents / 100).toFixed(0)})
                       </option>
                     ))}
                   </select>
@@ -305,7 +305,7 @@ export default async function ConversationPage({
                   <Input id="offer-price" name="price" inputMode="decimal" required />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="offer-note">Scope note (optional — becomes the brief)</Label>
+                  <Label htmlFor="offer-note">Scope note (optional, becomes the brief)</Label>
                   <Textarea
                     id="offer-note"
                     name="note"

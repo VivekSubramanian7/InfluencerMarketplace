@@ -10,12 +10,13 @@ import {
   Megaphone,
   Home,
   Bell,
+  Plus,
 } from "lucide-react";
 
 const CREATOR_TABS = [
   { href: "/dashboard", label: "Studio", icon: LayoutDashboard },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/inbox", label: "Inbox", icon: MessageSquare },
+  { href: "/dashboard/offerings/new", label: "New", icon: Plus, central: true },
   { href: "/deals", label: "Deals", icon: Handshake },
   { href: "/notifications", label: "Alerts", icon: Bell },
 ] as const;
@@ -23,7 +24,7 @@ const CREATOR_TABS = [
 const BRAND_TABS = [
   { href: "/brand", label: "Home", icon: Home },
   { href: "/discover", label: "Discover", icon: Search },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare },
+  { href: "/campaigns/new", label: "New", icon: Plus, central: true },
   { href: "/deals", label: "Deals", icon: Handshake },
   { href: "/notifications", label: "Alerts", icon: Bell },
 ] as const;
@@ -50,40 +51,53 @@ export function MobileNav({
           const active =
             pathname === tab.href || pathname.startsWith(tab.href + "/");
           const Icon = tab.icon;
+          const isCentral = "central" in tab && tab.central;
           return (
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
-                className={`mobile-tab relative flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-                  active
-                    ? "text-primary"
-                    : "text-muted-foreground/70 active:text-primary"
-                }`}
+                className={
+                  isCentral
+                    ? "mobile-tab relative flex flex-col items-center justify-center gap-0.5 py-2"
+                    : `mobile-tab relative flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
+                        active
+                          ? "text-primary"
+                          : "text-muted-foreground/70 active:text-primary"
+                      }`
+                }
                 aria-current={active ? "page" : undefined}
               >
-                <span className="relative">
-                  <Icon
-                    className={`size-6 transition-all ${
-                      active ? "stroke-[2.5]" : "stroke-[1.5]"
-                    }`}
-                    aria-hidden
-                  />
-                  {tab.label === "Alerts" && unread > 0 && (
-                    <span
-                      aria-hidden
-                      className="absolute -right-1.5 -top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground tabular-nums"
-                    >
-                      {unread > 9 ? "9+" : unread}
+                {isCentral ? (
+                  <span className="grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95">
+                    <Icon className="size-5 stroke-[2.5]" aria-hidden />
+                  </span>
+                ) : (
+                  <>
+                    <span className="relative">
+                      <Icon
+                        className={`size-6 transition-all ${
+                          active ? "stroke-[2.5]" : "stroke-[1.5]"
+                        }`}
+                        aria-hidden
+                      />
+                      {tab.label === "Alerts" && unread > 0 && (
+                        <span
+                          aria-hidden
+                          className="absolute -right-1.5 -top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground tabular-nums"
+                        >
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                <span
-                  className={`text-[10px] leading-tight ${
-                    active ? "font-bold" : "font-medium"
-                  }`}
-                >
-                  {tab.label}
-                </span>
+                    <span
+                      className={`text-[10px] leading-tight ${
+                        active ? "font-bold" : "font-medium"
+                      }`}
+                    >
+                      {tab.label}
+                    </span>
+                  </>
+                )}
               </Link>
             </li>
           );

@@ -10,7 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator", funded: "Funded",
   accepted: "Accepted", in_production: "In production",
   submitted: "Preview submitted", revision_requested: "Changes requested",
-  published: "Published — awaiting approval", completed: "Completed",
+  published: "Published, awaiting approval", completed: "Completed",
   cancelled: "Cancelled", disputed: "Disputed",
 };
 

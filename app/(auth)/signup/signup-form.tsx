@@ -49,12 +49,12 @@ export function SignupForm({
           What brings you here?
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pick what matters — we&apos;ll tailor your setup.
+          Pick what matters and we&apos;ll tailor your setup.
         </p>
 
         {invite && (
           <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
-            A brand invited you — sign up and your conversation opens
+            A brand invited you! Sign up and your conversation opens
             automatically.
           </p>
         )}
@@ -109,7 +109,7 @@ export function SignupForm({
           onClick={() => setStep("credentials")}
           className="mt-6 w-full"
         >
-          Continue — set up my account
+          Continue to set up my account
         </Button>
 
         <p className="mt-3 text-center text-xs text-muted-foreground">
@@ -132,7 +132,7 @@ export function SignupForm({
         Almost there
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Finish now — or lose your setup and start over.
+        Finish now or lose your setup and start over.
       </p>
 
       <form action={signupAction} className="mt-6 flex flex-col gap-4">

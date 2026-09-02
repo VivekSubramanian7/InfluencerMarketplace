@@ -96,6 +96,26 @@
   }
 }
 
+/* Legal prose — shared long-form reading style */
+.prose-legal h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+.prose-legal p,
+.prose-legal li {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+.prose-legal ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
 @layer utilities {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
@@ -200,13 +220,22 @@ input:focus, textarea:focus, select:focus {
   animation: gentle-pulse 3s ease-in-out infinite;
 }
 
-/* Deal next-steps sticky on mobile */
+/* Deal next-steps sticky */
+.deal-next-steps {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 10;
+}
 @media (max-width: 767px) {
   .deal-next-steps {
-    position: sticky;
     bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-    z-index: 10;
   }
+}
+
+/* Storefront sticky CTA — add breathing room so content isn't hidden */
+@media (max-width: 767px) {
+  .sticky-cta + * { scroll-margin-bottom: 80px; }
+  .has-sticky-cta { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Mobile bottom nav — safe area + tap targets */
@@ -219,6 +248,28 @@ input:focus, textarea:focus, select:focus {
 }
 @media (max-width: 767px) {
   main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Dual-thumb price range slider */
+.price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px rgb(27 25 23 / 0.2);
+  cursor: pointer;
+}
+.price-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px rgb(27 25 23 / 0.2);
+  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {

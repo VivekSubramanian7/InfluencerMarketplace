@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { StarRating } from "@/components/star-rating";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator response", funded: "Funded",
-  accepted: "Accepted — production starting", in_production: "In production",
+  accepted: "Accepted, production starting", in_production: "In production",
   submitted: "Preview submitted", revision_requested: "Changes requested",
-  published: "Published — awaiting brand approval", completed: "Completed",
-  cancelled: "Cancelled", disputed: "Disputed — admin will review",
+  published: "Published, awaiting brand approval", completed: "Completed",
+  cancelled: "Cancelled", disputed: "Disputed, admin will review",
 };
 
 export default async function DealPage({
@@ -139,7 +140,7 @@ export default async function DealPage({
       )}
       {reported && (
         <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
-          Thanks — our team will take a look.
+          Thanks! Our team will take a look.
         </p>
       )}
 
@@ -191,7 +192,7 @@ export default async function DealPage({
       <DealMessages dealId={deal.id} userId={user.id} />
 
       {actions.length > 0 && (
-        <section className="deal-next-steps mt-6 rounded-2xl bg-card p-6 shadow-card md:static">
+        <section className="deal-next-steps mt-6 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="flex items-center gap-2.5 text-base font-bold">
             <span aria-hidden className="size-2 rounded-full bg-amber" />
             Next steps
@@ -239,16 +240,9 @@ export default async function DealPage({
           <h2 className="text-base font-bold">Leave a review</h2>
           <form action={submitReview} className="mt-4 flex flex-col gap-3">
             <input type="hidden" name="deal_id" value={deal.id} />
-            <div className="flex items-center gap-2">
-              <Label htmlFor="rating">Rating</Label>
-              <select
-                id="rating"
-                name="rating"
-                className="h-10 rounded-full border bg-background px-4 text-sm"
-                defaultValue="5"
-              >
-                {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+            <div>
+              <Label>Rating</Label>
+              <StarRating name="rating" defaultValue={5} />
             </div>
             <Textarea name="body" rows={3} placeholder="How was the collaboration?" />
             <Button type="submit" className="self-start px-6">Submit review</Button>

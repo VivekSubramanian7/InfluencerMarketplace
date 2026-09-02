@@ -29,8 +29,23 @@ export default async function ReportPage({
         <form action={fileReport} className="mt-6 flex flex-col gap-4">
           <input type="hidden" name="deal_id" value={deal ?? ""} />
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="reason">What happened?</Label>
-            <Textarea id="reason" name="reason" rows={6} required placeholder="What happened?" />
+            <Label htmlFor="category">Category</Label>
+            <select
+              id="category"
+              name="category"
+              defaultValue="ghosting"
+              className="h-10 rounded-full border bg-background px-4 text-sm"
+            >
+              <option value="ghosting">Creator or brand stopped responding</option>
+              <option value="quality">Deliverable quality issue</option>
+              <option value="payment">Payment dispute</option>
+              <option value="content">Content doesn&apos;t match brief</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="reason">Details</Label>
+            <Textarea id="reason" name="reason" rows={5} required placeholder="Tell us what happened…" />
           </div>
           <Button type="submit" className="mt-2">
             Submit report

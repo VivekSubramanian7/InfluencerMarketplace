@@ -41,7 +41,7 @@ export default async function OnboardingOfferingsPage({
   return (
     <WizardShell step="offerings" skip={false}>
       <p className="mt-2 text-sm text-muted-foreground">
-        Productize what brands can book — a clear title, a set price, a turnaround.
+        Productize what brands can book: a clear title, a set price, a turnaround.
       </p>
       {error && (
         <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -50,7 +50,7 @@ export default async function OnboardingOfferingsPage({
       )}
       {saved && (
         <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
-          Offering added — add another or continue.
+          Offering added! Add another or continue.
         </p>
       )}
 
@@ -68,7 +68,7 @@ export default async function OnboardingOfferingsPage({
         ))}
         {(offerings ?? []).length === 0 && (
           <li className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No offerings yet — add your first below.
+            No offerings yet. Add your first below.
           </li>
         )}
       </ul>
@@ -123,7 +123,7 @@ export default async function OnboardingOfferingsPage({
         <p className="text-sm text-muted-foreground">
           {(offerings ?? []).length > 0
             ? `${(offerings ?? []).length} ${(offerings ?? []).length === 1 ? "offering" : "offerings"} added`
-            : "Nothing added yet — you can do this later"}
+            : "Nothing added yet, you can do this later"}
         </p>
         <Button asChild>
           <Link href="/onboarding/highlights">Continue → Show your best work</Link>

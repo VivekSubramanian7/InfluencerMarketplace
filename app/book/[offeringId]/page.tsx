@@ -41,7 +41,7 @@ export default async function BookOfferingPage({
   ]);
 
   const productDefault = (brandProducts ?? [])
-    .map((p) => [p.name, p.description].filter(Boolean).join(" — "))
+    .map((p) => [p.name, p.description].filter(Boolean).join(": "))
     .join("\n");
 
   return (
@@ -51,18 +51,34 @@ export default async function BookOfferingPage({
       <h1 className="text-3xl font-extrabold tracking-tight">Book: {offering.title}</h1>
 
       <div className="mt-4 rounded-xl border p-5">
-        <p className="text-muted-foreground">
-          {creator ? <>by @{creator.handle} · </> : null}
-          <span className="font-extrabold tabular-nums text-primary">
-            ${(offering.price_cents / 100).toFixed(2)}
-          </span>{" "}
-          · {offering.turnaround_days}d turnaround ·{" "}
-          {offering.revision_limit} revision{offering.revision_limit === 1 ? "" : "s"}
+        {creator && (
+          <p className="text-sm text-muted-foreground">by @{creator.handle}</p>
+        )}
+        <p className="mt-2 text-3xl font-black tabular-nums text-primary">
+          ${(offering.price_cents / 100).toFixed(0)}
         </p>
+        <ul className="mt-3 flex flex-col gap-1.5 text-sm text-muted-foreground">
+          <li className="flex items-center gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] text-primary">✓</span>
+            {offering.turnaround_days}-day delivery included
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] text-primary">✓</span>
+            {offering.revision_limit} revision{offering.revision_limit === 1 ? "" : "s"} included
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] text-primary">✓</span>
+            Direct creator communication
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] text-primary">✓</span>
+            Preview before publish
+          </li>
+        </ul>
       </div>
 
       <p className="mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 text-sm">
-        Payment is handled outside the platform for now — you and the creator
+        Payment is handled outside the platform for now. You and the creator
         agree on payment directly. The deal tracker keeps both sides honest.
       </p>
       {error && (
@@ -74,7 +90,7 @@ export default async function BookOfferingPage({
       <form action={createBooking} className="mt-6 flex flex-col gap-4">
         <input type="hidden" name="offering_id" value={offering.id} />
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="goals">Goals — what does success look like? *</Label>
+          <Label htmlFor="goals">Goals: what does success look like? *</Label>
           <Textarea id="goals" name="goals" rows={4} required />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -86,7 +102,7 @@ export default async function BookOfferingPage({
           <Textarea id="talking_points" name="talking_points" rows={3} />
         </div>
         <Button type="submit" className="mt-2">
-          Send booking request — ${(offering.price_cents / 100).toFixed(0)}
+          Send booking request · ${(offering.price_cents / 100).toFixed(0)}
         </Button>
       </form>
       </main>

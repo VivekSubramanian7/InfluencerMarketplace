@@ -64,7 +64,7 @@ export default async function StorefrontPage({
         </Link>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl px-6 pb-12">
+      <main className={`mx-auto w-full max-w-4xl px-6 pb-12${offerings.length > 0 ? " has-sticky-cta" : ""}`}>
         {/* Gradient identity banner — the creator's own color */}
         <section
           className="relative rounded-3xl p-8 text-white sm:p-11"
@@ -186,7 +186,16 @@ export default async function StorefrontPage({
                   className="rounded-2xl bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
                 >
                   <div>
-                    <h3 className="text-lg font-bold">{o.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold">{o.title}</h3>
+                      {avgRating !== null && (
+                        <span className="inline-flex items-center gap-1 text-sm">
+                          <span className="text-amber">★</span>
+                          <span className="font-semibold">{avgRating}</span>
+                          <span className="text-muted-foreground">({ratingCount})</span>
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
                         {TYPE_LABELS[o.type] ?? o.type}
@@ -200,19 +209,12 @@ export default async function StorefrontPage({
                       {o.description}
                     </p>
                   )}
-                  <div className="mt-5 flex items-center gap-3">
+                  <div className="mt-5">
                     <Button asChild className="px-7">
                       <a href={`/book/${o.id}`}>
-                        Book this — ${(o.priceCents / 100).toFixed(0)}
+                        Book this for ${(o.priceCents / 100).toFixed(0)}
                       </a>
                     </Button>
-                    {avgRating !== null && (
-                      <span className="text-sm text-muted-foreground">
-                        <span className="text-amber">★</span>{" "}
-                        <span className="font-semibold text-foreground">{avgRating}</span>{" "}
-                        ({ratingCount})
-                      </span>
-                    )}
                   </div>
                 </li>
               ))}
@@ -250,6 +252,26 @@ export default async function StorefrontPage({
             </ul>
           </section>
         )}
+
+        {offerings.length > 0 && (() => {
+          const cheapest = offerings.reduce((a, b) => a.priceCents < b.priceCents ? a : b);
+          return (
+            <div className="sticky-cta fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 backdrop-blur-md md:hidden">
+              <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold">{cheapest.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    From <span className="font-extrabold text-primary">${(cheapest.priceCents / 100).toFixed(0)}</span>
+                    {" · "}{cheapest.turnaroundDays}d delivery
+                  </p>
+                </div>
+                <Button asChild size="sm" className="shrink-0 px-5">
+                  <a href={`/book/${cheapest.id}`}>Book now</a>
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
 
         {portfolio.length > 0 && (
           <section className="mt-10">

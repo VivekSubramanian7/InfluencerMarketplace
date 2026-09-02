@@ -101,7 +101,7 @@ export default async function AdminDealPage({
           <ul className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
             {(events ?? []).map((e, i) => (
               <li key={i}>
-                {new Date(e.created_at).toLocaleString()} — {e.action}
+                {new Date(e.created_at).toLocaleString()} · {e.action}
                 {e.from_status !== e.to_status ? ` (${e.from_status} → ${e.to_status})` : ""}
               </li>
             ))}

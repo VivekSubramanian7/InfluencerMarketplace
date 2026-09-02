@@ -78,7 +78,7 @@ export default async function OfferingsPage({
           ))}
           {(offerings ?? []).length === 0 && (
             <li className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-              No offerings yet — add your first below.
+              No offerings yet. Add your first below.
             </li>
           )}
         </ul>

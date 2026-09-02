@@ -32,7 +32,7 @@ export default async function CreatorProfilePage({
             Status: <Badge variant="secondary">{p.status}</Badge>
             {p.status === "live" && (
               <>
-                — public at{" "}
+                , public at{" "}
                 <a className="text-primary underline" href={`/c/${p.handle}`}>
                   /c/{p.handle}
                 </a>

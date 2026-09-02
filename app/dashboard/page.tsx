@@ -12,7 +12,7 @@ const ACTIVE_STATUSES = [
 ];
 
 const STATUS_LABELS: Record<string, string> = {
-  requested: "Awaiting your response", funded: "Funded — respond",
+  requested: "Awaiting your response", funded: "Funded, respond",
   accepted: "Accepted", in_production: "In production",
   submitted: "Preview submitted", revision_requested: "Changes requested",
   published: "Awaiting brand approval", completed: "Completed",
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
             <p className="mt-1 text-xs text-muted-foreground">
               {ratings.length > 0
                 ? `${ratings.length} brand review${ratings.length === 1 ? "" : "s"}`
-                : "No reviews yet — they arrive with completed deals"}
+                : "No reviews yet, they arrive with completed deals"}
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
                 <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">📬</span>
                 <p className="font-semibold text-foreground">No bookings yet.</p>
                 <p className="mt-1">
-                  Share your storefront link — every booking lands here with a brief,
+                  Share your storefront link. Every booking lands here with a brief,
                   a deadline, and anti-ghosting timers.
                 </p>
               </div>

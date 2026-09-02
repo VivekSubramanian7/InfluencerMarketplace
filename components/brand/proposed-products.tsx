@@ -13,7 +13,7 @@ export function ProposedProducts({ initial }: { initial: Product[] }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs font-medium text-muted-foreground">
-        Products found — remove any you don&apos;t want, then save.
+        Products found. Remove any you don&apos;t want, then save.
       </p>
       <input type="hidden" name="products_json" value={JSON.stringify(products)} />
       <ul className="flex flex-col gap-1.5">

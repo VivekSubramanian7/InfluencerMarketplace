@@ -47,7 +47,7 @@ export default async function CampaignsPage({
         <p className="mt-2 text-sm text-muted-foreground">
           {role === "brand"
             ? "Post a brief and let creators come to you with a pitch and a price."
-            : "Brands post briefs here — pitch your take and name your price."}
+            : "Brands post briefs here. Pitch your take and name your price."}
         </p>
         {error && (
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -124,7 +124,7 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
         })}
         {(campaigns ?? []).length === 0 && (
           <li className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No campaigns yet — start your first below.
+            No campaigns yet. Start your first below.
           </li>
         )}
       </ul>
@@ -133,7 +133,7 @@ async function BrandCampaigns({ userId, supabase }: { userId: string; supabase: 
       <form action={createCampaign} className="mt-3 flex max-w-xl flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" name="title" required placeholder="Spring launch — honest review videos" />
+          <Input id="title" name="title" required placeholder="Spring launch, honest review videos" />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="description">What you&apos;re looking for</Label>
@@ -242,7 +242,7 @@ async function CreatorCampaigns({ userId, supabase }: { userId: string; supabase
       })}
       {(campaigns ?? []).length === 0 && (
         <li className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No open campaigns right now — check back soon.
+          No open campaigns right now. Check back soon.
         </li>
       )}
     </ul>

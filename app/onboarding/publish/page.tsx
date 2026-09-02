@@ -58,7 +58,7 @@ export default async function OnboardingPublishPage({
       <div className="mt-6 flex items-center gap-4">
         <form action={publishStorefront}>
           <SubmitButton pendingLabel="Publishing…">
-            {state.isLive ? "You're live — back to dashboard" : "Publish storefront"}
+            {state.isLive ? "You're live! Back to dashboard" : "Publish storefront"}
           </SubmitButton>
         </form>
         {state.handle && (
@@ -71,7 +71,7 @@ export default async function OnboardingPublishPage({
         )}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        You can publish with steps unfinished — an empty section just won&apos;t show yet.
+        You can publish with steps unfinished. An empty section just won&apos;t show yet.
       </p>
     </WizardShell>
   );

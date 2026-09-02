@@ -33,7 +33,7 @@ export function WebsiteIngest({
       </form>
       {proposal ? (
         <div className="rounded-xl border border-ok/30 bg-ok/5 p-4 text-sm">
-          <p className="font-semibold">Here&apos;s what we learned — review below, then save.</p>
+          <p className="font-semibold">Here&apos;s what we learned. Review below, then save.</p>
           <ul className="mt-2 flex flex-col gap-1 text-muted-foreground">
             {proposal.description && <li>Description drafted from your site.</li>}
             {proposal.niches.length > 0 && (
@@ -43,13 +43,13 @@ export function WebsiteIngest({
               <li>
                 {proposal.products.length} product{proposal.products.length === 1 ? "" : "s"} found:{" "}
                 {proposal.products.slice(0, 4).map((p) => p.name).join(", ")}
-                {proposal.products.length > 4 ? "…" : ""} — added when you save.
+                {proposal.products.length > 4 ? "…" : ""}, added when you save.
               </li>
             )}
             {proposal.tone && <li>Tone we picked up: {proposal.tone}</li>}
           </ul>
           <p className="mt-2 text-xs text-muted-foreground">
-            These are suggestions extracted from your website — edit anything
+            These are suggestions extracted from your website. Edit anything
             before saving. Nothing is published automatically.
           </p>
         </div>

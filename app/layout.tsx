@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Clipline — book video creators",
+  title: "Clipline | Book video creators",
   description:
     "Book sponsored videos from vetted micro-influencers on YouTube, TikTok, and Instagram.",
 };

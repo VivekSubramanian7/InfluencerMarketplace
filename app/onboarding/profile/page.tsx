@@ -24,7 +24,7 @@ export default async function OnboardingProfilePage({
   return (
     <WizardShell step="profile">
       <p className="mt-2 text-sm text-muted-foreground">
-        Your handle becomes your public storefront URL — brands will find you at /c/your-handle.
+        Your handle becomes your public storefront URL. Brands will find you at /c/your-handle.
       </p>
       {error && (
         <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">

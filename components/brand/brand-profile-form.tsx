@@ -52,7 +52,7 @@ export function BrandProfileForm({
         <Label htmlFor="website">Website</Label>
         <Input id="website" name="website" type="url" defaultValue={defaults?.website ?? ""} placeholder="https://acme.com" />
         <p className="text-xs text-muted-foreground">
-          For now we use this as a reference for creators — automatic product and
+          For now we use this as a reference for creators. Automatic product and
           brand-description extraction is coming.
         </p>
       </div>
@@ -106,7 +106,7 @@ export function BrandProfileForm({
         <legend className="px-1 text-sm font-semibold">Documents for creators</legend>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="guidelines">
-            Brand guidelines{defaults?.guidelines_path ? " (uploaded — choose a file to replace)" : ""}
+            Brand guidelines{defaults?.guidelines_path ? " (uploaded, choose a file to replace)" : ""}
           </Label>
           <input
             id="guidelines"
@@ -118,7 +118,7 @@ export function BrandProfileForm({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="rules">
-            Your rules for influencers{defaults?.rules_path ? " (uploaded — choose a file to replace)" : ""}
+            Your rules for influencers{defaults?.rules_path ? " (uploaded, choose a file to replace)" : ""}
           </Label>
           <input
             id="rules"
