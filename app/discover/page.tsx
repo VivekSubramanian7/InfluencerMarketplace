@@ -129,7 +129,7 @@ export default async function DiscoverPage({
               Find video creators
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Real offerings, transparent prices, verified-or-labeled stats.
+              Real offerings, transparent prices, stats verified or labeled.
             </p>
           </div>
           {isBrand && (
@@ -207,7 +207,7 @@ export default async function DiscoverPage({
             <p className="mt-2 text-xs text-muted-foreground">
               Filtered from your brand preferences.{" "}
               <Link href="/discover?tab=new&page=1" className="underline underline-offset-2">
-                show everyone
+                Show everyone
               </Link>
               .
             </p>
@@ -278,8 +278,8 @@ export default async function DiscoverPage({
           </p>
           {isBrand && filters.tab === "new" && creators.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              Tick creators to invite with your{" "}
-              <Link href="/brand/settings" className="font-medium underline underline-offset-2">reachout template</Link>
+              Select creators to invite using your{" "}
+              <Link href="/brand/settings" className="font-medium underline underline-offset-2">outreach template</Link>
             </p>
           )}
         </div>

@@ -48,7 +48,7 @@ export default async function BookOfferingPage({
     <>
       <SiteNav role={role} />
       <main className="mx-auto w-full max-w-2xl px-6 py-10">
-      <h1 className="text-3xl font-extrabold tracking-tight">Book: {offering.title}</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight">Book {offering.title}</h1>
 
       <div className="mt-4 rounded-xl border p-5">
         {creator && (
@@ -90,7 +90,7 @@ export default async function BookOfferingPage({
       <form action={createBooking} className="mt-6 flex flex-col gap-4">
         <input type="hidden" name="offering_id" value={offering.id} />
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="goals">Goals: what does success look like? *</Label>
+          <Label htmlFor="goals">What does success look like?</Label>
           <Textarea id="goals" name="goals" rows={4} required />
         </div>
         <div className="flex flex-col gap-1.5">

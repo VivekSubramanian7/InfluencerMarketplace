@@ -199,7 +199,7 @@ export default function LandingPage() {
               ["Book", "Pick an offering, send a brief. The price is the price."],
               ["Create", "The creator accepts, produces, and submits a preview link."],
               ["Approve", "Request changes within the revision cap, or approve the live post."],
-              ["Review", "Both sides rate the collab. Ratings build the public record."],
+              ["Review", "Both sides rate the deal. Ratings build the public record."],
             ].map(([title, body], i) => (
               <div
                 key={title}

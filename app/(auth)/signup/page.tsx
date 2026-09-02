@@ -18,7 +18,7 @@ export default async function SignupPage({
           </Link>
           <div>
             <p className="max-w-[28ch] text-2xl font-bold leading-tight">
-              Don&apos;t let your next collab die in DMs.
+              Don&apos;t let your next deal die in DMs.
             </p>
             <p className="mt-3 text-sm text-primary-foreground/60">
               Free for creators. You keep 100% of your rate.

@@ -132,7 +132,7 @@ export function SignupForm({
         Almost there
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Finish now or lose your setup and start over.
+        One more step and you&apos;re in.
       </p>
 
       <form action={signupAction} className="mt-6 flex flex-col gap-4">

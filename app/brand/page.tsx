@@ -142,7 +142,7 @@ export default async function BrandOverviewPage({
 
         <section className="mt-10">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-lg font-bold">Arrangements in progress</h2>
+            <h2 className="text-lg font-bold">Deals in progress</h2>
             <Link href="/deals" className="text-sm font-medium text-muted-foreground hover:text-foreground">
               All deals →
             </Link>
@@ -177,7 +177,7 @@ export default async function BrandOverviewPage({
         <section className="mt-10">
           <h2 className="text-lg font-bold">Completed</h2>
           {completed.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">No completed arrangements yet.</p>
+            <p className="mt-3 text-sm text-muted-foreground">No completed deals yet.</p>
           ) : (
             <ul className="mt-3 flex flex-col gap-2">
               {completed.map((d) => (

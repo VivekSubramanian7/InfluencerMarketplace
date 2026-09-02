@@ -262,7 +262,7 @@ export default async function StorefrontPage({
                   <p className="truncate text-sm font-bold">{cheapest.title}</p>
                   <p className="text-xs text-muted-foreground">
                     From <span className="font-extrabold text-primary">${(cheapest.priceCents / 100).toFixed(0)}</span>
-                    {" · "}{cheapest.turnaroundDays}d delivery
+                    {" · "}{cheapest.turnaroundDays}-day delivery
                   </p>
                 </div>
                 <Button asChild size="sm" className="shrink-0 px-5">
