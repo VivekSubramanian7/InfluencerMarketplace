@@ -12,7 +12,7 @@ export default function CampaignsLoading() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="flex items-center justify-between gap-4 rounded-xl border p-5"
+              className="flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-card"
             >
               <div className="min-w-0 flex-1">
                 <Skeleton className="h-5 w-1/2" />

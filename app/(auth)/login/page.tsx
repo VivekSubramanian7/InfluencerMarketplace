@@ -11,36 +11,59 @@ export default async function LoginPage({
 }) {
   const { next } = await searchParams;
   return (
-    <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center px-6 py-16">
-      <Link
-        href="/"
-        className="mb-8 self-center text-xl font-extrabold tracking-tight text-primary"
-      >
-        Clipline
-      </Link>
-      <div className="rounded-xl border p-6">
-        <h1 className="text-2xl font-extrabold tracking-tight">Log in</h1>
-        <form action={login} className="mt-6 flex flex-col gap-4">
-          <input type="hidden" name="next" value={next ?? ""} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="Email" required />
+    <main className="flex min-h-svh">
+      <div className="hidden w-2/5 bg-primary md:block" aria-hidden>
+        <div className="flex h-full flex-col justify-between p-10 text-primary-foreground">
+          <Link href="/" className="text-xl font-black tracking-tight">
+            Clipline
+          </Link>
+          <div>
+            <p className="max-w-[28ch] text-2xl font-bold leading-tight">
+              The marketplace where creators look like businesses.
+            </p>
+            <p className="mt-3 text-sm text-primary-foreground/60">
+              Real offerings, real prices, real reviews.
+            </p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" placeholder="Password" required />
-          </div>
-          <Button type="submit" className="mt-2">
-            Log in
-          </Button>
-        </form>
+          <p className="text-xs text-primary-foreground/40">
+            © {new Date().getFullYear()} Clipline
+          </p>
+        </div>
       </div>
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-primary hover:underline">
-          Sign up
-        </Link>
-      </p>
+      <div className="flex flex-1 items-center justify-center px-6 py-16">
+        <div className="w-full max-w-sm">
+          <Link
+            href="/"
+            className="mb-8 block text-center text-xl font-black tracking-tight text-primary md:hidden"
+          >
+            Clipline
+          </Link>
+          <div className="rounded-2xl bg-card p-8 shadow-card">
+            <h1 className="text-2xl font-extrabold tracking-tight">Welcome back</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Log in to your account</p>
+            <form action={login} className="mt-6 flex flex-col gap-4">
+              <input type="hidden" name="next" value={next ?? ""} />
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" placeholder="Password" required />
+              </div>
+              <Button type="submit" className="mt-2">
+                Log in
+              </Button>
+            </form>
+          </div>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="font-medium text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
+      </div>
     </main>
   );
 }

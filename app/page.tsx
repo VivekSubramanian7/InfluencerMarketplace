@@ -1,32 +1,38 @@
 import Link from "next/link";
+import { ArrowRight, Check, Clock, Star, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-/* Product-in-action panel: a stylized deal pipeline on the deep band —
-   trust machinery made visible (the brand story), no fake creator stats. */
 function DealPanel() {
+  const steps = [
+    { label: "Booked with brief", done: true },
+    { label: "Creator accepted", done: true },
+    { label: "Preview submitted", done: true },
+    { label: "Published — awaiting approval", done: false },
+  ];
   return (
-    <div className="relative w-full max-w-md rounded-2xl bg-band p-6 text-band-foreground shadow-2xl">
-      <p className="mb-4 text-sm font-semibold text-band-foreground/70">
-        Deal · 60s vertical feature
-      </p>
+    <div className="relative w-full max-w-md rounded-3xl bg-band p-7 text-band-foreground shadow-2xl ring-1 ring-white/10">
+      <div className="flex items-center justify-between mb-5">
+        <p className="text-sm font-semibold text-band-foreground/70">
+          Deal · 60s vertical feature
+        </p>
+        <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+          <Clock className="size-3" aria-hidden />
+          3d auto-approve
+        </span>
+      </div>
       <ol className="space-y-3">
-        {[
-          { label: "Booked with brief", done: true },
-          { label: "Creator accepted", done: true },
-          { label: "Preview submitted", done: true },
-          { label: "Published — awaiting approval", done: false },
-        ].map((step) => (
+        {steps.map((step, i) => (
           <li key={step.label} className="flex items-center gap-3">
             <span
               aria-hidden
-              className={`grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
+              className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-all ${
                 step.done
-                  ? "bg-ok text-white"
+                  ? "bg-ok text-white shadow-[0_0_8px_rgba(46,125,79,0.3)]"
                   : "border-2 border-amber text-amber"
               }`}
             >
-              {step.done ? "✓" : "•"}
+              {step.done ? <Check className="size-3.5" /> : i + 1}
             </span>
             <span
               className={
@@ -38,14 +44,14 @@ function DealPanel() {
           </li>
         ))}
       </ol>
-      <div className="mt-5 rounded-lg bg-white/10 p-3 text-sm">
+      <div className="mt-6 rounded-xl bg-white/[0.07] p-4 text-sm backdrop-blur-sm">
         <p className="font-semibold">Auto-approve in 3 days</p>
-        <p className="text-band-foreground/70">
+        <p className="mt-0.5 text-band-foreground/70">
           Ghosting isn&rsquo;t possible — timers keep both sides honest.
         </p>
       </div>
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-2xl font-extrabold tabular-nums">$150.00</span>
+      <div className="mt-5 flex items-center justify-between">
+        <span className="text-3xl font-black tabular-nums tracking-tight">$150</span>
         <Badge className="bg-amber text-amber-foreground hover:bg-amber">
           1 revision included
         </Badge>
@@ -54,116 +60,150 @@ function DealPanel() {
   );
 }
 
+function TrustBadge({ icon: Icon, label }: { icon: typeof Star; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-white px-4 py-2 text-sm font-medium shadow-card">
+      <Icon className="size-4 text-muted-foreground" aria-hidden />
+      {label}
+    </span>
+  );
+}
+
 export default function LandingPage() {
   return (
     <>
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-        <span className="text-xl font-black tracking-tight">
+        <Link href="/" className="text-xl font-black tracking-tight">
           Clipline
-        </span>
-        <div className="flex items-center gap-3">
+        </Link>
+        <nav className="flex items-center gap-2">
+          <Button asChild variant="ghost" className="text-muted-foreground">
+            <Link href="/discover">Discover</Link>
+          </Button>
           <Button asChild variant="ghost">
             <Link href="/login">Log in</Link>
           </Button>
           <Button asChild>
             <Link href="/signup">Get started</Link>
           </Button>
-        </div>
+        </nav>
       </header>
 
       <main>
-        {/* Hero: copy left, deal machinery right */}
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.1fr_0.9fr] md:py-24">
-          <div>
-            <h1 className="text-[clamp(2.4rem,6vw,4.2rem)] font-black leading-[1.05] tracking-[-0.03em]">
-              Book video creators.
-              <br />
-              <span className="text-muted-foreground">Skip the DM chaos.</span>
-            </h1>
-            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
-              Creators list real offerings at real prices. Brands book with a
-              brief and track every deal from accepted to published — with
-              anti-ghosting timers and reviews on both sides.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="px-7 text-base">
-                <Link href="/signup">Get started free</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="px-7 text-base">
-                <Link href="/c/mayafilms">See a live storefront</Link>
-              </Button>
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          <div className="hero-orb -right-20 top-10 hidden md:block" aria-hidden />
+          <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-[1.15fr_0.85fr] md:py-28">
+            <div>
+              <div className="mb-6 flex flex-wrap gap-2">
+                <TrustBadge icon={Shield} label="Anti-ghosting timers" />
+                <TrustBadge icon={Star} label="Mutual reviews" />
+              </div>
+              <h1 className="text-[clamp(2.6rem,6.5vw,4.5rem)] font-black leading-[1.02] tracking-[-0.035em]">
+                Book video creators.
+                <br />
+                <span className="text-muted-foreground">
+                  Skip the DM chaos.
+                </span>
+              </h1>
+              <p className="mt-7 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
+                Creators list real offerings at real prices. Brands book with a
+                brief and track every deal from accepted to published — with
+                anti-ghosting timers and reviews on both sides.
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Button asChild size="lg" className="gap-2 px-7 text-base">
+                  <Link href="/signup">
+                    Get started free
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="px-7 text-base">
+                  <Link href="/c/mayafilms">See a live storefront</Link>
+                </Button>
+              </div>
+              <p className="mt-5 text-sm text-muted-foreground">
+                Free for creators — you keep 100% of your rate.
+              </p>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Free for creators — you keep 100% of your rate.
-            </p>
-          </div>
-          <div className="flex justify-center md:justify-end">
-            <DealPanel />
+            <div className="relative flex justify-center md:justify-end">
+              <DealPanel />
+            </div>
           </div>
         </section>
 
-        {/* Two audiences, one deal machine */}
-        <section className="border-y bg-secondary/60">
-          <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-16 md:grid-cols-2">
-            <div>
-              <h2 className="text-2xl font-bold">For creators</h2>
-              <p className="mt-3 max-w-[48ch] leading-relaxed text-muted-foreground">
-                A storefront that makes you look like a business, not a DM.
-                Set your formats and prices once; every booking arrives with a
-                structured brief, a deadline, and a revision cap you chose.
-              </p>
-              <ul className="mt-5 space-y-2 text-sm">
-                {[
+        <div className="section-divider mx-auto max-w-6xl" aria-hidden />
+
+        {/* Two audiences */}
+        <section className="bg-secondary/40">
+          <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-20 md:grid-cols-2 md:gap-16">
+            {[
+              {
+                title: "For creators",
+                desc: "A storefront that makes you look like a business, not a DM. Set your formats and prices once; every booking arrives with a structured brief, a deadline, and a revision cap you chose.",
+                points: [
                   "Productized offerings — dedicated videos, integrations, UGC",
                   "A deal pipeline instead of spreadsheet archaeology",
                   "Reviews that compound into your public rating",
-                ].map((t) => (
-                  <li key={t} className="flex gap-2.5">
-                    <span aria-hidden className="mt-0.5 font-bold text-primary">→</span>
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">For brands</h2>
-              <p className="mt-3 max-w-[48ch] leading-relaxed text-muted-foreground">
-                Find vetted video creators by niche, country, format, and
-                budget. Book in two minutes with a brief the creator can
-                actually execute — then watch the deal move, step by step.
-              </p>
-              <ul className="mt-5 space-y-2 text-sm">
-                {[
+                ],
+              },
+              {
+                title: "For brands",
+                desc: "Find vetted video creators by niche, country, format, and budget. Book in two minutes with a brief the creator can actually execute — then watch the deal move, step by step.",
+                points: [
                   "Transparent pricing on every storefront",
                   "Preview before publish, revisions built in",
                   "Anti-ghosting timers on every deal",
-                ].map((t) => (
-                  <li key={t} className="flex gap-2.5">
-                    <span aria-hidden className="mt-0.5 font-bold text-primary">→</span>
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
+                ],
+              },
+            ].map(({ title, desc, points }) => (
+              <div key={title} className="rounded-3xl bg-card p-8 shadow-card">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="mt-3 max-w-[48ch] leading-relaxed text-muted-foreground">
+                  {desc}
+                </p>
+                <ul className="mt-6 space-y-3 text-sm">
+                  {points.map((t) => (
+                    <li key={t} className="flex gap-3">
+                      <span
+                        aria-hidden
+                        className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
+                      >
+                        <Check className="size-3" />
+                      </span>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* How a deal runs — the real sequence, numbered because it IS one */}
-        <section className="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
-          <h2 className="text-3xl font-bold">How a deal runs</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* How a deal runs */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-20 md:py-24">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold md:text-4xl">How a deal runs</h2>
+            <p className="mx-auto mt-3 max-w-[48ch] text-muted-foreground">
+              Four steps, fully tracked. No side-channel chaos.
+            </p>
+          </div>
+          <div className="card-grid mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["Book", "Pick an offering, send a brief. The price is the price."],
               ["Create", "The creator accepts, produces, and submits a preview link."],
               ["Approve", "Request changes within the revision cap, or approve the live post."],
               ["Review", "Both sides rate the collab. Ratings build the public record."],
             ].map(([title, body], i) => (
-              <div key={title}>
-                <span className="text-4xl font-extrabold tabular-nums text-primary/30">
+              <div
+                key={title}
+                className="rounded-2xl border bg-card p-6 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+              >
+                <span className="grid size-10 place-items-center rounded-xl bg-primary text-lg font-black text-primary-foreground tabular-nums">
                   {i + 1}
                 </span>
-                <h3 className="mt-2 text-lg font-bold">{title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                <h3 className="mt-4 text-lg font-bold">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {body}
                 </p>
               </div>
@@ -171,35 +211,46 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Closing band — the drench moment */}
+        <div className="section-divider mx-auto max-w-6xl" aria-hidden />
+
+        {/* Closing band */}
         <section className="bg-primary">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-6 px-6 py-16 md:flex-row md:items-center md:justify-between">
-            <h2 className="max-w-[24ch] text-3xl font-extrabold text-primary-foreground">
-              Your next collab shouldn&rsquo;t live in your DMs.
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-6 py-20 text-center md:py-24">
+            <h2 className="max-w-[28ch] text-3xl font-black text-primary-foreground md:text-4xl">
+              Every day without a storefront is a deal lost.
             </h2>
+            <p className="max-w-[44ch] text-primary-foreground/70">
+              Creators who wait lose bookings to those who don&rsquo;t.
+              Brands miss vetted creators while scrolling DMs.
+            </p>
             <Button
               asChild
               size="lg"
-              className="bg-white px-8 text-base text-primary hover:bg-white/90"
+              className="gap-2 bg-white px-8 text-base text-primary hover:bg-white/90"
             >
-              <Link href="/signup">Create your account</Link>
+              <Link href="/signup">
+                Don&rsquo;t miss out — sign up free
+                <ArrowRight className="size-4" />
+              </Link>
             </Button>
           </div>
         </section>
       </main>
 
-      <footer className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
-        <span className="font-bold text-foreground">Clipline</span>
-        <div className="flex gap-6">
-          <Link className="hover:text-foreground" href="/discover">
-            Find creators
-          </Link>
-          <Link className="hover:text-foreground" href="/signup">
-            Become a creator
-          </Link>
-          <Link className="hover:text-foreground" href="/login">
-            Log in
-          </Link>
+      <footer className="border-t">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
+          <span className="font-bold text-foreground">Clipline</span>
+          <nav className="flex gap-6">
+            <Link className="transition-colors hover:text-foreground" href="/discover">
+              Find creators
+            </Link>
+            <Link className="transition-colors hover:text-foreground" href="/signup">
+              Become a creator
+            </Link>
+            <Link className="transition-colors hover:text-foreground" href="/login">
+              Log in
+            </Link>
+          </nav>
         </div>
       </footer>
     </>

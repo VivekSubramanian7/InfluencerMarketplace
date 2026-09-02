@@ -30,9 +30,11 @@ export default async function NotificationsPage() {
       <main className="mx-auto w-full max-w-3xl px-6 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Notifications</h1>
         {rows.length === 0 ? (
-          <p className="mt-6 rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            Nothing yet — invites, offers, and deal updates land here.
-          </p>
+          <div className="mt-6 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+            <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">🔔</span>
+            <p className="font-semibold text-foreground">All caught up</p>
+            <p className="mt-1">Invites, offers, and deal updates land here.</p>
+          </div>
         ) : (
           <ul className="mt-6 flex flex-col gap-2">
             {rows.map((n) => {
@@ -41,7 +43,7 @@ export default async function NotificationsPage() {
                   <span className="flex min-w-0 flex-col">
                     <span className={`truncate text-sm ${n.read_at ? "font-medium" : "font-bold"}`}>
                       {!n.read_at && (
-                        <span aria-hidden className="mr-2 inline-block size-2 rounded-full bg-primary align-middle" />
+                        <span aria-hidden className="mr-2 inline-block size-2 rounded-full bg-amber align-middle" />
                       )}
                       {n.title}
                     </span>
@@ -59,12 +61,16 @@ export default async function NotificationsPage() {
                   {n.href ? (
                     <Link
                       href={n.href}
-                      className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:border-primary/40"
+                      className={`deal-row flex items-center justify-between gap-4 rounded-2xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-card-hover ${
+                        n.read_at ? "bg-card shadow-card" : "bg-card shadow-card ring-1 ring-amber/20"
+                      }`}
                     >
                       {inner}
                     </Link>
                   ) : (
-                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                    <div className={`flex items-center justify-between gap-4 rounded-2xl p-4 ${
+                      n.read_at ? "bg-card shadow-card" : "bg-card shadow-card ring-1 ring-amber/20"
+                    }`}>
                       {inner}
                     </div>
                   )}

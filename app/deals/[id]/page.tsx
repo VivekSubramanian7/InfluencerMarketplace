@@ -40,18 +40,27 @@ export default async function DealPage({
   if (!deal) notFound(); // RLS hides other people's deals
 
   const myRole = deal.brand_id === user.id ? "brand" : "creator";
-  const [{ data: brief }, { data: events }, { data: counterpartProfile }, { data: myReview }] = await Promise.all([
+  const [{ data: brief }, { data: events }, { data: counterpartProfile }, { data: myReview }, { data: creatorHandle }] = await Promise.all([
     supabase.from("briefs").select("goals, product_description, talking_points").eq("deal_id", id).maybeSingle(),
     supabase.from("deal_events").select("action, from_status, to_status, created_at").eq("deal_id", id).order("created_at"),
     supabase.from("profiles").select("display_name")
       .eq("id", myRole === "brand" ? deal.creator_id : deal.brand_id).maybeSingle(),
     supabase.from("reviews").select("id").eq("deal_id", id).eq("author_id", user.id).maybeSingle(),
+    supabase.from("creator_profiles").select("handle").eq("user_id", deal.creator_id).maybeSingle(),
   ]);
 
   const actions = role === "admin" ? [] :
     actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode);
 
   const statusIsAttention = deal.status === "disputed" || deal.status === "published";
+
+  const DEAL_STEPS = ["Booked", "Accepted", "In production", "Submitted", "Published", "Completed"] as const;
+  const STATUS_TO_STEP: Record<string, number> = {
+    requested: 0, funded: 0, accepted: 1, in_production: 2,
+    submitted: 3, revision_requested: 3, published: 4, completed: 5,
+    cancelled: -1, disputed: -1,
+  };
+  const currentStep = STATUS_TO_STEP[deal.status] ?? 0;
 
   return (
     <>
@@ -61,20 +70,59 @@ export default async function DealPage({
       <h1 className="mt-2 text-3xl font-extrabold tracking-tight">{deal.offering_title}</h1>
       <p className="mt-1 text-muted-foreground">
         {myRole === "brand" ? "You booked" : "Booked by"}{" "}
-        {counterpartProfile?.display_name ?? "counterpart"} ·{" "}
+        {creatorHandle?.handle && myRole === "brand" ? (
+          <Link href={`/c/${creatorHandle.handle}`} className="font-medium text-foreground underline-offset-2 hover:underline">
+            {counterpartProfile?.display_name ?? `@${creatorHandle.handle}`}
+          </Link>
+        ) : (
+          <span className="font-medium text-foreground">{counterpartProfile?.display_name ?? "counterpart"}</span>
+        )}
+        {" · "}
         <span className="font-extrabold tabular-nums text-primary">
           ${(deal.price_cents / 100).toFixed(2)}
         </span>
       </p>
-      <p
+
+      {currentStep >= 0 && (
+        <div className="mt-5 flex items-center gap-1" aria-label="Deal progress">
+          {DEAL_STEPS.map((label, i) => (
+            <div key={label} className="flex flex-1 flex-col items-center gap-1">
+              <div className="flex w-full items-center">
+                <div
+                  className={`size-3 shrink-0 rounded-full transition-colors ${
+                    i <= currentStep ? "bg-primary" : "bg-border"
+                  }`}
+                />
+                {i < DEAL_STEPS.length - 1 && (
+                  <div
+                    className={`h-0.5 flex-1 transition-colors ${
+                      i < currentStep ? "bg-primary" : "bg-border"
+                    }`}
+                  />
+                )}
+              </div>
+              <span className={`text-[10px] leading-tight ${
+                i === currentStep ? "font-bold text-foreground" : "text-muted-foreground"
+              }`}>
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div
         className={
           statusIsAttention
-            ? "mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 font-semibold"
-            : "mt-4 rounded-lg bg-secondary px-4 py-3 font-semibold"
+            ? "mt-4 flex items-center gap-3 rounded-2xl border border-amber bg-amber/10 px-5 py-4"
+            : "mt-4 flex items-center gap-3 rounded-2xl bg-secondary px-5 py-4"
         }
       >
-        {STATUS_LABELS[deal.status] ?? deal.status}
-      </p>
+        {statusIsAttention && (
+          <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
+        )}
+        <span className="font-semibold">{STATUS_LABELS[deal.status] ?? deal.status}</span>
+      </div>
 
       {deal.payment_mode === "off_platform" && (
         <p className="mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 text-sm">
@@ -96,45 +144,59 @@ export default async function DealPage({
       )}
 
       {(deal.preview_url || deal.live_url) && (
-        <section className="mt-6 rounded-xl border p-5">
+        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Deliverables</h2>
           {deal.preview_url && (
-            <p className="mt-2 text-sm">Preview:{" "}
-              <a className="break-all text-primary underline" href={deal.preview_url}
+            <p className="mt-3 text-sm">
+              <span className="text-muted-foreground">Preview:</span>{" "}
+              <a className="break-all font-medium underline underline-offset-2" href={deal.preview_url}
                 target="_blank" rel="noopener noreferrer">{deal.preview_url}</a></p>
           )}
           {deal.live_url && (
-            <p className="mt-1 text-sm">Live post:{" "}
-              <a className="break-all text-primary underline" href={deal.live_url}
+            <p className="mt-1.5 text-sm">
+              <span className="text-muted-foreground">Live post:</span>{" "}
+              <a className="break-all font-medium underline underline-offset-2" href={deal.live_url}
                 target="_blank" rel="noopener noreferrer">{deal.live_url}</a></p>
           )}
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-3 text-xs text-muted-foreground tabular-nums">
             Revisions used: {deal.revision_count} of {deal.revision_limit}
           </p>
         </section>
       )}
 
       {brief && (
-        <section className="mt-6 rounded-xl border p-5">
+        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Brief</h2>
-          <p className="mt-2 whitespace-pre-line text-sm"><strong>Goals:</strong> {brief.goals}</p>
-          {brief.product_description && (
-            <p className="mt-2 whitespace-pre-line text-sm">
-              <strong>Product:</strong> {brief.product_description}</p>
-          )}
-          {brief.talking_points && (
-            <p className="mt-2 whitespace-pre-line text-sm">
-              <strong>Talking points:</strong> {brief.talking_points}</p>
-          )}
+          <div className="mt-3 flex flex-col gap-3 text-sm">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Goals</p>
+              <p className="mt-1 whitespace-pre-line">{brief.goals}</p>
+            </div>
+            {brief.product_description && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product</p>
+                <p className="mt-1 whitespace-pre-line">{brief.product_description}</p>
+              </div>
+            )}
+            {brief.talking_points && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Talking points</p>
+                <p className="mt-1 whitespace-pre-line">{brief.talking_points}</p>
+              </div>
+            )}
+          </div>
         </section>
       )}
 
       <DealMessages dealId={deal.id} userId={user.id} />
 
       {actions.length > 0 && (
-        <section className="mt-6 rounded-xl border p-5">
-          <h2 className="text-base font-bold">Next steps</h2>
-          <div className="mt-3 flex flex-col gap-3">
+        <section className="deal-next-steps mt-6 rounded-2xl bg-card p-6 shadow-card md:static">
+          <h2 className="flex items-center gap-2.5 text-base font-bold">
+            <span aria-hidden className="size-2 rounded-full bg-amber" />
+            Next steps
+          </h2>
+          <div className="mt-4 flex flex-col gap-3">
             {actions.map((a) => (
               <form key={a.action} action={performDealAction} className="flex items-start gap-2">
                 <input type="hidden" name="deal_id" value={deal.id} />
@@ -173,16 +235,16 @@ export default async function DealPage({
       )}
 
       {role !== "admin" && deal.status === "completed" && !myReview && (
-        <section className="mt-6 rounded-xl border p-5">
+        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Leave a review</h2>
-          <form action={submitReview} className="mt-3 flex flex-col gap-3">
+          <form action={submitReview} className="mt-4 flex flex-col gap-3">
             <input type="hidden" name="deal_id" value={deal.id} />
             <div className="flex items-center gap-2">
               <Label htmlFor="rating">Rating</Label>
               <select
                 id="rating"
                 name="rating"
-                className="h-10 rounded-lg border bg-background px-3 text-sm"
+                className="h-10 rounded-full border bg-background px-4 text-sm"
                 defaultValue="5"
               >
                 {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
@@ -194,21 +256,43 @@ export default async function DealPage({
         </section>
       )}
 
-      <section className="mt-6">
+      <section className="mt-6 rounded-2xl bg-secondary/40 p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold">Timeline</h2>
-          <Link href={`/report?deal=${deal.id}`} className="text-xs text-muted-foreground underline">
+          <Link href={`/report?deal=${deal.id}`} className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
             Report a problem
           </Link>
         </div>
-        <ul className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
+        <ul className="mt-3 flex flex-col gap-0">
           {(events ?? []).map((e, i) => (
-            <li key={i}>
-              {new Date(e.created_at).toLocaleString()} — {e.action}
-              {e.from_status !== e.to_status ? ` (${e.from_status} → ${e.to_status})` : ""}
+            <li key={i} className="relative flex gap-4 pb-4 last:pb-0">
+              <div className="flex flex-col items-center">
+                <span aria-hidden className="mt-1 size-2.5 rounded-full bg-primary" />
+                {i < (events?.length ?? 1) - 1 && (
+                  <span aria-hidden className="w-px flex-1 bg-border" />
+                )}
+              </div>
+              <div className="min-w-0 pb-0.5 text-sm">
+                <p className="font-medium">{e.action}
+                  {e.from_status !== e.to_status ? ` (${e.from_status} → ${e.to_status})` : ""}
+                </p>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {new Date(e.created_at).toLocaleString()}
+                </p>
+              </div>
             </li>
           ))}
-          {(events ?? []).length === 0 && <li>Requested {new Date(deal.requested_at).toLocaleString()}</li>}
+          {(events ?? []).length === 0 && (
+            <li className="flex gap-4">
+              <span aria-hidden className="mt-1 size-2.5 rounded-full bg-primary" />
+              <div className="text-sm">
+                <p className="font-medium">Requested</p>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {new Date(deal.requested_at).toLocaleString()}
+                </p>
+              </div>
+            </li>
+          )}
         </ul>
       </section>
       </main>

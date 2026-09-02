@@ -25,11 +25,24 @@ export default async function BookOfferingPage({
     .maybeSingle();
   if (!offering || !offering.active) notFound();
 
-  const { data: creator } = await supabase
-    .from("creator_profiles")
-    .select("handle")
-    .eq("user_id", offering.creator_id)
-    .maybeSingle();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const [{ data: creator }, { data: brandProducts }] = await Promise.all([
+    supabase
+      .from("creator_profiles")
+      .select("handle")
+      .eq("user_id", offering.creator_id)
+      .maybeSingle(),
+    supabase
+      .from("brand_products")
+      .select("name, description")
+      .eq("brand_id", user!.id)
+      .limit(3),
+  ]);
+
+  const productDefault = (brandProducts ?? [])
+    .map((p) => [p.name, p.description].filter(Boolean).join(" — "))
+    .join("\n");
 
   return (
     <>
@@ -66,14 +79,14 @@ export default async function BookOfferingPage({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="product_description">Product / service description</Label>
-          <Textarea id="product_description" name="product_description" rows={3} />
+          <Textarea id="product_description" name="product_description" rows={3} defaultValue={productDefault} />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="talking_points">Key talking points</Label>
           <Textarea id="talking_points" name="talking_points" rows={3} />
         </div>
         <Button type="submit" className="mt-2">
-          Send booking request
+          Send booking request — ${(offering.price_cents / 100).toFixed(0)}
         </Button>
       </form>
       </main>

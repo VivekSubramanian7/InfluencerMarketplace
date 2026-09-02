@@ -108,6 +108,119 @@
   }
 }
 
+/* Hero floating orb — warm ambient gradient behind the deal panel */
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(12px, -18px) scale(1.04); }
+  66% { transform: translate(-8px, 10px) scale(0.97); }
+}
+.hero-orb {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #C8A87C 0%, #4A7A74 50%, transparent 70%);
+  opacity: 0.18;
+  filter: blur(60px);
+  animation: orb-drift 12s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Section divider line — subtle warm gradient hairline */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #E7E3DC 20%, #C9962B40 50%, #E7E3DC 80%, transparent 100%);
+}
+
+/* Stat card shimmer on hover */
+@keyframes stat-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 40%, rgba(201, 150, 43, 0.06) 50%, transparent 60%);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.stat-card:hover::after {
+  opacity: 1;
+  animation: stat-shimmer 1.5s ease-in-out;
+}
+
+/* Deal card lift on hover */
+.deal-row {
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.deal-row:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+/* Staggered entrance for card grids */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card-grid > * {
+  animation: card-enter 0.35s ease-out both;
+}
+.card-grid > *:nth-child(1) { animation-delay: 0s; }
+.card-grid > *:nth-child(2) { animation-delay: 0.06s; }
+.card-grid > *:nth-child(3) { animation-delay: 0.12s; }
+.card-grid > *:nth-child(4) { animation-delay: 0.15s; }
+.card-grid > *:nth-child(5) { animation-delay: 0.18s; }
+.card-grid > *:nth-child(6) { animation-delay: 0.21s; }
+
+/* Pill tab active indicator */
+.tab-pill-active {
+  box-shadow: 0 1px 3px rgba(27, 25, 23, 0.12);
+}
+
+/* Form focus glow */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(27, 25, 23, 0.06);
+}
+
+/* Empty state icon pulse */
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+.empty-icon {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+/* Deal next-steps sticky on mobile */
+@media (max-width: 767px) {
+  .deal-next-steps {
+    position: sticky;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    z-index: 10;
+  }
+}
+
+/* Mobile bottom nav — safe area + tap targets */
+.mobile-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mobile-tab {
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 767px) {
+  main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -115,4 +228,7 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .hero-orb { animation: none; }
+  .stat-card::after { display: none; }
+  .card-grid > * { animation: none; }
 }

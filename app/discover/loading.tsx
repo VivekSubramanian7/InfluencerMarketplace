@@ -28,9 +28,9 @@ export default function DiscoverLoading() {
         <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <li key={i} className="overflow-hidden rounded-2xl bg-card shadow-card">
-              <Skeleton className="h-20 rounded-none" />
-              <div className="-mt-6 flex items-end gap-3 px-5">
-                <Skeleton className="size-12 shrink-0 rounded-xl bg-background" />
+              <Skeleton className="h-24 rounded-none" />
+              <div className="-mt-7 flex items-end gap-3 px-5">
+                <Skeleton className="size-14 shrink-0 rounded-2xl bg-background" />
                 <div className="min-w-0 flex-1 pb-0.5">
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="mt-1.5 h-3 w-20" />
@@ -39,7 +39,10 @@ export default function DiscoverLoading() {
               <div className="px-5 pb-5">
                 <Skeleton className="mt-3 h-4 w-full" />
                 <Skeleton className="mt-1.5 h-4 w-3/4" />
-                <Skeleton className="mt-4 h-5 w-32" />
+                <div className="mt-4 flex items-center justify-between">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="size-8 rounded-full" />
+                </div>
               </div>
             </li>
           ))}

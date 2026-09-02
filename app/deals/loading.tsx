@@ -9,13 +9,13 @@ export default function DealsLoading() {
         <Skeleton className="h-9 w-48" />
         <div className="mt-6">
           {["a", "b", "c"].map((s) => (
-            <section key={s} className="mb-8">
-              <Skeleton className="h-6 w-32" />
+            <section key={s} className="mb-10">
+              <Skeleton className="h-6 w-40" />
               <div className="mt-3 flex flex-col gap-2">
                 {[0, 1].map((i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-4 rounded-xl border p-5"
+                    className="flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-card"
                   >
                     <Skeleton className="h-5 w-1/2" />
                     <div className="flex shrink-0 items-center gap-4">

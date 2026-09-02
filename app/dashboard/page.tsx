@@ -83,8 +83,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* The business at a glance — every number is real */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl bg-card p-6 shadow-card">
+        <div className="card-grid mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
             <p className="text-sm font-medium text-muted-foreground">Earned on Clipline</p>
             <p className="mt-2 text-3xl font-black tabular-nums">
               ${(earnedCents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
               {completedDeals.length} completed deal{completedDeals.length === 1 ? "" : "s"}
             </p>
           </div>
-          <div className="rounded-2xl bg-card p-6 shadow-card">
+          <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
             <p className="text-sm font-medium text-muted-foreground">Active deals</p>
             <p className="mt-2 text-3xl font-black tabular-nums">{activeDeals.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
               your response
             </p>
           </div>
-          <div className="rounded-2xl bg-card p-6 shadow-card">
+          <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
             <p className="text-sm font-medium text-muted-foreground">Brand rating</p>
             <p className="mt-2 text-3xl font-black tabular-nums">
               {avgRating !== null ? (
@@ -130,7 +130,8 @@ export default async function DashboardPage() {
               </Link>
             </div>
             {recentDeals.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+              <div className="mt-4 rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+                <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">📬</span>
                 <p className="font-semibold text-foreground">No bookings yet.</p>
                 <p className="mt-1">
                   Share your storefront link — every booking lands here with a brief,
@@ -138,12 +139,12 @@ export default async function DashboardPage() {
                 </p>
               </div>
             ) : (
-              <ul className="mt-4 flex flex-col divide-y">
+              <ul className="mt-4 flex flex-col gap-1.5">
                 {recentDeals.map((d) => (
                   <li key={d.id}>
                     <Link
                       href={`/deals/${d.id}`}
-                      className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-secondary/60 -mx-2 px-2 rounded-lg"
+                      className="deal-row flex items-center justify-between gap-4 rounded-xl border border-transparent bg-secondary/40 px-4 py-3.5 transition-all hover:border-border hover:bg-card"
                     >
                       <span className="min-w-0 truncate font-semibold">{d.offering_title}</span>
                       <span className="flex shrink-0 items-center gap-3">
@@ -216,9 +217,15 @@ export default async function DashboardPage() {
                 <h2 className="font-bold">
                   Finish setup{" "}
                   <span className="text-sm font-medium text-muted-foreground">
-                    ({steps.length - openSteps.length}/{steps.length})
+                    ({steps.length - openSteps.length + 1}/{steps.length + 1})
                   </span>
                 </h2>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${Math.round(((steps.length - openSteps.length + 1) / (steps.length + 1)) * 100)}%` }}
+                  />
+                </div>
                 <ul className="mt-3 flex flex-col gap-2">
                   {openSteps.map((s) => (
                     <li key={s.label}>

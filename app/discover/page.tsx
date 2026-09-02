@@ -146,6 +146,41 @@ export default async function DiscoverPage({
           </div>
         )}
 
+        {/* Quick-filter suggestions when no search active */}
+        {!filters.q && !filters.niche && !filters.country && !filters.type &&
+          filters.minPriceCents === null && filters.maxPriceCents === null && (
+          <div className="mt-4 rounded-2xl border border-dashed bg-secondary/30 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Popular niches</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {["gaming", "food", "beauty", "tech", "fitness", "lifestyle", "fashion", "finance"].map((n) => (
+                <Link
+                  key={n}
+                  href={`/discover?niche=${n}`}
+                  className="rounded-full border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  {n}
+                </Link>
+              ))}
+            </div>
+            {isBrand && savedSearches.length > 0 && (
+              <>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your saved searches</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {savedSearches.map((s) => (
+                    <Link
+                      key={s.id}
+                      href={savedHref(s.params)}
+                      className="rounded-full border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary hover:text-primary-foreground"
+                    >
+                      {s.name}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Search band: Heepsy's filter-chip pattern, Clipline's skin */}
         <form
           method="get"
@@ -298,14 +333,14 @@ export default async function DiscoverPage({
                 </Button>
               </div>
             )}
-            <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="card-grid mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {creators.map((c) => {
                 const initial = (c.displayName ?? c.handle).charAt(0).toUpperCase();
                 const gradient = creatorGradient(c.handle);
                 return (
                   <li key={c.userId} className="relative">
                     {isBrand && filters.tab === "new" && (
-                      <label className="absolute right-3 top-3 z-10 grid size-8 cursor-pointer place-items-center rounded-full bg-white/90 shadow-card">
+                      <label className="absolute right-3 top-3 z-10 grid size-8 cursor-pointer place-items-center rounded-full bg-white/90 shadow-card transition-transform hover:scale-110">
                         <input
                           type="checkbox"
                           name="creator_id"
@@ -317,17 +352,17 @@ export default async function DiscoverPage({
                     )}
                     <Link
                       href={`/c/${c.handle}`}
-                      className="group flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                      className="group flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover"
                     >
                       <div
                         aria-hidden
-                        className="h-20"
+                        className="h-24 transition-[height] duration-200 group-hover:h-[6.5rem]"
                         style={{ background: gradient.css }}
                       />
-                      <div className="-mt-6 flex items-end gap-3 px-5">
+                      <div className="-mt-7 flex items-end gap-3 px-5">
                         <span
                           aria-hidden
-                          className="grid size-12 shrink-0 place-items-center rounded-xl bg-white text-xl font-black shadow-card"
+                          className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white text-2xl font-black shadow-card ring-2 ring-white transition-transform duration-200 group-hover:scale-105"
                           style={{ color: gradient.deep }}
                         >
                           {initial}
@@ -357,21 +392,36 @@ export default async function DiscoverPage({
                           ))}
                         </div>
                       )}
-                      <p className="mt-auto pt-4 text-sm">
-                        {c.minPriceCents !== null ? (
-                          <>
-                            From{" "}
-                            <span className="text-lg font-extrabold tabular-nums text-primary">
-                              ${(c.minPriceCents / 100).toFixed(0)}
-                            </span>{" "}
-                            <span className="text-muted-foreground">
-                              · {c.offeringCount} offering{c.offeringCount === 1 ? "" : "s"}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">No offerings listed</span>
-                        )}
-                      </p>
+                      <div className="mt-auto pt-4 flex items-center justify-between">
+                        <div className="min-w-0">
+                          {c.minPriceCents !== null ? (
+                            <p className="text-sm">
+                              From{" "}
+                              <span className="text-lg font-extrabold tabular-nums text-primary">
+                                ${(c.minPriceCents / 100).toFixed(0)}
+                              </span>{" "}
+                              <span className="text-muted-foreground">
+                                · {c.offeringCount} offering{c.offeringCount === 1 ? "" : "s"}
+                              </span>
+                            </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No offerings listed</p>
+                          )}
+                          {c.avgRating !== null && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              <span className="text-amber">★</span>{" "}
+                              <span className="font-semibold text-foreground">{c.avgRating}</span>{" "}
+                              ({c.ratingCount} review{c.ratingCount === 1 ? "" : "s"})
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          aria-hidden
+                          className="grid size-8 place-items-center rounded-full bg-secondary text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground"
+                        >
+                          →
+                        </span>
+                      </div>
                       </div>
                     </Link>
                   </li>

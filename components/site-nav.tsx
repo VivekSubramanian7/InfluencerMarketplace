@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { MobileNav } from "@/components/mobile-nav";
 
 export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" }) {
   const links =
@@ -26,7 +27,6 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
             { href: "/deals", label: "Deals" },
           ];
 
-  // unread badge; getClaims is verified locally and pages already gate access
   const supabase = await createServerSupabase();
   const { data } = await supabase.auth.getClaims();
   const sub = data?.claims?.sub;
@@ -41,47 +41,51 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
   }
 
   return (
-    <nav className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="text-lg font-black tracking-tight">
-            Clipline
-          </Link>
+    <>
+      <nav className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2.5">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="text-lg font-black tracking-tight">
+              Clipline
+            </Link>
+            <div className="hidden items-center gap-0.5 rounded-full bg-secondary/60 p-1 md:flex">
+              {links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="rounded-full px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground hover:shadow-sm"
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
           <div className="flex items-center gap-1">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                {l.label}
-              </Link>
-            ))}
+            <Link
+              href="/notifications"
+              aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
+              className="relative hidden size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:grid"
+            >
+              <Bell className="size-4.5" aria-hidden />
+              {unread > 0 && (
+                <span
+                  aria-hidden
+                  className="absolute right-0.5 top-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-primary-foreground tabular-nums"
+                >
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+            <form action={logout}>
+              <Button variant="ghost" size="icon-sm" className="rounded-full text-muted-foreground">
+                <LogOut className="size-4" aria-hidden />
+                <span className="sr-only">Log out</span>
+              </Button>
+            </form>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Link
-            href="/notifications"
-            aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
-            className="relative grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <Bell className="size-4.5" aria-hidden />
-            {unread > 0 && (
-              <span
-                aria-hidden
-                className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-primary-foreground tabular-nums"
-              >
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-          </Link>
-          <form action={logout}>
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              Log out
-            </Button>
-          </form>
-        </div>
-      </div>
-    </nav>
+      </nav>
+      <MobileNav role={role} unread={unread} />
+    </>
   );
 }

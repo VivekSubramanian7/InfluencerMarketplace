@@ -70,13 +70,19 @@ export default async function InboxPage({
 
         {pendingForMe.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-lg font-bold">Brand invitations</h2>
+            <h2 className="flex items-center gap-2.5 text-lg font-bold">
+              <span aria-hidden className="size-2 rounded-full bg-amber" />
+              Brand invitations
+              <span className="text-sm font-medium text-muted-foreground tabular-nums">
+                ({pendingForMe.length})
+              </span>
+            </h2>
             <ul className="mt-3 flex flex-col gap-3">
               {pendingForMe.map((c) => (
-                <li key={c.id} className="rounded-xl border p-5">
+                <li key={c.id} className="rounded-2xl bg-card p-6 shadow-card ring-1 ring-amber/20">
                   <p className="font-bold">{label(c)}</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm">{c.invite_message}</p>
-                  <div className="mt-3 flex gap-2">
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{c.invite_message}</p>
+                  <div className="mt-4 flex gap-2">
                     <form action={respondInvite}>
                       <input type="hidden" name="conversation_id" value={c.id} />
                       <input type="hidden" name="response" value="accepted" />
@@ -97,26 +103,30 @@ export default async function InboxPage({
         <section className="mt-8">
           <h2 className="text-lg font-bold">Conversations</h2>
           {rest.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {role === "brand" ? (
-                <>
-                  No conversations yet — reach out to creators from{" "}
-                  <Link href="/discover" className="font-medium underline underline-offset-2">
-                    Discover
-                  </Link>
-                  .
-                </>
-              ) : (
-                "No conversations yet — brands you accept will appear here."
-              )}
-            </p>
+            <div className="mt-3 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+              <span aria-hidden className="empty-icon mx-auto mb-3 block text-3xl">💬</span>
+              <p className="font-semibold text-foreground">No conversations yet</p>
+              <p className="mt-1">
+                {role === "brand" ? (
+                  <>
+                    Reach out to creators from{" "}
+                    <Link href="/discover" className="font-medium underline underline-offset-2">
+                      Discover
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  "Brands you accept will appear here."
+                )}
+              </p>
+            </div>
           ) : (
             <ul className="mt-3 flex flex-col gap-2">
               {rest.map((c) => (
                 <li key={c.id}>
                   <Link
                     href={`/inbox/${c.id}`}
-                    className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:border-primary/40"
+                    className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
                   >
                     <span className="min-w-0 truncate font-medium">{label(c)}</span>
                     <Badge variant="secondary">{STATUS_LABELS[c.status] ?? c.status}</Badge>

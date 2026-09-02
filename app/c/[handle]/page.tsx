@@ -117,15 +117,15 @@ export default async function StorefrontPage({
         </section>
 
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">Audience</h2>
+          <h2 className="mb-5 text-xl font-bold">Audience</h2>
           {stats.length === 0 ? (
-            <div className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
               This creator hasn&apos;t linked social accounts yet.
             </div>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-3">
+            <ul className="card-grid grid gap-4 sm:grid-cols-3">
               {stats.map((s) => (
-                <li key={s.platform} className="rounded-2xl bg-card p-5 shadow-card">
+                <li key={s.platform} className="stat-card rounded-2xl bg-card p-5 shadow-card transition-shadow hover:shadow-card-hover">
                   <div className="flex items-center justify-between">
                     <p className="font-bold">
                       {PLATFORM_LABELS[s.platform] ?? s.platform}
@@ -139,12 +139,12 @@ export default async function StorefrontPage({
                   <p className="text-sm text-muted-foreground">@{s.platformHandle}</p>
                   {s.followerCount !== null ? (
                     <>
-                      <p className="mt-2 text-2xl font-black tabular-nums">
+                      <p className="mt-3 text-3xl font-black tabular-nums">
                         {Intl.NumberFormat("en", { notation: "compact" }).format(s.followerCount)}
                       </p>
                       <p className="text-xs text-muted-foreground">followers</p>
                       {s.avgViews !== null && (
-                        <p className="mt-1 text-sm text-muted-foreground tabular-nums">
+                        <p className="mt-2 text-sm text-muted-foreground tabular-nums">
                           {Intl.NumberFormat("en", { notation: "compact" }).format(s.avgViews)}{" "}
                           avg views
                         </p>
@@ -155,7 +155,7 @@ export default async function StorefrontPage({
                         </p>
                       )}
                       {s.lastSyncedAt && (
-                        <p className="mt-1 text-xs text-muted-foreground/70">
+                        <p className="mt-2 text-xs text-muted-foreground/70">
                           Public stats · updated {new Date(s.lastSyncedAt).toLocaleDateString()}
                         </p>
                       )}
@@ -171,39 +171,49 @@ export default async function StorefrontPage({
           )}
         </section>
 
+        <div className="section-divider mt-12" aria-hidden />
+
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">Offerings</h2>
+          <h2 className="mb-5 text-xl font-bold">Offerings</h2>
           {offerings.length === 0 ? (
             <p className="text-muted-foreground">No offerings listed yet.</p>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <ul className="card-grid flex flex-col gap-4">
               {offerings.map((o) => (
                 <li
                   key={o.id}
                   data-offering-id={o.id}
-                  className="rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover"
+                  className="rounded-2xl bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-bold">{o.title}</h3>
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        {TYPE_LABELS[o.type] ?? o.type} · {o.turnaroundDays}-day
-                        turnaround · {o.revisionLimit} revision
-                        {o.revisionLimit === 1 ? "" : "s"} included
-                      </p>
-                    </div>
-                    <span className="text-2xl font-black tabular-nums">
-                      ${(o.priceCents / 100).toFixed(0)}
-                    </span>
+                  <div>
+                    <h3 className="text-lg font-bold">{o.title}</h3>
+                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
+                        {TYPE_LABELS[o.type] ?? o.type}
+                      </span>
+                      {o.turnaroundDays}-day turnaround · {o.revisionLimit} revision
+                      {o.revisionLimit === 1 ? "" : "s"} included
+                    </p>
                   </div>
                   {o.description && (
-                    <p className="mt-3 max-w-[65ch] text-sm leading-relaxed">
+                    <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
                       {o.description}
                     </p>
                   )}
-                  <Button asChild className="mt-4 px-6">
-                    <a href={`/book/${o.id}`}>Book this</a>
-                  </Button>
+                  <div className="mt-5 flex items-center gap-3">
+                    <Button asChild className="px-7">
+                      <a href={`/book/${o.id}`}>
+                        Book this — ${(o.priceCents / 100).toFixed(0)}
+                      </a>
+                    </Button>
+                    {avgRating !== null && (
+                      <span className="text-sm text-muted-foreground">
+                        <span className="text-amber">★</span>{" "}
+                        <span className="font-semibold text-foreground">{avgRating}</span>{" "}
+                        ({ratingCount})
+                      </span>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

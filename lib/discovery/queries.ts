@@ -10,6 +10,8 @@ export interface CreatorCard {
   country: string | null;
   minPriceCents: number | null;
   offeringCount: number;
+  avgRating: number | null;
+  ratingCount: number;
 }
 
 export interface SearchScope {
@@ -99,12 +101,21 @@ export async function searchCreators(
     return { creators: [], total: count ?? 0, page, pageSize: PAGE_SIZE };
   }
 
-  const [{ data: profiles, error: pErr }, { data: offerings, error: oErr }] = await Promise.all([
+  const [{ data: profiles, error: pErr }, { data: offerings, error: oErr }, { data: reviews, error: rErr }] = await Promise.all([
     supabase.from("profiles").select("id, display_name").in("id", ids),
     supabase.from("offerings").select("creator_id, price_cents").eq("active", true).in("creator_id", ids),
+    supabase.from("public_creator_reviews").select("creator_id, rating").in("creator_id", ids),
   ]);
   if (pErr) throw new Error("discovery profiles query failed: " + pErr.message);
   if (oErr) throw new Error("discovery pricing query failed: " + oErr.message);
+  if (rErr) throw new Error("discovery reviews query failed: " + rErr.message);
+
+  const ratingStats = new Map<string, { sum: number; count: number }>();
+  for (const r of reviews ?? []) {
+    const cur = ratingStats.get(r.creator_id as string);
+    if (!cur) ratingStats.set(r.creator_id as string, { sum: r.rating as number, count: 1 });
+    else { cur.sum += r.rating as number; cur.count += 1; }
+  }
 
   const nameById = new Map((profiles ?? []).map((p) => [p.id as string, p.display_name as string | null]));
   const priceStats = new Map<string, { min: number; count: number }>();
@@ -125,6 +136,10 @@ export async function searchCreators(
       country: (r.country as string | null),
       minPriceCents: priceStats.get(r.user_id as string)?.min ?? null,
       offeringCount: priceStats.get(r.user_id as string)?.count ?? 0,
+      avgRating: ratingStats.has(r.user_id as string)
+        ? Math.round((ratingStats.get(r.user_id as string)!.sum / ratingStats.get(r.user_id as string)!.count) * 10) / 10
+        : null,
+      ratingCount: ratingStats.get(r.user_id as string)?.count ?? 0,
     })),
     total: count ?? 0,
     page,

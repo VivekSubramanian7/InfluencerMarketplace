@@ -39,21 +39,31 @@ export default async function DealsPage() {
   );
   const done = mine.filter((d) => DONE.includes(d.status as DealStatus));
 
-  const section = (title: string, rows: typeof mine) => (
-    <section className="mb-8">
-      <h2 className="text-lg font-bold">{title}</h2>
+  const section = (title: string, rows: typeof mine, accent?: boolean) => (
+    <section className="mb-10">
+      <h2 className="flex items-center gap-2.5 text-lg font-bold">
+        {accent && rows.length > 0 && (
+          <span aria-hidden className="size-2 rounded-full bg-amber" />
+        )}
+        {title}
+        <span className="text-sm font-medium text-muted-foreground tabular-nums">
+          ({rows.length})
+        </span>
+      </h2>
       {rows.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">Nothing here.</p>
+        <p className="mt-3 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Nothing here.
+        </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {rows.map((d) => (
             <li key={d.id}>
               <Link
                 href={`/deals/${d.id}`}
-                className="flex items-center justify-between gap-4 rounded-xl border p-5 transition-colors hover:border-primary/40"
+                className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
               >
                 <span className="min-w-0 truncate">
-                  {d.offering_title}
+                  <span className="font-semibold">{d.offering_title}</span>
                   <span className="text-muted-foreground">
                     {" "}
                     · {myRole(d) === "brand" ? "buying" : "selling"}
@@ -78,8 +88,11 @@ export default async function DealsPage() {
       <SiteNav role={role} />
       <main className="mx-auto w-full max-w-4xl px-6 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Your deals</h1>
-        <div className="mt-6">
-          {section("Action needed", needsMe)}
+        <p className="mt-1 text-muted-foreground">
+          {mine.length} total · {needsMe.length} need your action
+        </p>
+        <div className="mt-8">
+          {section("Action needed", needsMe, true)}
           {section("In progress", inFlight)}
           {section("Done", done)}
         </div>
