@@ -21,7 +21,7 @@ export default async function NotificationsPage({
   const { category } = await searchParams;
   const supabase = await createServerSupabase();
 
-  let query = supabase
+  const base = supabase
     .from("notifications")
     .select("id, kind, title, body, href, created_at, read_at")
     .eq("user_id", user.id)
@@ -29,11 +29,18 @@ export default async function NotificationsPage({
     .limit(50);
 
   const kinds = category ? CATEGORY_KINDS[category] : null;
-  if (kinds) {
-    query = query.in("kind", kinds);
-  }
+  const listQuery = kinds ? base.in("kind", kinds) : base;
 
-  const { data: notifications } = await query;
+  const countQuery = supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  const [{ data: notifications }, { count: unreadCount }] = await Promise.all([
+    listQuery,
+    countQuery,
+  ]);
 
   const rows = notifications ?? [];
 
@@ -79,7 +86,7 @@ export default async function NotificationsPage({
         ) : (
           <NotificationList
             notifications={rows}
-            hasUnread={rows.some((n) => !n.read_at)}
+            hasUnread={(unreadCount ?? 0) > 0}
           />
         )}
       </main>
