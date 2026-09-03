@@ -8,6 +8,7 @@ import { parseOptionalText, parsePriceCents, parseText } from "@/lib/storefront/
 import { generatePlainText } from "@/lib/ai/llm";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
+import { trackServerEvent } from "@/lib/analytics";
 
 export async function respondInvite(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -28,6 +29,9 @@ export async function respondInvite(formData: FormData) {
       encodeURIComponent(error ? friendlyDbError(error) : "Invitation not found"));
   }
 
+  const event = response === "accepted" ? "invite_accepted" as const : "invite_declined" as const;
+  trackServerEvent(event, user.id, { conversation_id: id });
+
   const { data: me } = await supabase
     .from("profiles").select("display_name").eq("id", user.id).maybeSingle();
   await notify({
@@ -43,7 +47,7 @@ export async function respondInvite(formData: FormData) {
 }
 
 export async function sendThreadMessage(formData: FormData) {
-  const { user } = await requireUser();
+  const { user, role } = await requireUser();
   const supabase = await createServerSupabase();
   const conversationId = String(formData.get("conversation_id") ?? "");
   const body = parseText(String(formData.get("body") ?? ""), 5000);
@@ -61,6 +65,11 @@ export async function sendThreadMessage(formData: FormData) {
     });
     redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(msg));
   }
+
+  trackServerEvent("message_sent", user.id, {
+    conversation_id: conversationId,
+    sender_role: role,
+  });
 
   const { data: conv } = await supabase
     .from("conversations")
@@ -82,7 +91,7 @@ export async function sendThreadMessage(formData: FormData) {
 }
 
 export async function sendOffer(formData: FormData) {
-  await requireRole("brand");
+  const { user } = await requireRole("brand");
   const supabase = await createServerSupabase();
   const conversationId = String(formData.get("conversation_id") ?? "");
   const offeringId = String(formData.get("offering_id") ?? "");
@@ -105,6 +114,11 @@ export async function sendOffer(formData: FormData) {
     redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(msg));
   }
 
+  trackServerEvent("offer_sent", user.id, {
+    conversation_id: conversationId,
+    price_cents: price,
+  });
+
   const { data: conv } = await supabase
     .from("conversations").select("creator_id").eq("id", conversationId).maybeSingle();
   if (conv) {
@@ -122,7 +136,7 @@ export async function sendOffer(formData: FormData) {
 }
 
 export async function respondOffer(formData: FormData) {
-  await requireRole("creator");
+  const { user } = await requireRole("creator");
   const supabase = await createServerSupabase();
   const offerId = String(formData.get("offer_id") ?? "");
   const conversationId = String(formData.get("conversation_id") ?? "");
@@ -139,6 +153,7 @@ export async function respondOffer(formData: FormData) {
       redirect(`/inbox/${conversationId}?error=` +
         encodeURIComponent(friendlyDbError(error)));
     }
+    trackServerEvent("offer_accepted", user.id, { offer_id: offerId, deal_id: dealId });
     if (conv) {
       await notify({
         userId: conv.brand_id,
@@ -158,6 +173,7 @@ export async function respondOffer(formData: FormData) {
   if (error) {
     redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
+  trackServerEvent("offer_declined", user.id, { offer_id: offerId });
   if (conv) {
     await notify({
       userId: conv.brand_id,
