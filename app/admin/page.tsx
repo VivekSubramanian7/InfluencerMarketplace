@@ -12,7 +12,7 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  const { role } = await requireRole("admin", "/admin");
+  const { user, role } = await requireRole("admin", "/admin");
   const { error, saved } = await searchParams;
   const supabase = await createServerSupabase();
 
@@ -29,7 +29,7 @@ export default async function AdminPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-4xl px-6 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Admin</h1>
         {error && (

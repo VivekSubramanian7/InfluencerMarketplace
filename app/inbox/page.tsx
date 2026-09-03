@@ -81,7 +81,7 @@ export default async function InboxPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-4xl px-6 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Inbox</h1>
 

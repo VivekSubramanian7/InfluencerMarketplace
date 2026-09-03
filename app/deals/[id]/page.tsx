@@ -85,7 +85,7 @@ export default async function DealPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-2xl px-6 py-10">
       <Link href="/deals" className="text-sm text-muted-foreground hover:underline">← All deals</Link>
       <h1 className="mt-2 text-3xl font-extrabold tracking-tight">{deal.offering_title}</h1>

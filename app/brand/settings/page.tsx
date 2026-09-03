@@ -61,7 +61,7 @@ export default async function BrandSettingsPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-2xl px-6 py-10">
         <Link href="/brand" className="text-sm text-muted-foreground hover:text-foreground">
           ← Brand home

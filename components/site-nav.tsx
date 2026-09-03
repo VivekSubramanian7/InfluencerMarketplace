@@ -5,7 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { MobileNav } from "@/components/mobile-nav";
 
-export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" }) {
+export async function SiteNav({ role, userId }: { role: "creator" | "brand" | "admin"; userId: string }) {
   const links =
     role === "creator"
       ? [
@@ -28,17 +28,12 @@ export async function SiteNav({ role }: { role: "creator" | "brand" | "admin" })
           ];
 
   const supabase = await createServerSupabase();
-  const { data } = await supabase.auth.getClaims();
-  const sub = data?.claims?.sub;
-  let unread = 0;
-  if (sub) {
-    const { count } = await supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", sub)
-      .is("read_at", null);
-    unread = count ?? 0;
-  }
+  const { count } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("read_at", null);
+  const unread = count ?? 0;
 
   return (
     <>

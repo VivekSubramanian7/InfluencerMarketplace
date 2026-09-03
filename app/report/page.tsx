@@ -10,12 +10,12 @@ export default async function ReportPage({
 }: {
   searchParams: Promise<{ deal?: string; error?: string }>;
 }) {
-  const { role } = await requireUser("/report");
+  const { user, role } = await requireUser("/report");
   const { deal, error } = await searchParams;
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-2xl px-6 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Report a problem</h1>
         <p className="mt-1 text-muted-foreground">

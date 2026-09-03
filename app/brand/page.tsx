@@ -131,7 +131,7 @@ export default async function BrandOverviewPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight">

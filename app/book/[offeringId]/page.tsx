@@ -16,7 +16,7 @@ export default async function BookOfferingPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { offeringId } = await params;
-  const { role } = await requireRole("brand", `/book/${offeringId}`);
+  const { user, role } = await requireRole("brand", `/book/${offeringId}`);
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
@@ -26,8 +26,6 @@ export default async function BookOfferingPage({
     .eq("id", offeringId)
     .maybeSingle();
   if (!offering || !offering.active) notFound();
-
-  const { data: { user } } = await supabase.auth.getUser();
 
   const [
     { data: creator },
@@ -74,7 +72,7 @@ export default async function BookOfferingPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-2xl px-6 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Book {offering.title}</h1>
 

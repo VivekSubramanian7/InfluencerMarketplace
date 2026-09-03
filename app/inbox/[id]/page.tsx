@@ -122,7 +122,7 @@ export default async function ConversationPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-3xl px-6 py-10">
         <AutoScroll />
         <Link href="/inbox" className="text-sm text-muted-foreground hover:text-foreground">

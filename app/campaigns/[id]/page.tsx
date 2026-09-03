@@ -77,7 +77,7 @@ export default async function CampaignPage({
 
   return (
     <>
-      <SiteNav role={role} />
+      <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-4xl px-6 py-10">
         <Link href="/campaigns" className="text-sm text-muted-foreground hover:text-foreground">
           ← Campaigns
