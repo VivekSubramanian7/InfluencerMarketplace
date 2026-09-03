@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { trackServerEvent } from "@/lib/analytics";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -47,5 +48,9 @@ export async function markReadAndGo(formData: FormData) {
     .eq("id", id)
     .eq("user_id", user.id);
   revalidatePath("/", "layout");
+  trackServerEvent("notification_clicked", user.id, {
+    notification_id: id,
+    destination: href,
+  });
   redirect(href);
 }
