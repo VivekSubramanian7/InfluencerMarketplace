@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { draftReply, respondInvite, respondOffer, sendOffer, sendThreadMessage } from "../actions";
+import { AutoScroll } from "@/components/inbox/auto-scroll";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { blockCreator } from "@/app/brand/actions";
 import { SiteNav } from "@/components/site-nav";
@@ -123,6 +124,7 @@ export default async function ConversationPage({
     <>
       <SiteNav role={role} />
       <main className="mx-auto w-full max-w-3xl px-6 py-10">
+        <AutoScroll />
         <Link href="/inbox" className="text-sm text-muted-foreground hover:text-foreground">
           ← Inbox
         </Link>

@@ -12,14 +12,14 @@ export async function saveCreatorProfile(formData: FormData) {
 
   const result = await upsertCreatorProfileFromForm(supabase, user.id, formData);
   if (!result.ok) {
-    redirect("/dashboard/profile?error=" + encodeURIComponent(result.error));
+    redirect("/dashboard?tab=profile&error=" + encodeURIComponent(result.error));
   }
 
   revalidatePath(`/c/${result.handle}`);
   if (result.previousHandle && result.previousHandle !== result.handle) {
     revalidatePath(`/c/${result.previousHandle}`);
   }
-  redirect("/dashboard/profile?saved=1");
+  redirect("/dashboard?tab=profile&saved=1");
 }
 
 export async function setProfileStatus(formData: FormData) {
@@ -34,9 +34,9 @@ export async function setProfileStatus(formData: FormData) {
     .select("handle")
     .maybeSingle();
   if (error || !row) {
-    redirect("/dashboard/profile?error=" + encodeURIComponent(error?.message ?? "Create your profile first"));
+    redirect("/dashboard?tab=profile&error=" + encodeURIComponent(error?.message ?? "Create your profile first"));
   }
 
   revalidatePath(`/c/${row.handle}`);
-  redirect("/dashboard/profile?saved=1");
+  redirect("/dashboard?tab=profile&saved=1");
 }

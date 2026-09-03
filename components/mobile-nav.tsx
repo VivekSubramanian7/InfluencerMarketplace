@@ -15,7 +15,7 @@ import {
 const CREATOR_TABS = [
   { href: "/dashboard", label: "Studio", icon: DashboardIcon },
   { href: "/inbox", label: "Inbox", icon: MessageIcon },
-  { href: "/dashboard/offerings/new", label: "New", icon: SparklesIcon, central: true },
+  { href: "/dashboard?tab=offerings", label: "New", icon: SparklesIcon, central: true },
   { href: "/deals", label: "Deals", icon: HandshakeIcon },
   { href: "/notifications", label: "Alerts", icon: BellIcon },
 ] as const;

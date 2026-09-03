@@ -38,6 +38,16 @@ export interface NotificationRow {
   read_at: string | null;
 }
 
+function quickActionLabel(kind: string): string | null {
+  switch (kind) {
+    case "offer": return "View offer";
+    case "booking": case "deal": return "View deal";
+    case "application_response": return "Open deal";
+    case "invite": return "View invite";
+    default: return null;
+  }
+}
+
 export function NotificationList({
   notifications,
   hasUnread,
@@ -91,7 +101,7 @@ export function NotificationList({
                   {!n.read_at && (
                     <form
                       action={markRead}
-                      className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-100"
                     >
                       <input type="hidden" name="id" value={n.id} />
                       <button
@@ -115,6 +125,7 @@ export function NotificationList({
 }
 
 function NotificationInner({ n }: { n: NotificationRow }) {
+  const actionLabel = quickActionLabel(n.kind);
   return (
     <>
       <span className="flex min-w-0 flex-col">
@@ -128,8 +139,15 @@ function NotificationInner({ n }: { n: NotificationRow }) {
           <span className="mt-0.5 truncate text-sm text-muted-foreground">{n.body}</span>
         )}
       </span>
-      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-        {timeAgo(n.created_at)}
+      <span className="flex shrink-0 items-center gap-2">
+        {actionLabel && n.href && (
+          <span className="hidden rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:inline-flex">
+            {actionLabel}
+          </span>
+        )}
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {timeAgo(n.created_at)}
+        </span>
       </span>
     </>
   );

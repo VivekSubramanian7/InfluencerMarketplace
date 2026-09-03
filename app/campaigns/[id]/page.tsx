@@ -27,6 +27,21 @@ const APPLICATION_LABELS: Record<string, string> = {
   withdrawn: "Withdrawn",
 };
 
+function pitchPlaceholder(offeringType: string): string {
+  switch (offeringType) {
+    case "dedicated_video":
+      return "What angle would you take? Mention your audience size and why they'd care about this product.";
+    case "integration":
+      return "How would you weave this into your content? What video would this fit naturally into?";
+    case "short_form_post":
+      return "What hook would you use? What's your typical view count on shorts?";
+    case "ugc_video":
+      return "Describe your production style and turnaround. Include any relevant past UGC work.";
+    default:
+      return "Why you're the right creator for this: your angle, your audience, relevant work.";
+  }
+}
+
 function budgetRange(minCents: number, maxCents: number) {
   const fmt = (c: number) => "$" + Math.round(c / 100).toLocaleString("en-US");
   return minCents === maxCents ? fmt(minCents) : `${fmt(minCents)}–${fmt(maxCents)}`;
@@ -127,6 +142,7 @@ export default async function CampaignPage({
             userId={user.id}
             budgetMinCents={campaign.budget_min_cents}
             budgetMaxCents={campaign.budget_max_cents}
+            offeringType={campaign.offering_type}
             supabase={supabase}
           />
         ) : null}
@@ -260,6 +276,7 @@ async function CreatorPanel({
   userId,
   budgetMinCents,
   budgetMaxCents,
+  offeringType,
   supabase,
 }: {
   campaignId: string;
@@ -267,6 +284,7 @@ async function CreatorPanel({
   userId: string;
   budgetMinCents: number;
   budgetMaxCents: number;
+  offeringType: string;
   supabase: Supabase;
 }) {
   const { data: mine } = await supabase
@@ -275,6 +293,16 @@ async function CreatorPanel({
     .eq("campaign_id", campaignId)
     .eq("creator_id", userId)
     .maybeSingle();
+
+  const [{ data: stats }, { data: reviews }, { count: completedDealCount }] = await Promise.all([
+    supabase.from("public_creator_stats").select("platform, follower_count").eq("creator_id", userId),
+    supabase.from("public_creator_reviews").select("rating").eq("creator_id", userId),
+    supabase.from("deals").select("id", { count: "exact", head: true }).eq("creator_id", userId).eq("status", "completed"),
+  ]);
+  const totalFollowers = (stats ?? []).reduce((sum, s) => sum + (s.follower_count ?? 0), 0);
+  const avgRating = (reviews ?? []).length > 0
+    ? Math.round(((reviews ?? []).reduce((s, r) => s + (r.rating as number), 0) / (reviews ?? []).length) * 10) / 10
+    : null;
 
   if (mine) {
     return (
@@ -333,35 +361,68 @@ async function CreatorPanel({
   return (
     <section className="mt-10">
       <h2 className="text-lg font-bold">Apply to this campaign</h2>
-      <form action={applyToCampaign} className="mt-3 flex max-w-xl flex-col gap-4">
-        <input type="hidden" name="campaign_id" value={campaignId} />
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pitch">Your pitch</Label>
-          <Textarea
-            id="pitch"
-            name="pitch"
-            rows={5}
-            required
-            placeholder="Why you're the right creator for this: your angle, your audience, relevant work."
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="proposed_price">Your price (USD)</Label>
-          <Input
-            id="proposed_price"
-            name="proposed_price"
-            inputMode="decimal"
-            required
-            defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Suggested from the brand&rsquo;s budget — adjust to your rate.
-          </p>
-        </div>
-        <Button type="submit" className="mt-2 self-start">
-          Submit application
-        </Button>
-      </form>
+      <div className="mt-3 gap-6 md:grid md:grid-cols-[1fr_280px]">
+        <form action={applyToCampaign} className="flex max-w-xl flex-col gap-4">
+          <input type="hidden" name="campaign_id" value={campaignId} />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pitch">Your pitch</Label>
+            <Textarea
+              id="pitch"
+              name="pitch"
+              rows={5}
+              required
+              placeholder={pitchPlaceholder(offeringType)}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="proposed_price">Your price (USD)</Label>
+            <Input
+              id="proposed_price"
+              name="proposed_price"
+              inputMode="decimal"
+              required
+              defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Suggested from the brand&rsquo;s budget — adjust to your rate.
+            </p>
+          </div>
+          <Button type="submit" className="mt-2 self-start">
+            Submit application
+          </Button>
+        </form>
+
+        <aside className="mt-6 h-fit rounded-xl border p-4 md:mt-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your profile</p>
+          <dl className="mt-3 flex flex-col gap-2 text-sm">
+            {totalFollowers > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Followers</dt>
+                <dd className="font-semibold tabular-nums">{totalFollowers.toLocaleString("en-US")}</dd>
+              </div>
+            )}
+            {avgRating !== null && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Rating</dt>
+                <dd className="font-semibold"><span className="text-amber">★</span> {avgRating} ({(reviews ?? []).length})</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Completed deals</dt>
+              <dd className="font-semibold tabular-nums">{completedDealCount ?? 0}</dd>
+            </div>
+            {(stats ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {(stats ?? []).map((s) => (
+                  <Badge key={s.platform} variant="secondary" className="text-xs">
+                    {s.platform}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </dl>
+        </aside>
+      </div>
     </section>
   );
 }

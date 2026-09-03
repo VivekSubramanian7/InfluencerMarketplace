@@ -11,20 +11,20 @@ export async function addPortfolioItem(formData: FormData) {
   const supabase = await createServerSupabase();
 
   const mediaUrl = parseMediaUrl(String(formData.get("media_url") ?? ""));
-  if (!mediaUrl) redirect("/dashboard/portfolio?error=" + encodeURIComponent("Enter a valid http(s) link to your video"));
+  if (!mediaUrl) redirect("/dashboard?tab=portfolio?error=" + encodeURIComponent("Enter a valid http(s) link to your video"));
   const captionResult = parseOptionalText(String(formData.get("caption") ?? ""), 200);
-  if (!captionResult.ok) redirect("/dashboard/portfolio?error=" + encodeURIComponent("Caption is too long (max 200 characters)"));
+  if (!captionResult.ok) redirect("/dashboard?tab=portfolio?error=" + encodeURIComponent("Caption is too long (max 200 characters)"));
   const caption = captionResult.ok ? captionResult.value : null;
 
   const { error } = await supabase
     .from("portfolio_items")
     .insert({ creator_id: user.id, media_url: mediaUrl, caption });
-  if (error) redirect("/dashboard/portfolio?error=" + encodeURIComponent(error.message));
+  if (error) redirect("/dashboard?tab=portfolio?error=" + encodeURIComponent(error.message));
 
   const { data: p } = await supabase
     .from("creator_profiles").select("handle").eq("user_id", user.id).maybeSingle();
   if (p?.handle) revalidatePath(`/c/${p.handle}`);
-  redirect("/dashboard/portfolio?saved=1");
+  redirect("/dashboard?tab=portfolio?saved=1");
 }
 
 export async function deletePortfolioItem(formData: FormData) {
@@ -34,10 +34,10 @@ export async function deletePortfolioItem(formData: FormData) {
 
   const { error } = await supabase
     .from("portfolio_items").delete().eq("id", id).eq("creator_id", user.id);
-  if (error) redirect("/dashboard/portfolio?error=" + encodeURIComponent(error.message));
+  if (error) redirect("/dashboard?tab=portfolio?error=" + encodeURIComponent(error.message));
 
   const { data: p } = await supabase
     .from("creator_profiles").select("handle").eq("user_id", user.id).maybeSingle();
   if (p?.handle) revalidatePath(`/c/${p.handle}`);
-  redirect("/dashboard/portfolio?saved=1");
+  redirect("/dashboard?tab=portfolio?saved=1");
 }

@@ -8,11 +8,9 @@ import { markPaid, performDealAction } from "./actions";
 import { submitReview } from "./review-actions";
 import { DealMessages } from "./messages";
 import { SiteNav } from "@/components/site-nav";
+import { ReviewModal } from "@/components/deals/review-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { StarRating } from "@/components/star-rating";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator response", funded: "Funded",
@@ -166,6 +164,47 @@ export default async function DealPage({
         </p>
       )}
 
+      {(actions.length > 0 || (role !== "admin" && deal.status === "completed" && !myReview)) && (
+        <section className="deal-next-steps sticky top-[72px] z-10 mt-4 rounded-2xl border border-amber bg-amber/10 p-6">
+          <h2 className="flex items-center gap-2.5 text-base font-bold">
+            <span aria-hidden className="size-2 rounded-full bg-amber" />
+            Next steps
+          </h2>
+          {actions.length > 0 && (
+            <div className="mt-4 flex flex-col gap-3">
+              {actions.map((a) => (
+                <form key={a.action} action={performDealAction} className="flex items-start gap-2">
+                  <input type="hidden" name="deal_id" value={deal.id} />
+                  <input type="hidden" name="action" value={a.action} />
+                  {a.needsUrl && (
+                    <Input
+                      name="url"
+                      type="url"
+                      required
+                      placeholder={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
+                      aria-label={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
+                      className="flex-1"
+                    />
+                  )}
+                  <Button
+                    type="submit"
+                    variant={a.confirm ? "outline" : "default"}
+                    className={a.confirm ? "text-destructive border-destructive/40" : undefined}
+                  >
+                    {a.label}
+                  </Button>
+                </form>
+              ))}
+            </div>
+          )}
+          {deal.status === "completed" && !myReview && role !== "admin" && (
+            <div className={actions.length > 0 ? "mt-3" : "mt-4"}>
+              <ReviewModal dealId={deal.id} action={submitReview} />
+            </div>
+          )}
+        </section>
+      )}
+
       {(deal.preview_url || deal.live_url) && (
         <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
           <h2 className="text-base font-bold">Deliverables</h2>
@@ -246,40 +285,6 @@ export default async function DealPage({
 
       <DealMessages dealId={deal.id} userId={user.id} />
 
-      {actions.length > 0 && (
-        <section className="deal-next-steps mt-6 rounded-2xl bg-card p-6 shadow-card">
-          <h2 className="flex items-center gap-2.5 text-base font-bold">
-            <span aria-hidden className="size-2 rounded-full bg-amber" />
-            Next steps
-          </h2>
-          <div className="mt-4 flex flex-col gap-3">
-            {actions.map((a) => (
-              <form key={a.action} action={performDealAction} className="flex items-start gap-2">
-                <input type="hidden" name="deal_id" value={deal.id} />
-                <input type="hidden" name="action" value={a.action} />
-                {a.needsUrl && (
-                  <Input
-                    name="url"
-                    type="url"
-                    required
-                    placeholder={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
-                    aria-label={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
-                    className="flex-1"
-                  />
-                )}
-                <Button
-                  type="submit"
-                  variant={a.confirm ? "outline" : "default"}
-                  className={a.confirm ? "text-destructive border-destructive/40" : undefined}
-                >
-                  {a.label}
-                </Button>
-              </form>
-            ))}
-          </div>
-        </section>
-      )}
-
       {role !== "admin" && myRole === "brand" && deal.payment_mode === "off_platform" &&
         !deal.marked_paid_at &&
         ["accepted", "in_production", "submitted", "revision_requested", "published", "completed"]
@@ -290,28 +295,15 @@ export default async function DealPage({
         </form>
       )}
 
-      {role !== "admin" && deal.status === "completed" && !myReview && (
-        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
-          <h2 className="text-base font-bold">Leave a review</h2>
-          <form action={submitReview} className="mt-4 flex flex-col gap-3">
-            <input type="hidden" name="deal_id" value={deal.id} />
-            <div>
-              <Label>Rating</Label>
-              <StarRating name="rating" defaultValue={5} />
-            </div>
-            <Textarea name="body" rows={3} placeholder="How was the collaboration?" />
-            <Button type="submit" className="self-start px-6">Submit review</Button>
-          </form>
-        </section>
-      )}
-
-      <section className="mt-6 rounded-2xl bg-secondary/40 p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold">Timeline</h2>
+      <details className="mt-6 rounded-2xl bg-secondary/40 p-6">
+        <summary className="flex cursor-pointer items-center justify-between">
+          <span className="text-base font-bold">
+            Timeline · {(events ?? []).length} event{(events ?? []).length !== 1 ? "s" : ""}
+          </span>
           <Link href={`/report?deal=${deal.id}`} className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
             Report a problem
           </Link>
-        </div>
+        </summary>
         <ul className="mt-3 flex flex-col gap-0">
           {(events ?? []).map((e, i) => (
             <li key={i} className="relative flex gap-4 pb-4 last:pb-0">
@@ -343,7 +335,7 @@ export default async function DealPage({
             </li>
           )}
         </ul>
-      </section>
+      </details>
       </main>
     </>
   );

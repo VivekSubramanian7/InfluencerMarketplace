@@ -22,7 +22,7 @@ export async function applyToCampaign(formData: FormData) {
   const { data: creatorProfile } = await supabase
     .from("creator_profiles").select("user_id").eq("user_id", user.id).maybeSingle();
   if (!creatorProfile) {
-    redirect("/dashboard/profile?error=" +
+    redirect("/dashboard?tab=profile&error=" +
       encodeURIComponent("Create your creator profile before applying to campaigns"));
   }
 

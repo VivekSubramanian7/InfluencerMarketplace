@@ -41,6 +41,20 @@ export default async function InboxPage({
     }
   }
 
+  const pendingOfferByConv = new Map<string, number>();
+  if (convIds.length > 0) {
+    const { data: offers } = await supabase
+      .from("offers")
+      .select("conversation_id, price_cents, status")
+      .in("conversation_id", convIds)
+      .eq("status", "pending");
+    for (const o of offers ?? []) {
+      if (o.conversation_id && !pendingOfferByConv.has(o.conversation_id)) {
+        pendingOfferByConv.set(o.conversation_id, o.price_cents);
+      }
+    }
+  }
+
   const otherId = (c: { brand_id: string; creator_id: string }) =>
     c.brand_id === user.id ? c.creator_id : c.brand_id;
   const otherIds = [...new Set(mine.map(otherId))];
@@ -122,6 +136,11 @@ export default async function InboxPage({
                   <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                     {c.invite_message}
                   </p>
+                  {pendingOfferByConv.has(c.id) && (
+                    <p className="mt-2 text-sm font-medium text-primary">
+                      Includes an offer · ${(pendingOfferByConv.get(c.id)! / 100).toFixed(0)}
+                    </p>
+                  )}
                   <div className="mt-4 flex gap-2">
                     <form action={respondInvite}>
                       <input type="hidden" name="conversation_id" value={c.id} />

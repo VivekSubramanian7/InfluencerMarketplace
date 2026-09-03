@@ -39,7 +39,7 @@ export async function respondInvite(formData: FormData) {
   });
 
   revalidatePath("/inbox");
-  redirect(response === "accepted" ? `/inbox/${id}` : "/inbox");
+  redirect(response === "accepted" ? `/inbox/${id}?focus=offer` : "/inbox");
 }
 
 export async function sendThreadMessage(formData: FormData) {
