@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/require";
+import { trackServerEvent, identifyServerUser } from "@/lib/analytics";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -36,6 +37,15 @@ export async function signup(formData: FormData) {
     await supabase.rpc("claim_creator_invite", { p_token: invite });
   }
 
+  // Track signup completion
+  const { data } = await supabase.auth.getUser();
+  if (data.user?.id) {
+    trackServerEvent("signup_completed", data.user.id, {
+      role,
+      method: "email",
+    });
+  }
+
   revalidatePath("/", "layout");
   redirect(role === "creator" ? "/onboarding" : "/brand/onboarding");
 }
@@ -51,6 +61,10 @@ export async function login(formData: FormData) {
   if (!data.user) redirect("/login");
   const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", data.user.id).single();
+
+  // Identify user with PostHog
+  identifyServerUser(data.user.id, { role: profile?.role ?? "unknown" });
+
   revalidatePath("/", "layout");
   let creatorHome = "/dashboard";
   if (profile?.role === "creator") {

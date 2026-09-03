@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { identifyServerUser } from "@/lib/analytics";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -13,6 +14,10 @@ export async function GET(request: Request) {
         .select("role")
         .eq("id", data.user.id)
         .single();
+
+      // Identify user with PostHog
+      identifyServerUser(data.user.id, { role: profile?.role ?? "unknown" });
+
       let target = "/discover";
       if (profile?.role === "creator") {
         const { data: cp } = await supabase
