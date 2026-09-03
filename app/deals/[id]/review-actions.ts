@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseIntInRange, parseOptionalText } from "@/lib/storefront/validation";
 import { friendlyDbError } from "@/lib/errors";
+import { trackServerEvent } from "@/lib/analytics";
 
 export async function submitReview(formData: FormData) {
   const { user } = await requireUser();
@@ -31,6 +32,11 @@ export async function submitReview(formData: FormData) {
     });
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(msg));
   }
+  trackServerEvent("deal_review_submitted", user.id, {
+    deal_id: dealId,
+    rating,
+    has_body: !!body.value,
+  });
 
   // refresh the reviewed creator's public storefront
   const { data: deal } = await supabase

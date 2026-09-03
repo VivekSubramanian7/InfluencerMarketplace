@@ -7,6 +7,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { parseMediaUrl } from "@/lib/storefront/validation";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
+import { trackServerEvent } from "@/lib/analytics";
 
 const USER_ACTIONS = new Set([
   "accept", "decline", "begin_production", "submit_preview",
@@ -64,6 +65,12 @@ export async function performDealAction(formData: FormData) {
       href: `/deals/${dealId}`,
       email: true,
     });
+    trackServerEvent("deal_state_changed", role === "brand" ? deal.brand_id : deal.creator_id, {
+      deal_id: dealId,
+      action,
+      actor_role: role,
+      offering_title: deal.offering_title,
+    });
   }
 
   revalidatePath(`/deals/${dealId}`);
@@ -71,7 +78,7 @@ export async function performDealAction(formData: FormData) {
 }
 
 export async function markPaid(formData: FormData) {
-  await requireUser();
+  const { user } = await requireUser();
   const supabase = await createServerSupabase();
   const dealId = String(formData.get("deal_id") ?? "");
 
@@ -79,6 +86,7 @@ export async function markPaid(formData: FormData) {
   if (error) {
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
+  trackServerEvent("deal_marked_paid", user.id, { deal_id: dealId });
   revalidatePath(`/deals/${dealId}`);
   redirect(`/deals/${dealId}`);
 }
