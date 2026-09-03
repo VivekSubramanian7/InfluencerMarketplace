@@ -83,7 +83,7 @@ export function MobileNav({
                         strokeWidth={active ? 2.5 : 1.5}
                         aria-hidden
                       />
-                      {(tab.label === "Alerts" || tab.label === "Inbox") && unread > 0 && (
+                      {tab.label === "Alerts" && unread > 0 && (
                         <span
                           aria-hidden
                           className="absolute -right-1.5 -top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground tabular-nums"
