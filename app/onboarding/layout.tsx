@@ -12,7 +12,7 @@ export default async function OnboardingLayout({
     <>
       <nav className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
-          <Link href="/" className="text-lg font-black tracking-tight">
+          <Link href="/dashboard" className="text-lg font-black tracking-tight">
             Clipline
           </Link>
           <Link

@@ -1,4 +1,5 @@
 import "server-only";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 
 // One entry point for user-facing notifications: always writes the in-app
@@ -24,6 +25,7 @@ export async function notify(n: Notification): Promise<void> {
       body: n.body ?? null,
       href: n.href ?? null,
     });
+    revalidatePath("/", "layout");
 
     if (n.email && process.env.RESEND_API_KEY) {
       const { data } = await service.auth.admin.getUserById(n.userId);

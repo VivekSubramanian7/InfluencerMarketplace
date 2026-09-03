@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { markAllRead, markRead } from "@/app/notifications/actions";
+import { markAllRead, markRead, markReadAndGo } from "@/app/notifications/actions";
 import { Button } from "@/components/ui/button";
 
 function timeAgo(iso: string): string {
@@ -80,12 +80,21 @@ export function NotificationList({
             <ul className="flex flex-col gap-2">
               {items.map((n) => (
                 <li key={n.id} className="group relative">
-                  {n.href ? (
+                  {n.href && !n.read_at ? (
+                    <form action={markReadAndGo}>
+                      <input type="hidden" name="id" value={n.id} />
+                      <input type="hidden" name="href" value={n.href} />
+                      <button
+                        type="submit"
+                        className="deal-row flex w-full items-center justify-between gap-4 rounded-2xl bg-card p-4 text-left shadow-card ring-1 ring-amber/20 transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                      >
+                        <NotificationInner n={n} />
+                      </button>
+                    </form>
+                  ) : n.href ? (
                     <Link
                       href={n.href}
-                      className={`deal-row flex items-center justify-between gap-4 rounded-2xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-card-hover ${
-                        n.read_at ? "bg-card shadow-card" : "bg-card shadow-card ring-1 ring-amber/20"
-                      }`}
+                      className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
                     >
                       <NotificationInner n={n} />
                     </Link>
