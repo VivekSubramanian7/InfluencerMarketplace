@@ -58,3 +58,4 @@ graphify-out/
 screenshots/
 .playwright-mcp/
 .serena/
+supabase/seed.sql
