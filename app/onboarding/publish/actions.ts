@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { trackServerEvent } from "@/lib/analytics";
 
 export async function publishStorefront() {
   const { user } = await requireRole("creator");
@@ -19,6 +20,8 @@ export async function publishStorefront() {
     redirect("/onboarding/publish?error=" +
       encodeURIComponent(error?.message ?? "Claim your handle first"));
   }
+
+  trackServerEvent("onboarding_completed", user.id, { handle: row.handle });
 
   revalidatePath(`/c/${row.handle}`);
   redirect("/dashboard?published=1");

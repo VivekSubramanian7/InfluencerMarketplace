@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseMediaUrl, parseOptionalText } from "@/lib/storefront/validation";
+import { trackServerEvent } from "@/lib/analytics";
 
 export async function addHighlight(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -29,6 +30,8 @@ export async function addHighlight(formData: FormData) {
     creator_id: user.id, media_url: mediaUrl, caption: captionResult.value,
   });
   if (error) redirect("/onboarding/highlights?error=" + encodeURIComponent(error.message));
+
+  trackServerEvent("onboarding_step_completed", user.id, { step: "highlights" });
 
   revalidatePath(`/c/${profile.handle}`);
   redirect("/onboarding/highlights?saved=1");

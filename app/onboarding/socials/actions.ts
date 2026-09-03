@@ -8,6 +8,7 @@ import { parseSocialHandle, suggestFromProfileUrl } from "@/lib/social/handle";
 import { isSocialPlatform, SOCIAL_PLATFORM_LABELS } from "@/lib/social/types";
 import { syncAccountBestEffort } from "@/lib/social/sync";
 import { friendlyDbError } from "@/lib/errors";
+import { trackServerEvent } from "@/lib/analytics";
 
 async function creatorHandle(
   supabase: Awaited<ReturnType<typeof createServerSupabase>>,
@@ -49,6 +50,8 @@ export async function addSocialAccount(formData: FormData) {
   if (error) {
     redirect("/onboarding/socials?error=" + encodeURIComponent(friendlyDbError(error)));
   }
+
+  trackServerEvent("onboarding_step_completed", user.id, { step: "socials", platform });
 
   // Blocking best-effort (≤5s): a detached promise can be frozen on
   // serverless before it finishes. Failure leaves the row pending;

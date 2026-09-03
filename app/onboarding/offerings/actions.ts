@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseIntInRange, parsePriceCents, parseText, parseOptionalText } from "@/lib/storefront/validation";
+import { trackServerEvent } from "@/lib/analytics";
 
 const OFFERING_TYPES = ["dedicated_video", "integration", "short_form_post", "ugc_video"] as const;
 
@@ -38,6 +39,12 @@ export async function saveOfferingStep(formData: FormData) {
     price_cents: priceCents, turnaround_days: turnaround, revision_limit: revisions,
   });
   if (error) redirect("/onboarding/offerings?error=" + encodeURIComponent(error.message));
+
+  trackServerEvent("onboarding_step_completed", user.id, {
+    step: "offerings",
+    type,
+    price_cents: priceCents,
+  });
 
   revalidatePath(`/c/${profile.handle}`);
   redirect("/onboarding/offerings?saved=1");
