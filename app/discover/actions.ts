@@ -7,6 +7,7 @@ import { parseText } from "@/lib/storefront/validation";
 import { SAVED_FILTER_KEYS } from "@/lib/discovery/filters";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
+import { trackServerEvent } from "@/lib/analytics";
 
 const DEFAULT_TEMPLATE =
   "Hi! We came across your work and think you'd be a great fit for our brand. " +
@@ -62,6 +63,10 @@ export async function sendReachouts(formData: FormData) {
     redirect("/discover?error=" +
       encodeURIComponent(firstError ?? "Already invited — check your inbox for those conversations"));
   }
+  trackServerEvent("reachouts_sent", user.id, {
+    sent_count: sent,
+    attempted_count: creatorIds.length,
+  });
   redirect(`/inbox?sent=${sent}`);
 }
 
@@ -89,6 +94,11 @@ export async function saveSearch(formData: FormData) {
     });
     redirect("/discover?error=" + encodeURIComponent(msg));
   }
+
+  trackServerEvent("search_saved", user.id, {
+    name,
+    filter_count: Object.keys(params).length,
+  });
 
   const qs = new URLSearchParams(params);
   qs.set("saved", "1");

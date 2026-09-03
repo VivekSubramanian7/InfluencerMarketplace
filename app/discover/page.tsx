@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PriceRange } from "@/components/price-range";
 import { SearchSuggest } from "@/components/discover/search-suggest";
+import { SearchTracker } from "./search-tracker";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -122,6 +123,18 @@ export default async function DiscoverPage({
 
   return (
     <>
+      <SearchTracker
+        query={filters.q}
+        filters={{
+          niche: filters.niche,
+          country: filters.country,
+          type: filters.type,
+          min_price: filters.minPriceCents?.toString() ?? null,
+          max_price: filters.maxPriceCents?.toString() ?? null,
+        }}
+        totalResults={total}
+        page={page}
+      />
       <SiteNav role={role} userId={user.id} />
       <main className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
