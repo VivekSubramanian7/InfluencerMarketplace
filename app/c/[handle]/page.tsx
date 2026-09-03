@@ -8,6 +8,7 @@ import { creatorGradient } from "@/lib/identity/gradient";
 import { detectPlatform } from "@/lib/portfolio/platform";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { inviteFromStorefront } from "./actions";
+import { StorefrontTracker, SectionTracker } from "./storefront-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -49,6 +50,7 @@ export default async function StorefrontPage({
   let existingConversation: { id: string } | null = null;
   let isBlocked = false;
   let isBrand = false;
+  let role: string | null = null;
   let matchingCampaigns: { id: string; title: string; offering_type: string }[] = [];
 
   if (brandUserId) {
@@ -57,7 +59,8 @@ export default async function StorefrontPage({
       .select("role")
       .eq("id", brandUserId)
       .maybeSingle();
-    isBrand = profileData?.role === "brand";
+    role = profileData?.role ?? null;
+    isBrand = role === "brand";
 
     if (isBrand) {
       const [convRes, blockRes] = await Promise.all([
@@ -100,6 +103,12 @@ export default async function StorefrontPage({
 
   return (
     <>
+      <StorefrontTracker
+        creatorHandle={handle}
+        offeringsCount={offerings.length}
+        reviewCount={ratingCount}
+        viewerRole={role}
+      />
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-lg font-black tracking-tight">
           Clipline
@@ -274,84 +283,88 @@ export default async function StorefrontPage({
 
         <div className="section-divider mt-12" aria-hidden />
 
-        <section className="mt-10">
-          <h2 className="mb-5 text-xl font-bold">Offerings</h2>
-          {offerings.length === 0 ? (
-            <p className="text-muted-foreground">No offerings listed yet.</p>
-          ) : (
-            <ul className="card-grid flex flex-col gap-4">
-              {offerings.map((o) => (
-                <li
-                  key={o.id}
-                  data-offering-id={o.id}
-                  className="rounded-2xl bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold">{o.title}</h3>
-                      {avgRating !== null && (
-                        <span className="inline-flex items-center gap-1 text-sm">
-                          <span className="text-amber">★</span>
-                          <span className="font-semibold">{avgRating}</span>
-                          <span className="text-muted-foreground">({ratingCount})</span>
+        <SectionTracker section="offerings" creatorHandle={handle}>
+          <section className="mt-10">
+            <h2 className="mb-5 text-xl font-bold">Offerings</h2>
+            {offerings.length === 0 ? (
+              <p className="text-muted-foreground">No offerings listed yet.</p>
+            ) : (
+              <ul className="card-grid flex flex-col gap-4">
+                {offerings.map((o) => (
+                  <li
+                    key={o.id}
+                    data-offering-id={o.id}
+                    className="rounded-2xl bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold">{o.title}</h3>
+                        {avgRating !== null && (
+                          <span className="inline-flex items-center gap-1 text-sm">
+                            <span className="text-amber">★</span>
+                            <span className="font-semibold">{avgRating}</span>
+                            <span className="text-muted-foreground">({ratingCount})</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
+                          {TYPE_LABELS[o.type] ?? o.type}
                         </span>
-                      )}
+                        {o.turnaroundDays}-day turnaround · {o.revisionLimit} revision
+                        {o.revisionLimit === 1 ? "" : "s"} included
+                      </p>
                     </div>
-                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
-                        {TYPE_LABELS[o.type] ?? o.type}
-                      </span>
-                      {o.turnaroundDays}-day turnaround · {o.revisionLimit} revision
-                      {o.revisionLimit === 1 ? "" : "s"} included
-                    </p>
-                  </div>
-                  {o.description && (
-                    <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
-                      {o.description}
-                    </p>
-                  )}
-                  <div className="mt-5">
-                    <Button asChild className="px-7">
-                      <a href={`/book/${o.id}`}>
-                        Book this for ${(o.priceCents / 100).toFixed(0)}
-                      </a>
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                    {o.description && (
+                      <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
+                        {o.description}
+                      </p>
+                    )}
+                    <div className="mt-5">
+                      <Button asChild className="px-7">
+                        <a href={`/book/${o.id}`}>
+                          Book this for ${(o.priceCents / 100).toFixed(0)}
+                        </a>
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </SectionTracker>
 
         {reviews.length > 0 && (
-          <section className="mt-10">
-            <h2 className="mb-4 text-xl font-bold">
-              Brand reviews
-              {avgRating !== null && (
-                <span className="ml-2">
-                  <span className="text-amber">★</span> {avgRating}
-                </span>
-              )}
-            </h2>
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {reviews.map((r, i) => (
-                <li key={i} className="rounded-2xl bg-secondary p-5">
-                  <p aria-label={`${r.rating} out of 5 stars`} className="text-amber">
-                    {"★".repeat(r.rating)}
-                    <span className="text-border">{"★".repeat(5 - r.rating)}</span>
-                  </p>
-                  {r.body && (
-                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
-                      {r.body}
+          <SectionTracker section="reviews" creatorHandle={handle}>
+            <section className="mt-10">
+              <h2 className="mb-4 text-xl font-bold">
+                Brand reviews
+                {avgRating !== null && (
+                  <span className="ml-2">
+                    <span className="text-amber">★</span> {avgRating}
+                  </span>
+                )}
+              </h2>
+              <ul className="grid gap-4 sm:grid-cols-2">
+                {reviews.map((r, i) => (
+                  <li key={i} className="rounded-2xl bg-secondary p-5">
+                    <p aria-label={`${r.rating} out of 5 stars`} className="text-amber">
+                      {"★".repeat(r.rating)}
+                      <span className="text-border">{"★".repeat(5 - r.rating)}</span>
                     </p>
-                  )}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {new Date(r.createdAt).toLocaleDateString("en-US")}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
+                    {r.body && (
+                      <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
+                        {r.body}
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleDateString("en-US")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </SectionTracker>
         )}
 
         {offerings.length > 0 && (() => {
@@ -375,42 +388,44 @@ export default async function StorefrontPage({
         })()}
 
         {portfolio.length > 0 && (
-          <section className="mt-10">
-            <h2 className="mb-4 text-xl font-bold">Recent work</h2>
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {portfolio.map((item, i) => (
-                <li key={item.id}>
-                  <a
-                    href={item.mediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden rounded-2xl bg-card shadow-card transition-shadow hover:shadow-card-hover"
-                  >
-                    <div
-                      aria-hidden
-                      className="h-28"
-                      style={{
-                        background: creatorGradient(`${profile.handle}-${i}`).css,
-                        opacity: 0.85,
-                      }}
-                    />
-                    <span
-                      className="-mt-4 ml-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold shadow-card"
-                      style={{ color: creatorGradient(`${profile.handle}-${i}`).deep }}
+          <SectionTracker section="portfolio" creatorHandle={handle}>
+            <section className="mt-10">
+              <h2 className="mb-4 text-xl font-bold">Recent work</h2>
+              <ul className="grid gap-4 sm:grid-cols-2">
+                {portfolio.map((item, i) => (
+                  <li key={item.id}>
+                    <a
+                      href={item.mediaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block overflow-hidden rounded-2xl bg-card shadow-card transition-shadow hover:shadow-card-hover"
                     >
-                      {detectPlatform(item.mediaUrl).label}
-                    </span>
-                    <div className="px-4 pb-4 pt-2">
-                      <p className="font-semibold">{item.caption ?? "Watch"}</p>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {item.mediaUrl}
-                      </p>
-                    </div>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
+                      <div
+                        aria-hidden
+                        className="h-28"
+                        style={{
+                          background: creatorGradient(`${profile.handle}-${i}`).css,
+                          opacity: 0.85,
+                        }}
+                      />
+                      <span
+                        className="-mt-4 ml-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold shadow-card"
+                        style={{ color: creatorGradient(`${profile.handle}-${i}`).deep }}
+                      >
+                        {detectPlatform(item.mediaUrl).label}
+                      </span>
+                      <div className="px-4 pb-4 pt-2">
+                        <p className="font-semibold">{item.caption ?? "Watch"}</p>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                          {item.mediaUrl}
+                        </p>
+                      </div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </SectionTracker>
         )}
       </main>
     </>

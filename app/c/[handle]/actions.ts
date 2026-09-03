@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
+import { trackServerEvent } from "@/lib/analytics";
 
 const DEFAULT_TEMPLATE =
   "Hi! We came across your work and think you'd be a great fit for our brand. " +
@@ -41,6 +42,12 @@ export async function inviteFromStorefront(formData: FormData) {
     const sep = redirectBack.includes("?") ? "&" : "?";
     redirect(`${redirectBack}${sep}error=${encodeURIComponent(friendlyDbError(error))}`);
   }
+
+  trackServerEvent("invite_sent", user.id, {
+    creator_handle: handle,
+    creator_id: creatorId,
+    source: "storefront",
+  });
 
   await notify({
     userId: creatorId,
