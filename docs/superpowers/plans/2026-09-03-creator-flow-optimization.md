@@ -1423,7 +1423,7 @@ Replace the section wrapper class:
 // Old:
 <section className="deal-next-steps mt-6 rounded-2xl bg-card p-6 shadow-card">
 // New:
-<section className="deal-next-steps mt-4 rounded-2xl border border-amber bg-amber/10 p-6">
+<section className="deal-next-steps sticky top-[72px] z-10 mt-4 rounded-2xl border border-amber bg-amber/10 p-6">
 ```
 
 Also add the review modal button to the actions section when deal is completed and no review exists. Add import at top:
