@@ -153,6 +153,7 @@ export default async function DiscoverPage({
 
         {/* ── Search ── */}
         <form
+          key={flatParams.toString()}
           method="get"
           className="mt-6 rounded-2xl bg-card p-5 shadow-card"
         >
@@ -335,13 +336,10 @@ export default async function DiscoverPage({
                 return (
                   <li key={c.userId} className="relative">
                     {isBrand && filters.tab === "new" && (
-                      <form
-                        action={sendReachouts}
-                        className="absolute left-3 top-3 z-10"
-                      >
-                        <input type="hidden" name="creator_id" value={c.userId} />
+                      <div className="absolute left-3 top-3 z-10">
                         <button
                           type="submit"
+                          form={`invite-${c.userId}`}
                           aria-label={`Invite ${c.displayName ?? c.handle} to chat`}
                           className="grid size-8 place-items-center rounded-full bg-white/90 shadow-card text-muted-foreground transition-all hover:scale-110 hover:bg-primary hover:text-primary-foreground"
                         >
@@ -349,7 +347,7 @@ export default async function DiscoverPage({
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                           </svg>
                         </button>
-                      </form>
+                      </div>
                     )}
                     {isBrand && filters.tab === "new" && (
                       <label className="absolute right-3 top-3 z-10 grid size-8 cursor-pointer place-items-center rounded-full bg-white/90 shadow-card transition-transform hover:scale-110">
@@ -455,6 +453,14 @@ export default async function DiscoverPage({
             </ul>
           </form>
         )}
+
+        {creators.length > 0 && isBrand && filters.tab === "new" &&
+          creators.map((c) => (
+            <form key={c.userId} id={`invite-${c.userId}`} action={sendReachouts} hidden>
+              <input type="hidden" name="creator_id" value={c.userId} />
+            </form>
+          ))
+        }
 
         {totalPages > 1 && (
           <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-5">

@@ -17,11 +17,12 @@ interface ProfileFormProps {
   action: (formData: FormData) => void;
   statusAction?: (formData: FormData) => void;
   mode: "wizard" | "settings";
+  suggestedHandle?: string;
   error?: string;
   saved?: string;
 }
 
-export function ProfileForm({ profile, action, statusAction, mode, error, saved }: ProfileFormProps) {
+export function ProfileForm({ profile, action, statusAction, mode, suggestedHandle, error, saved }: ProfileFormProps) {
   const p = profile;
   return (
     <>
@@ -60,7 +61,7 @@ export function ProfileForm({ profile, action, statusAction, mode, error, saved 
           <Input
             id="handle"
             name="handle"
-            defaultValue={p?.handle ?? ""}
+            defaultValue={p?.handle ?? suggestedHandle ?? ""}
             required
             placeholder={mode === "wizard" ? "e.g. caseyclips" : undefined}
           />

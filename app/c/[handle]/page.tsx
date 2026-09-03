@@ -11,16 +11,7 @@ import { inviteFromStorefront } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export const revalidate = 300;
-
-// No handles are known at build time; this opts the route into Next.js's
-// static-generation system so unlisted handles are rendered on first
-// request and then cached per `revalidate` (dynamicParams defaults to
-// true). Without this export, dynamic segments are never eligible for
-// ISR and render on every request regardless of `revalidate`.
-export async function generateStaticParams() {
-  return [];
-}
+export const dynamic = "force-dynamic";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -266,7 +257,7 @@ export default async function StorefrontPage({
                       )}
                       {s.lastSyncedAt && (
                         <p className="mt-2 text-xs text-muted-foreground/70">
-                          Public stats · updated {new Date(s.lastSyncedAt).toLocaleDateString()}
+                          Public stats · updated {new Date(s.lastSyncedAt).toLocaleDateString("en-US")}
                         </p>
                       )}
                     </>
@@ -355,7 +346,7 @@ export default async function StorefrontPage({
                     </p>
                   )}
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {new Date(r.createdAt).toLocaleDateString()}
+                    {new Date(r.createdAt).toLocaleDateString("en-US")}
                   </p>
                 </li>
               ))}
