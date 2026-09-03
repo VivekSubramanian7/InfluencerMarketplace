@@ -5,14 +5,21 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export async function markAllRead() {
+export async function markAllRead(formData?: FormData) {
   const { user } = await requireUser();
   const supabase = await createServerSupabase();
-  await supabase
+  let query = supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", user.id)
     .is("read_at", null);
+
+  const raw = formData?.get("kinds");
+  if (typeof raw === "string" && raw.length > 0) {
+    query = query.in("kind", raw.split(","));
+  }
+
+  await query;
   revalidatePath("/", "layout");
 }
 

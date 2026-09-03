@@ -51,9 +51,11 @@ function quickActionLabel(kind: string): string | null {
 export function NotificationList({
   notifications,
   hasUnread,
+  activeKinds,
 }: {
   notifications: NotificationRow[];
   hasUnread: boolean;
+  activeKinds?: string[];
 }) {
   const grouped = new Map<string, NotificationRow[]>();
   for (const n of notifications) {
@@ -66,6 +68,9 @@ export function NotificationList({
     <>
       {hasUnread && (
         <form action={markAllRead} className="mt-4 flex justify-end">
+          {activeKinds && (
+            <input type="hidden" name="kinds" value={activeKinds.join(",")} />
+          )}
           <Button type="submit" variant="outline" size="sm">
             Mark all read
           </Button>

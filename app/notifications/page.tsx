@@ -87,6 +87,7 @@ export default async function NotificationsPage({
           <NotificationList
             notifications={rows}
             hasUnread={(unreadCount ?? 0) > 0}
+            activeKinds={kinds ?? undefined}
           />
         )}
       </main>
