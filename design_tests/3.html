@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clipline — Book video creators</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* Cabinet of Curiosities palette */
+  --ground: #F0ECE2;
+  --ground-light: #F5F2EB;
+  --grid: #E0DBD0;
+  --ink: #1A1815;
+  --muted: #6B6458;
+  --teal: #2A9D8F;
+  --teal-light: rgba(42,157,143,0.08);
+  --botanical: #4A7C5B;
+  --map-parch: #D4C9A8;
+  --map-line: #B35640;
+  --rose: #C47B84;
+  --graph-blue: #3B82C4;
+  --amber-spot: #D68830;
+  --wing-dark: #2C2A26;
+  --surface: #FDFCF9;
+  --shadow-card: 0 1px 3px rgba(26,24,21,.06), 0 8px 24px rgba(26,24,21,.08);
+  --shadow-card-hover: 0 2px 6px rgba(26,24,21,.08), 0 16px 40px rgba(26,24,21,.12);
+
+  /* Motion tokens */
+  --ease-paper: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drift: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-snap: 200ms;
+  --dur-assemble: 500ms;
+  --dur-entrance: 800ms;
+  --dur-bloom: 600ms;
+  --dur-text: 500ms;
+
+  /* Layout */
+  --max-w: 72rem;
+  --radius-card: 6px;
+  --radius-pill: 999px;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--ground);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Graph paper grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.45;
+}
+
+/* Noise grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAElBMVEUAAAAAAAAAAAAAAAAAAAAAAADgKxmiAAAABnRSTlMHEBc4OzyklvEaAAAAdklEQVQ4y83MsQ3CQBBE0UkgJ+ccSJY4paOgBLdACU5wCXSAKIASEFoW+cPVan+yM7MHH8hxRUQeiYjIE6O8PN4dT6anz5MDLNqfGmDu/Fj4cOi3g7S0bbxkfyt+/fikfMHfSP/6JR5+X/jF71c6nINH4BPAB3ksEp/pVFkAAAAASUVORK5CYII=);
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+ul, ol { list-style: none; }
+
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
+
+/* ── Header ── */
+.header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(240,236,226,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s ease;
+}
+.header.scrolled { border-bottom-color: var(--grid); }
+.header-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.nav { display: flex; align-items: center; gap: 0.5rem; }
+.nav-link {
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-radius: var(--radius-pill);
+  transition: color 150ms var(--ease-paper), background 150ms var(--ease-paper);
+}
+.nav-link:hover { color: var(--ink); background: rgba(26,24,21,.04); }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9375rem; font-weight: 700;
+  color: var(--ground);
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+  transition: transform 150ms var(--ease-paper), box-shadow 150ms var(--ease-paper);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26,24,21,.25);
+}
+.btn-primary-lg { padding: 0.875rem 2rem; font-size: 1.0625rem; }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-size: 1.0625rem; font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--grid);
+  border-radius: var(--radius-pill);
+  transition: border-color 150ms var(--ease-paper), background 150ms var(--ease-paper);
+}
+.btn-secondary:hover {
+  border-color: var(--ink);
+  background: rgba(26,24,21,.03);
+}
+/* Teal accent button variant */
+.btn-teal {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-size: 1.0625rem; font-weight: 700;
+  color: #fff;
+  background: var(--teal);
+  border-radius: var(--radius-pill);
+  transition: transform 150ms var(--ease-paper), box-shadow 150ms var(--ease-paper);
+}
+.btn-teal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(42,157,143,.3);
+}
+
+/* ── Hero ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  padding-top: 64px;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 4rem;
+}
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--teal);
+  background: var(--teal-light);
+  border: 1px solid rgba(42,157,143,0.15);
+  border-radius: var(--radius-pill);
+  margin-bottom: 1.5rem;
+}
+.hero-label svg { color: var(--teal); }
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6vw, 4.8rem);
+  font-weight: 900;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+.hero h1 .muted { color: var(--muted); }
+.hero h1 .teal { color: var(--teal); }
+.hero-sub {
+  margin-top: 1.75rem;
+  font-size: 1.125rem;
+  color: var(--muted);
+  max-width: 48ch;
+  line-height: 1.7;
+}
+.hero-cta-row { display: flex; flex-wrap: wrap; gap: 0.875rem; margin-top: 2.25rem; align-items: center; }
+.hero-note { margin-top: 1.25rem; font-size: 0.875rem; color: var(--muted); }
+
+/* ── Deal panel (floating product showcase) ── */
+.deal-showcase { position: relative; display: flex; justify-content: center; }
+
+/* Collage paper layers behind the deal panel */
+.deal-paper {
+  position: absolute;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.deal-paper-1 {
+  width: 340px; height: 280px;
+  background: var(--map-parch);
+  background-image:
+    linear-gradient(rgba(179,86,64,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(179,86,64,.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  transform: rotate(4deg) translate(20px, 20px);
+  opacity: 0.6;
+  top: 30px; right: -10px;
+}
+.deal-paper-2 {
+  width: 300px; height: 240px;
+  background: var(--surface);
+  background-image:
+    repeating-linear-gradient(transparent, transparent 23px, var(--graph-blue) 23px, var(--graph-blue) 24px);
+  background-size: 100% 24px;
+  transform: rotate(-3deg) translate(-15px, 10px);
+  opacity: 0.45;
+  top: 50px; left: 10px;
+}
+
+.deal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  border-radius: var(--radius-card);
+  background: var(--ink);
+  color: var(--ground);
+  padding: 1.75rem;
+  box-shadow: 0 4px 8px rgba(26,24,21,.08), 0 20px 50px rgba(26,24,21,.14);
+  z-index: 2;
+}
+.deal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.deal-header p { font-size: 0.875rem; font-weight: 600; opacity: 0.7; }
+.deal-timer {
+  display: flex; align-items: center; gap: 0.375rem;
+  font-size: 0.75rem; font-weight: 500;
+  background: rgba(255,255,255,0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+}
+.deal-steps { display: flex; flex-direction: column; gap: 0.75rem; }
+.deal-step { display: flex; align-items: center; gap: 0.75rem; }
+.deal-step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  font-size: 0.75rem; font-weight: 700;
+}
+.deal-step-dot.done { background: var(--teal); color: white; }
+.deal-step-dot.pending { border: 2px solid var(--amber-spot); color: var(--amber-spot); }
+.deal-step.done span:last-child { color: var(--ground); }
+.deal-step.pending span:last-child { font-weight: 600; color: var(--amber-spot); }
+.deal-info-box {
+  margin-top: 1.5rem; padding: 1rem; border-radius: 6px;
+  background: rgba(255,255,255,0.07);
+  font-size: 0.875rem;
+}
+.deal-info-box p:first-child { font-weight: 600; }
+.deal-info-box p:last-child { margin-top: 0.25rem; opacity: 0.7; }
+.deal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
+.deal-price {
+  font-family: var(--font-display);
+  font-size: 1.875rem; font-weight: 900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.deal-badge {
+  background: var(--amber-spot);
+  color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-pill);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.75rem; font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  animation: scroll-hint 2s ease-in-out infinite;
+}
+@keyframes scroll-hint {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 1; transform: translateX(-50%) translateY(4px); }
+}
+
+/* ── Torn-edge divider ── */
+.torn-edge {
+  position: relative;
+  overflow: hidden;
+}
+.torn-edge::before {
+  content: '';
+  position: absolute;
+  top: -12px; left: 0; right: 0;
+  height: 24px;
+  background: var(--ground);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 24'%3E%3Cpath d='M0 24 C20 18 40 22 60 16 C80 10 100 20 120 14 C140 8 160 18 180 12 C200 6 220 16 240 10 C260 4 280 14 300 8 C320 2 340 12 360 6 C380 0 400 10 420 4 C440 0 460 8 480 2 C500 0 520 6 540 0 C560 4 580 0 600 6 C620 2 640 8 660 4 C680 0 700 10 720 4 C740 0 760 6 780 2 C800 8 820 0 840 6 C860 12 880 4 900 10 C920 16 940 8 960 14 C980 20 1000 12 1020 18 C1040 22 1060 14 1080 20 C1100 24 1120 16 1140 22 C1160 18 1180 24 1200 20 L1200 24 Z' fill='white'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 24'%3E%3Cpath d='M0 24 C20 18 40 22 60 16 C80 10 100 20 120 14 C140 8 160 18 180 12 C200 6 220 16 240 10 C260 4 280 14 300 8 C320 2 340 12 360 6 C380 0 400 10 420 4 C440 0 460 8 480 2 C500 0 520 6 540 0 C560 4 580 0 600 6 C620 2 640 8 660 4 C680 0 700 10 720 4 C740 0 760 6 780 2 C800 8 820 0 840 6 C860 12 880 4 900 10 C920 16 940 8 960 14 C980 20 1000 12 1020 18 C1040 22 1060 14 1080 20 C1100 24 1120 16 1140 22 C1160 18 1180 24 1200 20 L1200 24 Z' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  z-index: 2;
+}
+
+/* ── Proof strip ── */
+.proof-strip {
+  background: var(--surface);
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--grid);
+  border-bottom: 1px solid var(--grid);
+}
+.proof-inner {
+  display: flex; align-items: center; justify-content: center;
+  gap: 3rem; flex-wrap: wrap;
+}
+.proof-stat { text-align: center; min-width: 140px; }
+.proof-stat-number {
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.proof-stat-label {
+  font-size: 0.875rem; color: var(--muted);
+  margin-top: 0.25rem; font-weight: 500;
+}
+.proof-divider { width: 1px; height: 40px; background: var(--grid); }
+
+/* ── Features ── */
+.features { padding: 7rem 0; }
+.feature-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  padding: 4rem 0;
+}
+.feature-row + .feature-row { border-top: 1px solid var(--grid); }
+.feature-row.flip > .feature-text { order: 2; }
+.feature-row.flip > .feature-visual { order: 1; }
+.feature-label {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  font-size: 0.8125rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 1rem;
+}
+.feature-label::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  opacity: 0.4;
+}
+.feature-text h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.feature-text p {
+  margin-top: 1rem; color: var(--muted);
+  font-size: 1rem; line-height: 1.7; max-width: 44ch;
+}
+.feature-points { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.feature-point {
+  font-size: 0.9375rem; padding-left: 1.5rem;
+  position: relative; line-height: 1.5;
+}
+.feature-point::before {
+  content: '';
+  position: absolute; left: 0; top: 0.5em;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+/* Feature visual: collage-style number block */
+.feature-visual {
+  display: flex; flex-direction: column; gap: 1.5rem;
+}
+.feature-stat { display: flex; align-items: baseline; gap: 1rem; }
+.feature-stat-value {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.feature-stat-desc {
+  font-size: 0.9375rem; color: var(--muted);
+  max-width: 20ch; line-height: 1.4;
+}
+/* Collage card style for feature visuals */
+.collage-card {
+  background: var(--surface);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.collage-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, var(--teal), var(--graph-blue));
+  opacity: 0.6;
+}
+
+/* ── How it works ── */
+.how-it-works { padding: 7rem 0; background: var(--surface); }
+.section-header { text-align: center; margin-bottom: 2.5rem; }
+.section-header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.section-header p { margin-top: 0.75rem; color: var(--muted); font-size: 1.0625rem; max-width: 44ch; margin-left: auto; margin-right: auto; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+.timeline::before {
+  content: '';
+  position: absolute; top: 28px;
+  left: calc(12.5% + 14px);
+  right: calc(12.5% + 14px);
+  height: 2px;
+  background: var(--grid);
+}
+.timeline-step { text-align: center; position: relative; z-index: 1; }
+.timeline-dot {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--grid);
+  display: grid; place-items: center;
+  margin: 0 auto 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem; font-weight: 900;
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+  transition: background 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+}
+.timeline-step.lit .timeline-dot {
+  background: var(--teal);
+  color: white;
+  border-color: var(--teal);
+}
+.timeline-step h3 {
+  font-family: var(--font-display);
+  font-size: 1.125rem; font-weight: 700;
+}
+.timeline-step p { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); max-width: 22ch; margin-left: auto; margin-right: auto; line-height: 1.6; }
+
+/* ── Closing CTA ── */
+.closing-cta {
+  background: var(--ink);
+  color: var(--ground);
+  padding: 7rem 0;
+  position: relative;
+  overflow: hidden;
+}
+/* Circuit-trace decorative lines */
+.closing-circuit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image:
+    linear-gradient(90deg, var(--teal) 1px, transparent 1px),
+    linear-gradient(var(--teal) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.closing-inner {
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  position: relative; z-index: 1;
+}
+.closing-inner h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+}
+.closing-inner p {
+  margin-top: 1.25rem;
+  color: rgba(240,236,226,0.6);
+  font-size: 1.0625rem;
+  max-width: 42ch; line-height: 1.7;
+}
+.closing-cta-btn {
+  margin-top: 2.5rem;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 1rem 2.5rem;
+  font-size: 1.0625rem; font-weight: 700;
+  color: var(--ink);
+  background: var(--ground);
+  border-radius: var(--radius-pill);
+  transition: transform 150ms var(--ease-paper), box-shadow 150ms var(--ease-paper);
+}
+.closing-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(240,236,226,0.25);
+}
+
+/* ── Footer ── */
+.footer { border-top: 1px solid var(--grid); padding: 2.5rem 0; background: var(--ground); }
+.footer-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem; font-size: 0.875rem;
+}
+.footer-logo {
+  font-family: var(--font-display);
+  font-weight: 900; font-size: 1rem;
+}
+.footer-links { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+.footer-links a { color: var(--muted); font-weight: 500; transition: color 150ms var(--ease-paper); }
+.footer-links a:hover { color: var(--ink); }
+
+/* ── Ornaments ── */
+.ornament-butterfly {
+  position: absolute;
+  width: 48px; height: 48px;
+  opacity: 0.12;
+  pointer-events: none;
+}
+.ornament-star {
+  position: absolute;
+  opacity: 0.18;
+  pointer-events: none;
+}
+.ornament-flower {
+  position: absolute;
+  opacity: 0.1;
+  pointer-events: none;
+}
+.ornament-gear {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.08;
+  color: var(--amber-spot);
+}
+.ornament-seed {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.1;
+}
+.ornament-leaf {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.07;
+  color: var(--botanical);
+}
+.ornament-dot {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ornament-circuit {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.08;
+  color: var(--teal);
+}
+
+/* ── Motion: collage-reveal (torn paper slide) ── */
+.collage-reveal {
+  opacity: 0;
+  transform: translateX(-30px) rotate(-1deg);
+  transition: opacity var(--dur-assemble) var(--ease-paper),
+              transform var(--dur-assemble) var(--ease-paper);
+}
+.collage-reveal.visible {
+  opacity: 1;
+  transform: translateX(0) rotate(0);
+}
+
+/* ── Motion: assemble (hero primary entrance) ── */
+.assemble {
+  opacity: 0;
+  transform: scale(0.92) translateY(20px);
+  transition: opacity var(--dur-entrance) var(--ease-settle),
+              transform var(--dur-entrance) var(--ease-settle);
+}
+.assemble.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Stagger children */
+.assemble-stagger > .assemble:nth-child(1) { transition-delay: 0ms; }
+.assemble-stagger > .assemble:nth-child(2) { transition-delay: 80ms; }
+.assemble-stagger > .assemble:nth-child(3) { transition-delay: 160ms; }
+.assemble-stagger > .assemble:nth-child(4) { transition-delay: 240ms; }
+.assemble-stagger > .assemble:nth-child(5) { transition-delay: 320ms; }
+.assemble-stagger > .assemble:nth-child(6) { transition-delay: 400ms; }
+.assemble-stagger > .assemble:nth-child(7) { transition-delay: 480ms; }
+
+/* ── Motion: bloom (ornaments scatter outward) ── */
+.bloom {
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity var(--dur-bloom) var(--ease-settle),
+              transform var(--dur-bloom) var(--ease-settle);
+}
+.bloom.visible {
+  opacity: 1;
+  transform: scale(1) rotate(var(--bloom-r, 0deg));
+}
+
+/* ── Motion: text-land ── */
+.text-land {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--dur-text) var(--ease-paper),
+              transform var(--dur-text) var(--ease-paper);
+}
+.text-land.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Motion: pill-from-dot ── */
+.motion-pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  overflow: hidden;
+  opacity: 0;
+  max-width: 48px; height: 48px;
+  border-radius: 50%;
+  transform: scale(0);
+  transition:
+    transform 490ms var(--ease-settle),
+    opacity 280ms var(--ease-settle),
+    max-width 420ms var(--ease-settle) 280ms,
+    border-radius 420ms var(--ease-settle) 280ms,
+    padding 420ms var(--ease-settle) 280ms;
+  padding: 0;
+}
+.motion-pill.visible {
+  opacity: 1; transform: scale(1);
+  max-width: 300px;
+  border-radius: var(--radius-pill);
+  padding: 0.875rem 2rem;
+}
+.motion-pill > .pill-label {
+  opacity: 0; white-space: nowrap;
+  transition: opacity 280ms var(--ease-settle) 595ms;
+}
+.motion-pill.visible > .pill-label { opacity: 1; }
+.motion-pill > .pill-arrow {
+  opacity: 0;
+  transition: opacity 280ms var(--ease-settle) 665ms;
+}
+.motion-pill.visible > .pill-arrow { opacity: 1; }
+
+/* ── Ambient animations ── */
+@keyframes wing-flutter {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.82); }
+}
+@keyframes gear-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes gear-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+@keyframes petal-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(8px, 20px) rotate(12deg); }
+}
+@keyframes petal-drift-b {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-10px, 15px) rotate(-8deg); }
+  66% { transform: translate(6px, 30px) rotate(15deg); }
+}
+@keyframes petal-drift-c {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  40% { transform: translate(12px, -10px) rotate(6deg); }
+  80% { transform: translate(-8px, 12px) rotate(-10deg); }
+}
+@keyframes seed-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0.12; }
+  100% { transform: translate(15px, 60px) rotate(180deg); opacity: 0.04; }
+}
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes float-drift {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(6px, -8px); }
+  50% { transform: translate(-4px, -12px); }
+  75% { transform: translate(8px, -4px); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.12; transform: scale(1); }
+  50% { opacity: 0.2; transform: scale(1.15); }
+}
+
+/* ── Scroll reveal (generic) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s var(--ease-settle), transform 0.7s var(--ease-settle);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .assemble, .collage-reveal, .bloom, .text-land {
+    opacity: 1; transform: none; transition: none;
+  }
+  .motion-pill {
+    opacity: 1; transform: none; max-width: 300px;
+    border-radius: var(--radius-pill); padding: 0.875rem 2rem; transition: none;
+  }
+  .motion-pill > .pill-label, .motion-pill > .pill-arrow { opacity: 1; transition: none; }
+  .deal-panel { animation: none; }
+  .ornament-butterfly, .ornament-flower, .ornament-gear, .ornament-seed, .ornament-leaf, .ornament-dot, .ornament-circuit { animation: none; }
+  .scroll-indicator { animation: none; }
+  body::after { display: none; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 3rem; text-align: center; }
+  .hero-label { margin-left: auto; margin-right: auto; }
+  .hero-cta-row { justify-content: center; }
+  .hero-sub { margin-left: auto; margin-right: auto; }
+  .deal-showcase { margin-top: 1rem; }
+  .deal-paper { display: none; }
+  .feature-row { grid-template-columns: 1fr; gap: 2rem; }
+  .feature-row.flip > .feature-text { order: 1; }
+  .feature-row.flip > .feature-visual { order: 2; }
+  .timeline { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+  .timeline::before { display: none; }
+  .proof-inner { gap: 2rem; }
+  .proof-divider { display: none; }
+  .scroll-indicator { display: none; }
+  .ornament-butterfly, .ornament-star, .ornament-flower, .ornament-gear, .ornament-seed, .ornament-leaf, .ornament-dot, .ornament-circuit { display: none; }
+}
+@media (max-width: 480px) {
+  .timeline { grid-template-columns: 1fr; gap: 2rem; }
+  .hero h1 { font-size: 2.4rem; }
+  .nav-link { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Header ─── -->
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/" class="logo">Clipline</a>
+    <nav class="nav">
+      <a href="/discover" class="nav-link">Discover</a>
+      <a href="/login" class="nav-link">Log in</a>
+      <a href="/signup" class="btn-primary">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ─── Hero ─── -->
+<section class="hero">
+  <!-- Wireframe butterfly ornament — bottom-left -->
+  <svg class="ornament-butterfly" style="bottom:12%;left:6%;animation:wing-flutter 3s var(--ease-paper) infinite,petal-drift 8s var(--ease-drift) infinite" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1" opacity="0.12">
+    <path d="M24 8c-6 0-14 6-18 16 4 4 12 6 18 0M24 8c6 0 14 6 18 16-4 4-12 6-18 0M24 8v16M24 24c0 4-1 10-3 16M24 24c0 4 1 10 3 16"/>
+  </svg>
+  <!-- Four-point star ornament — top-right -->
+  <svg class="ornament-star" style="top:18%;right:8%;width:20px;height:20px" viewBox="0 0 24 24" fill="currentColor" opacity="0.15">
+    <path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/>
+  </svg>
+  <!-- Pressed flower ornament -->
+  <svg class="ornament-flower" style="top:30%;right:3%;width:36px;height:36px;animation:petal-drift 10s var(--ease-drift) infinite" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.1">
+    <circle cx="18" cy="18" r="3"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(0 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(72 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(144 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(216 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(288 18 18)"/>
+  </svg>
+  <!-- Clockwork gear — top-left -->
+  <svg class="ornament-gear" style="top:14%;left:12%;width:28px;height:28px;animation:gear-spin 12s linear infinite" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1l1.09 3.41L16 3l-.59 3.34L19 8l-2.59 1.91L18 13l-3-1.5L13.5 15l-1.5-3-1.5 3L9 11.5 6 13l1.59-3.09L5 8l3.59-1.66L8 3l2.91 1.41z"/>
+    <circle cx="12" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="0.8"/>
+  </svg>
+  <!-- Small gear — mid-right -->
+  <svg class="ornament-gear" style="top:55%;right:5%;width:20px;height:20px;animation:gear-spin-reverse 9s linear infinite" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1l1.09 3.41L16 3l-.59 3.34L19 8l-2.59 1.91L18 13l-3-1.5L13.5 15l-1.5-3-1.5 3L9 11.5 6 13l1.59-3.09L5 8l3.59-1.66L8 3l2.91 1.41z"/>
+  </svg>
+  <!-- Teal dots cluster — upper mid -->
+  <div class="ornament-dot" style="top:22%;left:38%;width:6px;height:6px;background:var(--teal);opacity:0.14;animation:pulse-soft 4s var(--ease-drift) infinite"></div>
+  <div class="ornament-dot" style="top:19%;left:41%;width:4px;height:4px;background:var(--teal);opacity:0.1;animation:pulse-soft 5s var(--ease-drift) 1s infinite"></div>
+  <div class="ornament-dot" style="top:24%;left:40%;width:3px;height:3px;background:var(--teal);opacity:0.08;animation:pulse-soft 6s var(--ease-drift) 2s infinite"></div>
+  <!-- Seed — lower-right -->
+  <svg class="ornament-seed" style="bottom:20%;right:14%;width:12px;height:12px;animation:seed-fall 8s var(--ease-drift) infinite" viewBox="0 0 12 12" fill="var(--muted)" opacity="0.1">
+    <ellipse cx="6" cy="6" rx="2.5" ry="5" transform="rotate(-30 6 6)"/>
+  </svg>
+  <!-- Leaf — hero left edge -->
+  <svg class="ornament-leaf" style="top:42%;left:2%;width:32px;height:32px;animation:petal-drift-b 12s var(--ease-drift) infinite" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="0.7">
+    <path d="M8 28 Q4 16 16 4 Q28 16 24 28 Q16 22 8 28Z"/>
+    <path d="M16 4 L16 24"/>
+    <path d="M12 16 Q16 14 20 16"/>
+  </svg>
+  <!-- Circuit trace — right side -->
+  <svg class="ornament-circuit" style="top:65%;right:2%;width:40px;height:60px;animation:float-drift 14s var(--ease-drift) infinite" viewBox="0 0 40 60" fill="none" stroke="currentColor" stroke-width="1">
+    <path d="M20 0 L20 15 L35 15 L35 30 L20 30 L20 45 L5 45 L5 60"/>
+    <circle cx="20" cy="15" r="2" fill="currentColor"/>
+    <circle cx="35" cy="30" r="2" fill="currentColor"/>
+    <circle cx="5" cy="45" r="2" fill="currentColor"/>
+  </svg>
+  <!-- Second butterfly — upper right, smaller -->
+  <svg class="ornament-butterfly" style="top:8%;right:18%;width:28px;height:28px;opacity:0.08;animation:wing-flutter 2.5s var(--ease-paper) infinite,float-drift 10s var(--ease-drift) infinite" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+    <path d="M24 8c-6 0-14 6-18 16 4 4 12 6 18 0M24 8c6 0 14 6 18 16-4 4-12 6-18 0M24 8v16"/>
+  </svg>
+  <!-- Rose dot cluster — lower left -->
+  <div class="ornament-dot" style="bottom:8%;left:18%;width:5px;height:5px;background:var(--rose);opacity:0.12;animation:pulse-soft 5s var(--ease-drift) infinite"></div>
+  <div class="ornament-dot" style="bottom:10%;left:21%;width:3px;height:3px;background:var(--rose);opacity:0.08;animation:pulse-soft 4s var(--ease-drift) 0.5s infinite"></div>
+
+  <div class="container">
+    <div class="hero-grid">
+      <div class="assemble-stagger">
+        <div class="hero-label assemble">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Enforced timelines. Mutual reviews.
+        </div>
+        <h1 class="assemble">
+          Book video creators.<br>
+          <span class="muted">Skip the DM chaos.</span>
+        </h1>
+        <p class="hero-sub assemble">
+          Creators list real offerings at real prices. Brands book with a brief and track every deal from accepted to published, with anti-ghosting timers and reviews on both sides.
+        </p>
+        <div class="hero-cta-row">
+          <a href="/signup" class="btn-teal motion-pill assemble" style="transition-delay:240ms">
+            <span class="pill-label">Get started for free</span>
+            <svg class="pill-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a href="/discover" class="btn-secondary assemble" style="transition-delay:320ms">See a live storefront</a>
+        </div>
+        <p class="hero-note assemble" style="transition-delay:400ms">Free for creators. You keep 100% of your rate.</p>
+      </div>
+
+      <div class="deal-showcase assemble" style="transition-delay:200ms">
+        <div class="deal-paper deal-paper-1" aria-hidden="true"></div>
+        <div class="deal-paper deal-paper-2" aria-hidden="true"></div>
+        <div class="deal-panel" style="animation: float-subtle 6s ease-in-out infinite">
+          <div class="deal-header">
+            <p>Deal &middot; 60s vertical feature</p>
+            <span class="deal-timer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              3d auto-approve
+            </span>
+          </div>
+          <ol class="deal-steps">
+            <li class="deal-step done">
+              <span class="deal-step-dot done">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span>Booked with brief</span>
+            </li>
+            <li class="deal-step done">
+              <span class="deal-step-dot done">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span>Creator accepted</span>
+            </li>
+            <li class="deal-step done">
+              <span class="deal-step-dot done">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span>Preview submitted</span>
+            </li>
+            <li class="deal-step pending">
+              <span class="deal-step-dot pending">4</span>
+              <span>Published, awaiting approval</span>
+            </li>
+          </ol>
+          <div class="deal-info-box">
+            <p>Auto-approve in 3 days</p>
+            <p>Ghosting isn&rsquo;t possible. Timers keep both sides honest.</p>
+          </div>
+          <div class="deal-footer">
+            <span class="deal-price">$150</span>
+            <span class="deal-badge">1 revision included</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-indicator" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+</section>
+
+<!-- ─── Social Proof Strip ─── -->
+<section class="proof-strip torn-edge">
+  <div class="container">
+    <div class="proof-inner reveal">
+      <div class="proof-stat">
+        <div class="proof-stat-number">2,400+</div>
+        <div class="proof-stat-label">Creator storefronts</div>
+      </div>
+      <div class="proof-divider" aria-hidden="true"></div>
+      <div class="proof-stat">
+        <div class="proof-stat-number">$1.2M</div>
+        <div class="proof-stat-label">Deals completed</div>
+      </div>
+      <div class="proof-divider" aria-hidden="true"></div>
+      <div class="proof-stat">
+        <div class="proof-stat-number">4.8</div>
+        <div class="proof-stat-label">Average rating</div>
+      </div>
+      <div class="proof-divider" aria-hidden="true"></div>
+      <div class="proof-stat">
+        <div class="proof-stat-number">&lt;2%</div>
+        <div class="proof-stat-label">Ghosting rate</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Features ─── -->
+<section class="features" style="position:relative;overflow:hidden">
+  <!-- Features ornaments -->
+  <svg class="ornament-flower" style="top:8%;right:6%;width:28px;height:28px;animation:petal-drift-c 11s var(--ease-drift) infinite;opacity:0.08" viewBox="0 0 36 36" fill="none" stroke="var(--rose)" stroke-width="0.8">
+    <circle cx="18" cy="18" r="3"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(0 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(72 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(144 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(216 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(288 18 18)"/>
+  </svg>
+  <svg class="ornament-gear" style="top:35%;left:3%;width:22px;height:22px;animation:gear-spin 14s linear infinite" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1l1.09 3.41L16 3l-.59 3.34L19 8l-2.59 1.91L18 13l-3-1.5L13.5 15l-1.5-3-1.5 3L9 11.5 6 13l1.59-3.09L5 8l3.59-1.66L8 3l2.91 1.41z"/>
+  </svg>
+  <svg class="ornament-star" style="top:15%;left:8%;width:14px;height:14px;animation:pulse-soft 5s var(--ease-drift) infinite" viewBox="0 0 24 24" fill="currentColor" opacity="0.12">
+    <path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/>
+  </svg>
+  <svg class="ornament-leaf" style="bottom:12%;right:4%;width:26px;height:26px;animation:petal-drift-b 13s var(--ease-drift) infinite;opacity:0.06" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="0.7">
+    <path d="M8 28 Q4 16 16 4 Q28 16 24 28 Q16 22 8 28Z"/>
+    <path d="M16 4 L16 24"/>
+  </svg>
+  <div class="ornament-dot" style="top:50%;right:8%;width:5px;height:5px;background:var(--teal);opacity:0.1;animation:pulse-soft 6s var(--ease-drift) infinite"></div>
+  <div class="ornament-dot" style="top:52%;right:10%;width:3px;height:3px;background:var(--teal);opacity:0.07;animation:pulse-soft 4s var(--ease-drift) 1.5s infinite"></div>
+  <svg class="ornament-seed" style="top:60%;left:5%;width:10px;height:10px;animation:seed-fall 10s var(--ease-drift) 2s infinite" viewBox="0 0 12 12" fill="var(--muted)" opacity="0.08">
+    <ellipse cx="6" cy="6" rx="2" ry="4.5" transform="rotate(20 6 6)"/>
+  </svg>
+  <svg class="ornament-butterfly" style="bottom:5%;left:10%;width:32px;height:32px;opacity:0.06;animation:wing-flutter 3.5s var(--ease-paper) infinite,petal-drift 9s var(--ease-drift) infinite" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1">
+    <path d="M24 8c-6 0-14 6-18 16 4 4 12 6 18 0M24 8c6 0 14 6 18 16-4 4-12 6-18 0M24 8v16"/>
+  </svg>
+  <div class="container">
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-label">For creators</div>
+        <h2>A storefront, not a DM&nbsp;thread.</h2>
+        <p>Set your formats and prices once. Bookings arrive with a brief attached, not a "hey what are your rates?" message.</p>
+        <div class="feature-points">
+          <div class="feature-point">Productized offerings with fixed pricing</div>
+          <div class="feature-point">A deal pipeline that replaces the spreadsheet</div>
+          <div class="feature-point">Reviews that compound into a public track record</div>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="collage-card">
+          <div class="feature-stat">
+            <span class="feature-stat-value">100%</span>
+            <span class="feature-stat-desc">of your rate. Free to list.</span>
+          </div>
+        </div>
+        <div class="collage-card">
+          <div class="feature-stat">
+            <span class="feature-stat-value">2,400+</span>
+            <span class="feature-stat-desc">creator storefronts live</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row flip reveal">
+      <div class="feature-text">
+        <div class="feature-label">For brands</div>
+        <h2>Book in two minutes. Track every&nbsp;step.</h2>
+        <p>Search by niche, country, format, and budget. Every price is visible before you reach out. Every deal has a timeline.</p>
+        <div class="feature-points">
+          <div class="feature-point">Transparent pricing on every storefront</div>
+          <div class="feature-point">Preview before publish, revisions built in</div>
+          <div class="feature-point">Anti-ghosting timers keep both sides honest</div>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="collage-card">
+          <div class="feature-stat">
+            <span class="feature-stat-value">&lt;2%</span>
+            <span class="feature-stat-desc">ghosting rate across all deals</span>
+          </div>
+        </div>
+        <div class="collage-card">
+          <div class="feature-stat">
+            <span class="feature-stat-value">4.8</span>
+            <span class="feature-stat-desc">average deal rating</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── How It Works ─── -->
+<section class="how-it-works torn-edge" style="position:relative;overflow:hidden">
+  <!-- How-it-works ornaments -->
+  <svg class="ornament-gear" style="top:15%;right:5%;width:24px;height:24px;animation:gear-spin-reverse 11s linear infinite" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1l1.09 3.41L16 3l-.59 3.34L19 8l-2.59 1.91L18 13l-3-1.5L13.5 15l-1.5-3-1.5 3L9 11.5 6 13l1.59-3.09L5 8l3.59-1.66L8 3l2.91 1.41z"/>
+    <circle cx="12" cy="9.5" r="2" fill="none" stroke="currentColor" stroke-width="0.6"/>
+  </svg>
+  <svg class="ornament-star" style="bottom:18%;left:6%;width:16px;height:16px;animation:float-drift 8s var(--ease-drift) infinite" viewBox="0 0 24 24" fill="currentColor" opacity="0.14">
+    <path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/>
+  </svg>
+  <svg class="ornament-circuit" style="bottom:10%;right:8%;width:36px;height:50px;animation:float-drift 16s var(--ease-drift) 3s infinite" viewBox="0 0 40 60" fill="none" stroke="currentColor" stroke-width="1">
+    <path d="M5 0 L5 20 L30 20 L30 40 L15 40 L15 60"/>
+    <circle cx="5" cy="20" r="2" fill="currentColor"/>
+    <circle cx="30" cy="40" r="2" fill="currentColor"/>
+  </svg>
+  <svg class="ornament-seed" style="top:40%;left:3%;width:10px;height:10px;animation:seed-fall 12s var(--ease-drift) infinite" viewBox="0 0 12 12" fill="var(--muted)" opacity="0.08">
+    <ellipse cx="6" cy="6" rx="2" ry="4.5" transform="rotate(-15 6 6)"/>
+  </svg>
+  <div class="ornament-dot" style="top:25%;left:14%;width:4px;height:4px;background:var(--amber-spot);opacity:0.12;animation:pulse-soft 5s var(--ease-drift) infinite"></div>
+  <div class="ornament-dot" style="top:28%;left:16%;width:3px;height:3px;background:var(--amber-spot);opacity:0.08;animation:pulse-soft 4s var(--ease-drift) 1s infinite"></div>
+  <div class="container">
+    <div class="section-header reveal">
+      <h2>How a deal runs</h2>
+      <p>Four steps, fully tracked. No side-channel chaos.</p>
+    </div>
+    <div class="timeline">
+      <div class="timeline-step reveal reveal-delay-1" data-step="1">
+        <div class="timeline-dot">1</div>
+        <h3>Book</h3>
+        <p>Pick an offering, send a brief. The price is the price.</p>
+      </div>
+      <div class="timeline-step reveal reveal-delay-2" data-step="2">
+        <div class="timeline-dot">2</div>
+        <h3>Create</h3>
+        <p>The creator accepts, produces, and submits a preview.</p>
+      </div>
+      <div class="timeline-step reveal reveal-delay-3" data-step="3">
+        <div class="timeline-dot">3</div>
+        <h3>Approve</h3>
+        <p>Request changes within the cap, or approve the post.</p>
+      </div>
+      <div class="timeline-step reveal reveal-delay-4" data-step="4">
+        <div class="timeline-dot">4</div>
+        <h3>Review</h3>
+        <p>Both sides rate the deal. Ratings build the record.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Closing CTA ─── -->
+<section class="closing-cta">
+  <div class="closing-circuit" aria-hidden="true"></div>
+  <!-- Wireframe butterfly ornament in closing -->
+  <svg class="ornament-butterfly" style="bottom:15%;left:8%;width:64px;height:64px;animation:wing-flutter 2.5s var(--ease-paper) infinite" viewBox="0 0 48 48" fill="none" stroke="rgba(240,236,226,0.12)" stroke-width="0.8">
+    <path d="M24 8c-6 0-14 6-18 16 4 4 12 6 18 0M24 8c6 0 14 6 18 16-4 4-12 6-18 0M24 8v16M24 24c0 4-1 10-3 16M24 24c0 4 1 10 3 16"/>
+  </svg>
+  <svg class="ornament-star" style="top:20%;right:12%;width:16px;height:16px" viewBox="0 0 24 24" fill="rgba(240,236,226,0.15)">
+    <path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/>
+  </svg>
+  <!-- Additional closing ornaments -->
+  <svg class="ornament-gear" style="top:25%;left:15%;width:18px;height:18px;animation:gear-spin 10s linear infinite;color:rgba(240,236,226,0.08)" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1l1.09 3.41L16 3l-.59 3.34L19 8l-2.59 1.91L18 13l-3-1.5L13.5 15l-1.5-3-1.5 3L9 11.5 6 13l1.59-3.09L5 8l3.59-1.66L8 3l2.91 1.41z"/>
+  </svg>
+  <svg class="ornament-star" style="bottom:22%;right:18%;width:12px;height:12px;animation:pulse-soft 6s var(--ease-drift) infinite" viewBox="0 0 24 24" fill="rgba(240,236,226,0.1)">
+    <path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/>
+  </svg>
+  <svg class="ornament-flower" style="top:60%;right:6%;width:24px;height:24px;animation:petal-drift-c 14s var(--ease-drift) infinite;opacity:0.05" viewBox="0 0 36 36" fill="none" stroke="rgba(240,236,226,0.5)" stroke-width="0.8">
+    <circle cx="18" cy="18" r="3"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(0 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(72 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(144 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(216 18 18)"/>
+    <ellipse cx="18" cy="10" rx="4" ry="7" transform="rotate(288 18 18)"/>
+  </svg>
+  <div class="ornament-dot" style="top:35%;right:25%;width:4px;height:4px;background:rgba(42,157,143,0.3);border-radius:50%;animation:pulse-soft 5s var(--ease-drift) infinite"></div>
+  <div class="ornament-dot" style="bottom:30%;left:22%;width:3px;height:3px;background:rgba(240,236,226,0.12);border-radius:50%;animation:pulse-soft 4s var(--ease-drift) 2s infinite"></div>
+  <svg class="ornament-butterfly" style="top:15%;right:28%;width:36px;height:36px;opacity:0.05;animation:wing-flutter 3s var(--ease-paper) infinite,float-drift 12s var(--ease-drift) infinite" viewBox="0 0 48 48" fill="none" stroke="rgba(240,236,226,0.5)" stroke-width="0.8">
+    <path d="M24 8c-6 0-14 6-18 16 4 4 12 6 18 0M24 8c6 0 14 6 18 16-4 4-12 6-18 0M24 8v16"/>
+  </svg>
+  <div class="container">
+    <div class="closing-inner reveal">
+      <h2>Every day without a storefront is a deal&nbsp;lost.</h2>
+      <p>Creators who wait lose bookings to those who don&rsquo;t. Brands miss vetted creators while scrolling DMs.</p>
+      <a href="/signup" class="closing-cta-btn">
+        Get started free
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer ─── -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <span class="footer-logo">Clipline</span>
+      <nav class="footer-links">
+        <a href="/discover">Find creators</a>
+        <a href="/signup">Become a creator</a>
+        <a href="/login">Log in</a>
+        <a href="/legal/terms">Terms</a>
+        <a href="/legal/privacy">Privacy</a>
+        <a href="/legal/refunds">Refunds</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+
+// Hero assembly entrance
+requestAnimationFrame(function() {
+  document.querySelectorAll('.assemble-stagger > .assemble').forEach(function(el) {
+    el.classList.add('visible');
+  });
+  // Deal showcase (outside stagger, separate delay)
+  document.querySelectorAll('.deal-showcase.assemble').forEach(function(el) {
+    el.classList.add('visible');
+  });
+});
+
+// Header border on scroll
+var header = document.getElementById('header');
+window.addEventListener('scroll', function() {
+  header.classList.toggle('scrolled', window.scrollY > 10);
+}, { passive: true });
+
+// Timeline step illumination
+var timelineObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) entry.target.classList.add('lit');
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.timeline-step').forEach(function(el) { timelineObserver.observe(el); });
+</script>
+
+</body>
+</html>
