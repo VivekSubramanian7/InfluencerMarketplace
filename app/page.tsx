@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -6,6 +7,7 @@ import {
   StarIcon,
   LockIcon,
 } from "@/components/ui/icons";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -75,7 +77,11 @@ function TrustBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   );
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) redirect("/dashboard");
+
   return (
     <>
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">

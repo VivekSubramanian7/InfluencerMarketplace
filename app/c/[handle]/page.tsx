@@ -110,7 +110,7 @@ export default async function StorefrontPage({
         viewerRole={role}
       />
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-black tracking-tight">
+        <Link href={brandUserId ? "/dashboard" : "/"} className="text-lg font-black tracking-tight">
           Clipline
         </Link>
         <Link href="/discover" className="text-sm text-muted-foreground hover:text-foreground">
