@@ -81,8 +81,11 @@ begin
 end;
 $$;
 
--- Drop old constraint and column
+-- Drop old constraint, policies, index, then column
 alter table public.messages drop constraint if exists messages_one_parent;
+drop policy if exists "participants read messages" on public.messages;
+drop policy if exists "participants send messages" on public.messages;
+drop index if exists public.messages_deal_idx;
 alter table public.messages drop column if exists deal_id;
 
 -- Update RLS: deal participants can read messages via conversation
@@ -538,3 +541,4 @@ create policy "system messages readable by conversation participants"
       where c.id = conversation_id
         and (select auth.uid()) in (c.brand_id, c.creator_id)
     )
+  );
