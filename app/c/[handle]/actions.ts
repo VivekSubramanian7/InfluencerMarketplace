@@ -28,11 +28,13 @@ export async function inviteFromStorefront(formData: FormData) {
   const message = profile?.outreach_template || DEFAULT_TEMPLATE;
   const brandLabel = profile?.company || "A brand";
 
-  const { error } = await supabase.from("conversations").insert({
+  const t0 = Date.now();
+  const { data: conv, error } = await supabase.from("conversations").insert({
     brand_id: user.id,
     creator_id: creatorId,
     invite_message: message,
-  });
+  }).select("id").single();
+  const duration_ms = Date.now() - t0;
 
   if (error) {
     if (error.code === "23505") {
@@ -46,7 +48,9 @@ export async function inviteFromStorefront(formData: FormData) {
   trackServerEvent("invite_sent", user.id, {
     creator_handle: handle,
     creator_id: creatorId,
+    conversation_id: conv.id,
     source: "storefront",
+    duration_ms,
   });
 
   await notify({

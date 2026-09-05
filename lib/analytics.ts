@@ -10,6 +10,7 @@ export type AnalyticsEvent =
   | "booking_started"
   | "booking_completed"
   | "deal_state_changed"
+  | "deal_created"
   | "deal_marked_paid"
   | "deal_review_submitted"
   | "search_performed"

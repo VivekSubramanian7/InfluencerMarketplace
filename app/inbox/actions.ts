@@ -30,7 +30,7 @@ export async function respondInvite(formData: FormData) {
   }
 
   const event = response === "accepted" ? "invite_accepted" as const : "invite_declined" as const;
-  trackServerEvent(event, user.id, { conversation_id: id });
+  trackServerEvent(event, user.id, { conversation_id: id, creator_id: user.id });
 
   const { data: me } = await supabase
     .from("profiles").select("display_name").eq("id", user.id).maybeSingle();
@@ -55,9 +55,11 @@ export async function sendThreadMessage(formData: FormData) {
     redirect(`/inbox/${conversationId}?error=` +
       encodeURIComponent("Message must be 1-5000 characters"));
   }
+  const t0 = Date.now();
   const { error } = await supabase
     .from("messages")
     .insert({ conversation_id: conversationId, sender_id: user.id, body });
+  const duration_ms = Date.now() - t0;
   if (error) {
     const msg = friendlyDbError(error, {
       "42501": "You can only message in your own conversations",
@@ -71,6 +73,7 @@ export async function sendThreadMessage(formData: FormData) {
   trackServerEvent("message_sent", user.id, {
     conversation_id: conversationId,
     sender_role: role,
+    duration_ms,
   });
 
   const { data: conv } = await supabase
@@ -156,6 +159,12 @@ export async function respondOffer(formData: FormData) {
         encodeURIComponent(friendlyDbError(error)));
     }
     trackServerEvent("offer_accepted", user.id, { offer_id: offerId, deal_id: dealId });
+    trackServerEvent("deal_created", user.id, {
+      deal_id: dealId,
+      source: "offer",
+      offer_id: offerId,
+      conversation_id: conversationId,
+    });
     if (conv) {
       await notify({
         userId: conv.brand_id,

@@ -54,12 +54,14 @@ export async function performDealAction(formData: FormData) {
     payload.revision_note = note;
   }
 
+  const t0 = Date.now();
   const { data: deal, error } = await supabase.rpc("transition_deal", {
     p_deal_id: dealId,
     p_action: action,
     p_actor_role: role,
     p_payload: payload,
   });
+  const duration_ms = Date.now() - t0;
   if (error) {
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
@@ -84,6 +86,7 @@ export async function performDealAction(formData: FormData) {
       action,
       actor_role: role,
       offering_title: deal.offering_title,
+      duration_ms,
     });
   }
 

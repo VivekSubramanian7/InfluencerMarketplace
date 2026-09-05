@@ -7,6 +7,7 @@ import { parsePriceCents, parseText } from "@/lib/storefront/validation";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
+import { trackServerEvent } from "@/lib/analytics";
 
 export async function applyToCampaign(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -105,6 +106,12 @@ export async function decideApplication(formData: FormData) {
     const { data: app } = await supabase
       .from("campaign_applications").select("creator_id").eq("id", id).maybeSingle();
     if (app) {
+      trackServerEvent("deal_created", app.creator_id, {
+        deal_id: dealId,
+        source: "campaign_application",
+        campaign_id: campaignId,
+        application_id: id,
+      });
       await notify({
         userId: app.creator_id,
         kind: "application_response",
@@ -157,7 +164,7 @@ export async function bulkDecideApplications(formData: FormData) {
 
   if (decision === "accepted") {
     for (const id of ids) {
-      const { error } = await supabase.rpc("accept_campaign_application", {
+      const { data: dealId, error } = await supabase.rpc("accept_campaign_application", {
         p_application_id: id,
       });
       if (error) errors.push(error.message);
@@ -165,6 +172,12 @@ export async function bulkDecideApplications(formData: FormData) {
         const { data: app } = await supabase
           .from("campaign_applications").select("creator_id").eq("id", id).maybeSingle();
         if (app) {
+          trackServerEvent("deal_created", app.creator_id, {
+            deal_id: dealId,
+            source: "campaign_application",
+            campaign_id: campaignId,
+            application_id: id,
+          });
           await notify({
             userId: app.creator_id,
             kind: "application_response",

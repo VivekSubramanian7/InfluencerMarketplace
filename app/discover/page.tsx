@@ -33,6 +33,7 @@ export default async function DiscoverPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { user, role } = await requireUser("/discover");
+  const pageLoadedAt = Date.now();
   const params = await searchParams;
   const filters = parseDiscoveryFilters(params);
   const supabase = await createServerSupabase();
@@ -134,6 +135,7 @@ export default async function DiscoverPage({
         }}
         totalResults={total}
         page={page}
+        pageLoadedAt={pageLoadedAt}
       />
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
