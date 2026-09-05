@@ -91,8 +91,14 @@ export async function sendThreadMessage(formData: FormData) {
     });
   }
 
+  const returnTo = formData.get("return_to");
+  const dest = typeof returnTo === "string" && returnTo.startsWith("/inbox")
+    ? returnTo
+    : `/inbox/${conversationId}`;
+
   revalidatePath(`/inbox/${conversationId}`);
-  redirect(`/inbox/${conversationId}`);
+  revalidatePath("/inbox");
+  redirect(dest);
 }
 
 export async function sendOffer(formData: FormData) {

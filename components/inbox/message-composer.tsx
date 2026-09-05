@@ -11,11 +11,13 @@ export function MessageComposer({
   defaultValue = "",
   showDraftButton,
   draftAction,
+  returnTo,
 }: {
   conversationId: string;
   defaultValue?: string;
   showDraftButton?: boolean;
   draftAction?: (formData: FormData) => Promise<void>;
+  returnTo?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -36,6 +38,7 @@ export function MessageComposer({
         }}
       >
         <input type="hidden" name="conversation_id" value={conversationId} />
+        {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
         <Textarea
           name="body"
           placeholder="Write a message"

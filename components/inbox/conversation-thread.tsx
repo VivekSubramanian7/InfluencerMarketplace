@@ -15,9 +15,11 @@ import { inboxCta } from "@/lib/inbox/cta";
 export async function ConversationThread({
   conversationId,
   compact = false,
+  returnTo,
 }: {
   conversationId: string;
   compact?: boolean;
+  returnTo?: string;
 }) {
   const { user, role } = await requireUser(`/inbox/${conversationId}`);
   const supabase = await createServerSupabase();
@@ -138,6 +140,7 @@ export async function ConversationThread({
               defaultValue={draft?.body ?? ""}
               showDraftButton={iAmBrand}
               draftAction={draftReply}
+              returnTo={returnTo}
             />
           </div>
         </section>

@@ -90,7 +90,7 @@ export default async function InboxPage({
     <AuthenticatedShell
       userId={user.id}
       role={role}
-      pane={ownedSelected ? <ConversationThread conversationId={ownedSelected} compact /> : undefined}
+      pane={ownedSelected ? <ConversationThread conversationId={ownedSelected} compact returnTo={`/inbox?c=${ownedSelected}`} /> : undefined}
     >
         <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
 
