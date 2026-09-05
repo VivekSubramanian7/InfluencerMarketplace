@@ -56,8 +56,13 @@ export default async function DealPage({
                deal.revision_count, deal.revision_limit);
 
   const statusIsAttention = deal.status === "disputed" || deal.status === "published";
-
   const currentStep = STATUS_TO_STEP[deal.status as DealStatus] ?? 0;
+
+  const previewApproved = deal.status === "submitted" && (() => {
+    const last = [...(events ?? [])].reverse()
+      .find((e) => e.action === "approve_preview" || e.action === "request_revision");
+    return last?.action === "approve_preview";
+  })();
 
   return (
     <AuthenticatedShell userId={user.id} role={role}>
@@ -210,6 +215,16 @@ export default async function DealPage({
           {deal.last_revision_note && myRole === "creator" && (
             <p className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--secondary)] p-3 text-sm">
               <span className="font-medium">Brand feedback:</span> {deal.last_revision_note}
+            </p>
+          )}
+          {previewApproved && myRole === "creator" && (
+            <p className="mt-3 rounded-lg border border-ok/30 bg-ok/5 p-3 text-sm text-ok">
+              <span className="font-medium">Preview approved</span> — you&apos;re clear to publish and mark the content live.
+            </p>
+          )}
+          {previewApproved && myRole === "brand" && (
+            <p className="mt-3 rounded-lg border border-ok/30 bg-ok/5 p-3 text-sm text-ok">
+              <span className="font-medium">Preview approved.</span> Waiting for the creator to publish.
             </p>
           )}
           {deal.status === "completed" && !myReview && role !== "admin" && (

@@ -56,6 +56,15 @@ export async function applyToCampaign(formData: FormData) {
     redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(msg));
   }
 
+  if (campaign) {
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await emailUser({
+      userId: campaign.brand_id,
+      subject: `New application for "${campaign.title}"`,
+      text: `Review it on Clipline: ${site}/campaigns/${campaignId}`,
+    });
+  }
+
   redirect(`/campaigns/${campaignId}?saved=1`);
 }
 

@@ -35,7 +35,7 @@ export const TRANSITIONS: Transition[] = [
   { from: "revision_requested", action: "submit_preview", to: "submitted", actor: "creator", mode: null },
   { from: "submitted", action: "request_revision", to: "revision_requested", actor: "brand", mode: null },
   { from: "submitted", action: "approve_preview", to: "submitted", actor: "brand", mode: null },
-  { from: "submitted", action: "mark_published", to: "published", actor: "creator", mode: null },
+  { from: "submitted", action: "mark_published", to: "completed", actor: "creator", mode: null },
 
   // completion
   { from: "published", action: "approve", to: "completed", actor: "brand", mode: null },

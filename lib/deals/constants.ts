@@ -32,7 +32,7 @@ export const ACTION_TITLES: Record<string, string> = {
   submit_preview:   "Preview submitted for review",
   approve_preview:  "Preview approved — clear to publish",
   request_revision: "Changes requested on preview",
-  mark_published:   "Content is live — verify and approve",
+  mark_published:   "Content is live — deal completed",
   approve:          "Deal approved and completed",
   cancel:           "Deal cancelled",
   dispute:          "Dispute opened",
