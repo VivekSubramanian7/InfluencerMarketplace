@@ -31,6 +31,7 @@ export function BulkProposals({
   convByCreator,
   ratingByCreator = {},
   verifiedById = {},
+  returnTo,
 }: {
   campaignId: string;
   applications: App[];
@@ -39,6 +40,7 @@ export function BulkProposals({
   convByCreator: Record<string, string>;
   ratingByCreator?: Record<string, { avg: number; count: number }>;
   verifiedById?: Record<string, boolean>;
+  returnTo?: string;
 }) {
   const pending = applications.filter((a) => a.status === "pending");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -76,6 +78,7 @@ export function BulkProposals({
               <form action={bulkDecideApplications}>
                 <input type="hidden" name="campaign_id" value={campaignId} />
                 <input type="hidden" name="decision" value="accepted" />
+                {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
                 {[...selected].map((id) => (
                   <input key={id} type="hidden" name="application_ids" value={id} />
                 ))}
@@ -92,6 +95,7 @@ export function BulkProposals({
                 <form action={bulkDecideApplications} className="mt-2 flex flex-col gap-2">
                   <input type="hidden" name="campaign_id" value={campaignId} />
                   <input type="hidden" name="decision" value="declined" />
+                  {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
                   {[...selected].map((id) => (
                     <input key={id} type="hidden" name="application_ids" value={id} />
                   ))}
@@ -174,6 +178,7 @@ export function BulkProposals({
                     <input type="hidden" name="campaign_id" value={campaignId} />
                     <input type="hidden" name="id" value={a.id} />
                     <input type="hidden" name="decision" value="accepted" />
+                    {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
                     <Button type="submit" size="sm">Accept</Button>
                   </form>
                   <details className="group">
@@ -186,6 +191,7 @@ export function BulkProposals({
                       <input type="hidden" name="campaign_id" value={campaignId} />
                       <input type="hidden" name="id" value={a.id} />
                       <input type="hidden" name="decision" value="declined" />
+                      {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
                       <textarea
                         name="decline_reason"
                         maxLength={500}

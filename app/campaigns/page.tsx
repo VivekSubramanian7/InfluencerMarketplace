@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/require";
 import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { CampaignDetail } from "@/components/campaigns/campaign-detail";
 import { TemplatePicker } from "@/components/campaigns/template-picker";
 import { FilterTokenBar } from "@/components/filters/filter-token-bar";
 import { parseFilterTokens, type FilterToken } from "@/lib/filters/tokens";
@@ -38,12 +39,14 @@ export default async function CampaignsPage({
     prefill_niche?: string;
     status?: string;
     offering_type?: string;
+    c?: string;
   }>;
 }) {
   const { user, role } = await requireUser("/campaigns");
   await touchCursor("campaigns");
   const sp = await searchParams;
   const { error, saved } = sp;
+  const selectedId = sp.c ?? null;
   const filterSp = new URLSearchParams();
   if (sp.status) filterSp.set("status", sp.status);
   if (sp.offering_type) filterSp.set("offering_type", sp.offering_type);
@@ -51,7 +54,19 @@ export default async function CampaignsPage({
   const supabase = await createServerSupabase();
 
   return (
-    <AuthenticatedShell userId={user.id} role={role}>
+    <AuthenticatedShell
+      userId={user.id}
+      role={role}
+      pane={selectedId ? (
+        <CampaignDetail
+          campaignId={selectedId}
+          compact
+          returnTo={`/campaigns?c=${selectedId}`}
+          error={error}
+          saved={saved}
+        />
+      ) : undefined}
+    >
         <h1 className="text-2xl font-semibold tracking-tight">
           {role === "brand" ? "Your campaigns" : "Open campaigns"}
         </h1>
@@ -78,35 +93,93 @@ export default async function CampaignsPage({
             ]}
           />
         )}
-        {error && (
-          <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        {saved && (
-          <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
-            Saved.
-          </p>
+        {(error || saved) && !selectedId && (
+          <>
+            {error && (
+              <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            {saved && (
+              <p className="mt-4 rounded-lg border border-ok/30 bg-ok/5 px-4 py-3 text-sm text-ok">
+                Saved.
+              </p>
+            )}
+          </>
         )}
         {role === "brand" ? (
-          <BrandCampaigns userId={user.id} supabase={supabase} tokens={tokens} />
+          <BrandCampaigns userId={user.id} supabase={supabase} tokens={tokens} selectedId={selectedId} filterSp={filterSp} />
         ) : (
-          <CreatorCampaigns userId={user.id} supabase={supabase} />
+          <CreatorCampaigns userId={user.id} supabase={supabase} selectedId={selectedId} />
         )}
     </AuthenticatedShell>
   );
 }
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
+type Stats = { pending: number; accepted: number; declined: number };
+
+type BrandCampaign = {
+  id: string;
+  title: string;
+  description: string;
+  offering_type: string;
+  budget_min_cents: number;
+  budget_max_cents: number;
+  apply_by: string | null;
+  status: string;
+  created_at: string;
+};
+
+function BrandCampaignRow({
+  campaign,
+  stats,
+}: {
+  campaign: BrandCampaign;
+  stats: Stats | undefined;
+}) {
+  return (
+    <>
+      <span className="min-w-0">
+        <span className="block truncate font-bold">{campaign.title}</span>
+        <span className="mt-0.5 block text-sm text-muted-foreground">
+          {TYPE_LABELS[campaign.offering_type] ?? campaign.offering_type}
+          {campaign.apply_by ? ` · apply by ${campaign.apply_by}` : ""}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-4">
+        {stats && (stats.pending > 0 || stats.accepted > 0 || stats.declined > 0) && (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {[
+              stats.pending > 0 && `${stats.pending} pending`,
+              stats.accepted > 0 && `${stats.accepted} accepted`,
+              stats.declined > 0 && `${stats.declined} declined`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        )}
+        <Badge variant="secondary">{campaign.status}</Badge>
+        <span className="font-semibold tabular-nums text-primary">
+          {budgetRange(campaign.budget_min_cents, campaign.budget_max_cents)}
+        </span>
+      </span>
+    </>
+  );
+}
 
 async function BrandCampaigns({
   userId,
   supabase,
   tokens,
+  selectedId,
+  filterSp,
 }: {
   userId: string;
   supabase: Supabase;
   tokens: FilterToken[];
+  selectedId: string | null;
+  filterSp: URLSearchParams;
 }) {
   const [{ data: campaigns, error }, { count: liveCreators }] = await Promise.all([
     supabase
@@ -130,7 +203,6 @@ async function BrandCampaigns({
   });
 
   const ids = filtered.map((c) => c.id);
-  type Stats = { pending: number; accepted: number; declined: number };
   const statsByCampaign = new Map<string, Stats>();
   if (ids.length > 0) {
     const { data: apps, error: aErr } = await supabase
@@ -177,36 +249,26 @@ async function BrandCampaigns({
         <ul className="mt-6 flex flex-col gap-2">
           {filtered.map((c) => {
             const stats = statsByCampaign.get(c.id);
+            const paneHref = `/campaigns?c=${c.id}${filterSp.toString() ? `&${filterSp.toString()}` : ""}`;
+            const rowClass = (selected: boolean) =>
+              `items-center justify-between gap-4 rounded-xl border p-5 transition-colors ${
+                selected
+                  ? "border-primary/40 bg-primary/5"
+                  : "hover:border-primary/40"
+              }`;
             return (
               <li key={c.id}>
                 <Link
-                  href={`/campaigns/${c.id}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border p-5 transition-colors hover:border-primary/40"
+                  href={paneHref}
+                  className={`hidden ${rowClass(c.id === selectedId)} lg:flex`}
                 >
-                  <span className="min-w-0">
-                    <span className="block truncate font-bold">{c.title}</span>
-                    <span className="mt-0.5 block text-sm text-muted-foreground">
-                      {TYPE_LABELS[c.offering_type] ?? c.offering_type}
-                      {c.apply_by ? ` · apply by ${c.apply_by}` : ""}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-4">
-                    {stats && (stats.pending > 0 || stats.accepted > 0 || stats.declined > 0) && (
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {[
-                          stats.pending > 0 && `${stats.pending} pending`,
-                          stats.accepted > 0 && `${stats.accepted} accepted`,
-                          stats.declined > 0 && `${stats.declined} declined`,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    )}
-                    <Badge variant="secondary">{c.status}</Badge>
-                    <span className="font-semibold tabular-nums text-primary">
-                      {budgetRange(c.budget_min_cents, c.budget_max_cents)}
-                    </span>
-                  </span>
+                  <BrandCampaignRow campaign={c} stats={stats} />
+                </Link>
+                <Link
+                  href={`/campaigns/${c.id}`}
+                  className={`flex ${rowClass(false)} lg:hidden`}
+                >
+                  <BrandCampaignRow campaign={c} stats={stats} />
                 </Link>
               </li>
             );
@@ -217,7 +279,15 @@ async function BrandCampaigns({
   );
 }
 
-async function CreatorCampaigns({ userId, supabase }: { userId: string; supabase: Supabase }) {
+async function CreatorCampaigns({
+  userId,
+  supabase,
+  selectedId,
+}: {
+  userId: string;
+  supabase: Supabase;
+  selectedId: string | null;
+}) {
   const today = new Date().toISOString().slice(0, 10);
   const [{ data: campaigns, error }, { data: myApps, error: aErr }] = await Promise.all([
     supabase
@@ -253,24 +323,41 @@ async function CreatorCampaigns({ userId, supabase }: { userId: string; supabase
       {(campaigns ?? []).map((c) => {
         const brandName = companyById.get(c.brand_id) || nameById.get(c.brand_id) || "A brand";
         const mine = myStatusByCampaign.get(c.id);
+        const rowClass = (selected: boolean) =>
+          `rounded-xl border p-5 transition-colors ${
+            selected
+              ? "border-primary/40 bg-primary/5"
+              : "hover:border-primary/40"
+          }`;
+        const rowContent = (
+          <>
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate font-bold">{c.title}</span>
+              <span className="shrink-0 font-semibold tabular-nums text-primary">
+                {budgetRange(c.budget_min_cents, c.budget_max_cents)}
+              </span>
+            </div>
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+              {brandName} · {TYPE_LABELS[c.offering_type] ?? c.offering_type}
+              {c.apply_by ? ` · apply by ${c.apply_by}` : ""}
+              {mine && <Badge variant="secondary">{APPLICATION_LABELS[mine] ?? mine}</Badge>}
+            </p>
+            <p className="mt-2 line-clamp-2 text-sm">{c.description}</p>
+          </>
+        );
         return (
           <li key={c.id}>
             <Link
-              href={`/campaigns/${c.id}`}
-              className="block rounded-xl border p-5 transition-colors hover:border-primary/40"
+              href={`/campaigns?c=${c.id}`}
+              className={`hidden ${rowClass(c.id === selectedId)} lg:block`}
             >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate font-bold">{c.title}</span>
-                <span className="shrink-0 font-semibold tabular-nums text-primary">
-                  {budgetRange(c.budget_min_cents, c.budget_max_cents)}
-                </span>
-              </div>
-              <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                {brandName} · {TYPE_LABELS[c.offering_type] ?? c.offering_type}
-                {c.apply_by ? ` · apply by ${c.apply_by}` : ""}
-                {mine && <Badge variant="secondary">{APPLICATION_LABELS[mine] ?? mine}</Badge>}
-              </p>
-              <p className="mt-2 line-clamp-2 text-sm">{c.description}</p>
+              {rowContent}
+            </Link>
+            <Link
+              href={`/campaigns/${c.id}`}
+              className={`block ${rowClass(false)} lg:hidden`}
+            >
+              {rowContent}
             </Link>
           </li>
         );

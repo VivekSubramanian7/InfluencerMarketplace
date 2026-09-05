@@ -9,15 +9,23 @@ import { friendlyDbError } from "@/lib/errors";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
 import { trackServerEvent } from "@/lib/analytics";
 
+function campaignsRedirectBase(returnTo: string, fallback: string) {
+  return returnTo.startsWith("/campaigns") ? returnTo : fallback;
+}
+
 export async function applyToCampaign(formData: FormData) {
   const { user } = await requireRole("creator");
   const supabase = await createServerSupabase();
   const campaignId = String(formData.get("campaign_id") ?? "");
+  const returnTo = String(formData.get("return_to") ?? "");
+  const fallback = `/campaigns/${campaignId}`;
+  const base = campaignsRedirectBase(returnTo, fallback);
+  const sep = base.includes("?") ? "&" : "?";
 
   const pitch = parseText(String(formData.get("pitch") ?? ""), 2000);
   const price = parsePriceCents(String(formData.get("proposed_price") ?? ""));
   if (!pitch || !price) {
-    redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(
+    redirect(`${base}${sep}error=` + encodeURIComponent(
       "Check the form: pitch (≤2000 characters) and a price between $1 and $1,000,000"));
   }
 
@@ -38,7 +46,7 @@ export async function applyToCampaign(formData: FormData) {
   const activeTypes = (offerings ?? []).map((o) => o.type);
   if (!campaign || !creatorCanApply({ campaignType: campaign.offering_type, activeOfferingTypes: activeTypes })) {
     const typeLabel = campaign?.offering_type?.replace(/_/g, " ") ?? "matching";
-    redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(
+    redirect(`${base}${sep}error=` + encodeURIComponent(
       `This campaign needs a ${typeLabel} offering. Add one to your storefront, or ask the brand to book another format.`));
   }
 
@@ -53,7 +61,7 @@ export async function applyToCampaign(formData: FormData) {
       "23505": "You already applied to this campaign",
       "42501": "Only creator accounts can apply to campaigns",
     });
-    redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(msg));
+    redirect(`${base}${sep}error=` + encodeURIComponent(msg));
   }
 
   if (campaign) {
@@ -65,7 +73,7 @@ export async function applyToCampaign(formData: FormData) {
     });
   }
 
-  redirect(`/campaigns/${campaignId}?saved=1`);
+  redirect(`${base}${sep}saved=1`);
 }
 
 export async function withdrawApplication(formData: FormData) {
@@ -73,6 +81,10 @@ export async function withdrawApplication(formData: FormData) {
   const supabase = await createServerSupabase();
   const campaignId = String(formData.get("campaign_id") ?? "");
   const id = String(formData.get("id") ?? "");
+  const returnTo = String(formData.get("return_to") ?? "");
+  const fallback = `/campaigns/${campaignId}`;
+  const base = campaignsRedirectBase(returnTo, fallback);
+  const sep = base.includes("?") ? "&" : "?";
 
   const { error } = await supabase
     .from("campaign_applications")
@@ -80,9 +92,9 @@ export async function withdrawApplication(formData: FormData) {
     .eq("id", id)
     .eq("creator_id", user.id);
   if (error) {
-    redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(friendlyDbError(error)));
+    redirect(`${base}${sep}error=` + encodeURIComponent(friendlyDbError(error)));
   }
-  redirect(`/campaigns/${campaignId}?saved=1`);
+  redirect(`${base}${sep}saved=1`);
 }
 
 export async function decideApplication(formData: FormData) {
@@ -91,7 +103,11 @@ export async function decideApplication(formData: FormData) {
   const campaignId = String(formData.get("campaign_id") ?? "");
   const id = String(formData.get("id") ?? "");
   const decision = String(formData.get("decision") ?? "");
-  if (decision !== "accepted" && decision !== "declined") redirect(`/campaigns/${campaignId}`);
+  const returnTo = String(formData.get("return_to") ?? "");
+  const fallback = `/campaigns/${campaignId}`;
+  const base = campaignsRedirectBase(returnTo, fallback);
+  const sep = base.includes("?") ? "&" : "?";
+  if (decision !== "accepted" && decision !== "declined") redirect(base);
 
   // Accepting creates the deal at the creator's proposed price (RPC also
   // flips the application to accepted and links the deal).
@@ -100,7 +116,7 @@ export async function decideApplication(formData: FormData) {
       p_application_id: id,
     });
     if (error || !dealId) {
-      redirect(`/campaigns/${campaignId}?error=` +
+      redirect(`${base}${sep}error=` +
         encodeURIComponent(friendlyDbError(error)));
     }
     const { data: app } = await supabase
@@ -134,10 +150,10 @@ export async function decideApplication(formData: FormData) {
     .select("creator_id")
     .maybeSingle();
   if (error || !declined) {
-    redirect(`/campaigns/${campaignId}?error=` +
+    redirect(`${base}${sep}error=` +
       encodeURIComponent(error ? friendlyDbError(error) : "Application not found"));
   }
-  redirect(`/campaigns/${campaignId}?saved=1`);
+  redirect(`${base}${sep}saved=1`);
 }
 
 export async function bulkDecideApplications(formData: FormData) {
@@ -145,12 +161,16 @@ export async function bulkDecideApplications(formData: FormData) {
   const supabase = await createServerSupabase();
   const campaignId = String(formData.get("campaign_id") ?? "");
   const decision = String(formData.get("decision") ?? "");
+  const returnTo = String(formData.get("return_to") ?? "");
+  const fallback = `/campaigns/${campaignId}`;
+  const base = campaignsRedirectBase(returnTo, fallback);
+  const sep = base.includes("?") ? "&" : "?";
   const ids = formData.getAll("application_ids").map(String).filter(Boolean);
   const reasonRaw = String(formData.get("decline_reason") ?? "").trim();
   const declineReason = reasonRaw.length > 0 ? reasonRaw.slice(0, 500) : null;
 
   if (ids.length === 0 || (decision !== "accepted" && decision !== "declined")) {
-    redirect(`/campaigns/${campaignId}`);
+    redirect(base);
   }
 
   const errors: string[] = [];
@@ -193,8 +213,8 @@ export async function bulkDecideApplications(formData: FormData) {
   }
 
   if (errors.length > 0) {
-    redirect(`/campaigns/${campaignId}?error=` +
+    redirect(`${base}${sep}error=` +
       encodeURIComponent(`${errors.length} application(s) failed: ${errors[0]}`));
   }
-  redirect(`/campaigns/${campaignId}?saved=1`);
+  redirect(`${base}${sep}saved=1`);
 }

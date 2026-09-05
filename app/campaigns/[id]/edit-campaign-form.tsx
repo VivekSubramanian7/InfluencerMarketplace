@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 
 export function EditCampaignForm({
   campaign,
+  returnTo,
 }: {
   campaign: {
     id: string;
@@ -19,6 +20,7 @@ export function EditCampaignForm({
     budget_max_cents: number;
     apply_by: string | null;
   };
+  returnTo?: string;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -33,6 +35,7 @@ export function EditCampaignForm({
   return (
     <form action={editCampaign} className="mt-4 flex max-w-xl flex-col gap-4 rounded-xl border p-5">
       <input type="hidden" name="id" value={campaign.id} />
+      {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="edit-title">Title</Label>
         <Input id="edit-title" name="title" required maxLength={80} defaultValue={campaign.title} />

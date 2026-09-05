@@ -60,25 +60,37 @@ export async function createCampaign(formData: FormData) {
   redirect(`/campaigns/${campaign.id}`);
 }
 
+function campaignsRedirectBase(returnTo: string, fallback: string) {
+  return returnTo.startsWith("/campaigns") ? returnTo : fallback;
+}
+
 export async function setCampaignStatus(formData: FormData) {
   const { user } = await requireRole("brand");
   const supabase = await createServerSupabase();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
-  if (status !== "open" && status !== "closed") redirect(`/campaigns/${id}`);
+  const returnTo = String(formData.get("return_to") ?? "");
+  const fallback = `/campaigns/${id}`;
+  if (status !== "open" && status !== "closed") redirect(campaignsRedirectBase(returnTo, fallback));
 
   const { error } = await supabase
     .from("campaigns").update({ status }).eq("id", id).eq("brand_id", user.id);
+  const base = campaignsRedirectBase(returnTo, fallback);
+  const sep = base.includes("?") ? "&" : "?";
   if (error) {
-    redirect(`/campaigns/${id}?error=` + encodeURIComponent(friendlyDbError(error)));
+    redirect(`${base}${sep}error=` + encodeURIComponent(friendlyDbError(error)));
   }
-  redirect(`/campaigns/${id}?saved=1`);
+  redirect(`${base}${sep}saved=1`);
 }
 
 export async function editCampaign(formData: FormData) {
   const { user } = await requireRole("brand");
   const supabase = await createServerSupabase();
   const id = String(formData.get("id") ?? "");
+  const returnTo = String(formData.get("return_to") ?? "");
+  const fallback = `/campaigns/${id}`;
+  const base = campaignsRedirectBase(returnTo, fallback);
+  const sep = base.includes("?") ? "&" : "?";
 
   const title = parseText(String(formData.get("title") ?? ""), 80);
   const description = parseText(String(formData.get("description") ?? ""), 2000);
@@ -87,7 +99,7 @@ export async function editCampaign(formData: FormData) {
   const applyBy = parseApplyBy(String(formData.get("apply_by") ?? ""));
 
   if (!title || !description || !budgetMin || !budgetMax || budgetMax < budgetMin || !applyBy.ok) {
-    redirect(`/campaigns/${id}?error=` + encodeURIComponent(
+    redirect(`${base}${sep}error=` + encodeURIComponent(
       "Check the form: title (≤80), description (≤2000), budget $1–$1,000,000 with max ≥ min, and a valid date"));
   }
 
@@ -104,7 +116,7 @@ export async function editCampaign(formData: FormData) {
     .eq("brand_id", user.id);
 
   if (error) {
-    redirect(`/campaigns/${id}?error=` + encodeURIComponent(friendlyDbError(error)));
+    redirect(`${base}${sep}error=` + encodeURIComponent(friendlyDbError(error)));
   }
-  redirect(`/campaigns/${id}?saved=1`);
+  redirect(`${base}${sep}saved=1`);
 }
