@@ -6,7 +6,7 @@ import { requireRole, requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseOptionalText, parsePriceCents, parseText } from "@/lib/storefront/validation";
 import { generatePlainText } from "@/lib/ai/llm";
-import { notify } from "@/lib/notify";
+import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { trackServerEvent } from "@/lib/analytics";
 
@@ -34,13 +34,14 @@ export async function respondInvite(formData: FormData) {
 
   const { data: me } = await supabase
     .from("profiles").select("display_name").eq("id", user.id).maybeSingle();
-  await notify({
-    userId: updated.brand_id,
-    kind: "invite_response",
-    title: `${me?.display_name || "A creator"} ${response === "accepted" ? "accepted your invite" : "declined your invite"}`,
-    href: response === "accepted" ? `/inbox/${id}` : "/inbox",
-    email: response === "accepted",
-  });
+  if (response === "accepted") {
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await emailUser({
+      userId: updated.brand_id,
+      subject: `${me?.display_name || "A creator"} accepted your invite`,
+      text: `Open it on Clipline: ${site}/inbox/${id}`,
+    });
+  }
 
   revalidatePath("/inbox");
   redirect(response === "accepted" ? `/inbox/${id}?focus=offer` : "/inbox");
@@ -76,21 +77,6 @@ export async function sendThreadMessage(formData: FormData) {
     duration_ms,
   });
 
-  const { data: conv } = await supabase
-    .from("conversations")
-    .select("brand_id, creator_id")
-    .eq("id", conversationId)
-    .maybeSingle();
-  if (conv) {
-    await notify({
-      userId: conv.brand_id === user.id ? conv.creator_id : conv.brand_id,
-      kind: "message",
-      title: "New message",
-      body: body!.slice(0, 200),
-      href: `/inbox/${conversationId}`,
-    });
-  }
-
   const returnTo = formData.get("return_to");
   const dest = typeof returnTo === "string" && returnTo.startsWith("/inbox")
     ? returnTo
@@ -107,16 +93,20 @@ export async function sendOffer(formData: FormData) {
   const conversationId = String(formData.get("conversation_id") ?? "");
   const offeringId = String(formData.get("offering_id") ?? "");
   const price = parsePriceCents(String(formData.get("price") ?? ""));
-  const note = parseOptionalText(String(formData.get("note") ?? ""), 2000);
-  if (!offeringId || !price || !note.ok) {
+  const goals = parseText(String(formData.get("goals") ?? ""), 2000);
+  const product = parseOptionalText(String(formData.get("product_description") ?? ""), 2000);
+  const talking = parseOptionalText(String(formData.get("talking_points") ?? ""), 2000);
+  if (!offeringId || !price || !goals || !product.ok || !talking.ok) {
     redirect(`/inbox/${conversationId}?error=` +
-      encodeURIComponent("Pick an offering and a price between $1 and $1,000,000; note up to 2000 characters"));
+      encodeURIComponent("Pick an offering, set a price ($1-$1M), and describe the goals (max 2000 chars each)"));
   }
   const { error } = await supabase.from("offers").insert({
     conversation_id: conversationId,
     offering_id: offeringId,
     price_cents: price,
-    note: note.ok ? note.value : null,
+    goals,
+    product_description: product.value,
+    talking_points: talking.value,
   });
   if (error) {
     const msg = friendlyDbError(error, {
@@ -133,12 +123,11 @@ export async function sendOffer(formData: FormData) {
   const { data: conv } = await supabase
     .from("conversations").select("creator_id").eq("id", conversationId).maybeSingle();
   if (conv) {
-    await notify({
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await emailUser({
       userId: conv.creator_id,
-      kind: "offer",
-      title: `You have an offer: $${(price! / 100).toFixed(2)}`,
-      href: `/inbox/${conversationId}`,
-      email: true,
+      subject: `You have an offer: $${(price! / 100).toFixed(2)}`,
+      text: `Open it on Clipline: ${site}/inbox/${conversationId}`,
     });
   }
 
@@ -172,12 +161,11 @@ export async function respondOffer(formData: FormData) {
       conversation_id: conversationId,
     });
     if (conv) {
-      await notify({
+      const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+      await emailUser({
         userId: conv.brand_id,
-        kind: "offer_response",
-        title: "Your offer was accepted — the deal has started",
-        href: `/deals/${dealId}`,
-        email: true,
+        subject: "Your offer was accepted — the deal has started",
+        text: `Open it on Clipline: ${site}/deals/${dealId}`,
       });
     }
     redirect(`/deals/${dealId}`);
@@ -191,14 +179,6 @@ export async function respondOffer(formData: FormData) {
     redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
   trackServerEvent("offer_declined", user.id, { offer_id: offerId });
-  if (conv) {
-    await notify({
-      userId: conv.brand_id,
-      kind: "offer_response",
-      title: "Your offer was declined",
-      href: `/inbox/${conversationId}`,
-    });
-  }
   revalidatePath(`/inbox/${conversationId}`);
   redirect(`/inbox/${conversationId}`);
 }

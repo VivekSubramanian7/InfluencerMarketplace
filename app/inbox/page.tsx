@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
+import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { respondInvite } from "./actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
@@ -14,6 +15,7 @@ export default async function InboxPage({
   searchParams: Promise<{ error?: string; sent?: string; status?: string; c?: string }>;
 }) {
   const { user, role } = await requireUser("/inbox");
+  await touchCursor("inbox");
   const { error, sent, status, c: selectedId } = await searchParams;
   const supabase = await createServerSupabase();
 

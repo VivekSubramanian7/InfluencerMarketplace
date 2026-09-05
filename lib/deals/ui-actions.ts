@@ -11,12 +11,11 @@ export interface UiAction {
   needsPreview?: boolean;
 }
 
-// Order here is display order. Only user-facing actions (no system/admin).
 const CANDIDATES: UiAction[] = [
   { action: "accept", label: "Accept deal", needsUrl: null, confirm: false },
   { action: "decline", label: "Decline", needsUrl: null, confirm: true },
-  { action: "begin_production", label: "Start production", needsUrl: null, confirm: false },
   { action: "submit_preview", label: "Submit preview", needsUrl: "preview_url", confirm: false },
+  { action: "approve_preview", label: "Approve preview", needsUrl: null, confirm: false },
   { action: "request_revision", label: "Request changes", needsUrl: null, confirm: false, needsNote: true },
   { action: "mark_published", label: "Mark as published", needsUrl: "live_url", confirm: false },
   { action: "approve", label: "Approve & complete", needsUrl: null, confirm: false, needsPreview: true },
@@ -27,9 +26,14 @@ const CANDIDATES: UiAction[] = [
 export function actionsFor(
   status: DealStatus,
   role: "brand" | "creator",
-  mode: PaymentMode
+  mode: PaymentMode,
+  revisionCount = 0,
+  revisionLimit = 1,
 ): UiAction[] {
-  return CANDIDATES.filter((c) => canTransition(status, c.action, role, mode));
+  return CANDIDATES.filter((c) => {
+    if (c.action === "request_revision" && revisionCount >= revisionLimit) return false;
+    return canTransition(status, c.action, role, mode);
+  });
 }
 
 export function primaryActionLabel(

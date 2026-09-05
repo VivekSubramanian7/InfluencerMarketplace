@@ -1,24 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
+import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
+import { STATUS_LABELS, DEAL_STEPS, STATUS_TO_STEP } from "@/lib/deals/constants";
 import { markPaid, performDealAction } from "./actions";
 import { submitReview } from "./review-actions";
-import { DealMessages } from "./messages";
+import { sendThreadMessage } from "@/app/inbox/actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { ReviewModal } from "@/components/deals/review-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-const STATUS_LABELS: Record<string, string> = {
-  requested: "Awaiting creator response", funded: "Funded",
-  accepted: "Accepted, production starting", in_production: "In production",
-  submitted: "Preview submitted", revision_requested: "Changes requested",
-  published: "Published, awaiting brand approval", completed: "Completed",
-  cancelled: "Cancelled", disputed: "Disputed, admin will review",
-};
 
 export default async function DealPage({
   params, searchParams,
@@ -28,6 +22,7 @@ export default async function DealPage({
 }) {
   const { id } = await params;
   const { user, role } = await requireUser(`/deals/${id}`);
+  await touchCursor("deals");
   const { error, reported } = await searchParams;
   const supabase = await createServerSupabase();
 
@@ -48,40 +43,26 @@ export default async function DealPage({
     supabase.from("creator_profiles").select("handle").eq("user_id", deal.creator_id).maybeSingle(),
   ]);
 
-  let conversationMessages: { id: string; sender_id: string; body: string; created_at: string }[] = [];
-  {
-    const offerEvent = (events ?? []).find((e) => e.action === "offer_accepted");
-    if (offerEvent) {
-      const { data: fullEvent } = await supabase
-        .from("deal_events")
-        .select("metadata")
-        .eq("deal_id", id)
-        .eq("action", "offer_accepted")
-        .maybeSingle();
-      const convId = fullEvent?.metadata?.conversation_id;
-      if (convId) {
-        const { data } = await supabase
-          .from("messages")
-          .select("id, sender_id, body, created_at")
-          .eq("conversation_id", convId)
-          .order("created_at");
-        conversationMessages = data ?? [];
-      }
-    }
-  }
+  const { data: threadMessages } = deal.conversation_id
+    ? await supabase
+        .from("messages")
+        .select("id, sender_id, body, kind, created_at")
+        .eq("conversation_id", deal.conversation_id)
+        .order("created_at")
+    : { data: null };
 
   const actions = role === "admin" ? [] :
-    actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode);
+    actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode,
+               deal.revision_count, deal.revision_limit);
 
   const statusIsAttention = deal.status === "disputed" || deal.status === "published";
+  const currentStep = STATUS_TO_STEP[deal.status as DealStatus] ?? 0;
 
-  const DEAL_STEPS = ["Booked", "Accepted", "In production", "Submitted", "Published", "Completed"] as const;
-  const STATUS_TO_STEP: Record<string, number> = {
-    requested: 0, funded: 0, accepted: 1, in_production: 2,
-    submitted: 3, revision_requested: 3, published: 4, completed: 5,
-    cancelled: -1, disputed: -1,
-  };
-  const currentStep = STATUS_TO_STEP[deal.status] ?? 0;
+  const previewApproved = deal.status === "submitted" && (() => {
+    const last = [...(events ?? [])].reverse()
+      .find((e) => e.action === "approve_preview" || e.action === "request_revision");
+    return last?.action === "approve_preview";
+  })();
 
   return (
     <AuthenticatedShell userId={user.id} role={role}>
@@ -140,7 +121,7 @@ export default async function DealPage({
         {statusIsAttention && (
           <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
         )}
-        <span className="font-semibold">{STATUS_LABELS[deal.status] ?? deal.status}</span>
+        <span className="font-semibold">{STATUS_LABELS[deal.status as DealStatus] ?? deal.status}</span>
       </div>
 
       {deal.payment_mode === "off_platform" && (
@@ -236,6 +217,16 @@ export default async function DealPage({
               <span className="font-medium">Brand feedback:</span> {deal.last_revision_note}
             </p>
           )}
+          {previewApproved && myRole === "creator" && (
+            <p className="mt-3 rounded-lg border border-ok/30 bg-ok/5 p-3 text-sm text-ok">
+              <span className="font-medium">Preview approved</span> — you&apos;re clear to publish and mark the content live.
+            </p>
+          )}
+          {previewApproved && myRole === "brand" && (
+            <p className="mt-3 rounded-lg border border-ok/30 bg-ok/5 p-3 text-sm text-ok">
+              <span className="font-medium">Preview approved.</span> Waiting for the creator to publish.
+            </p>
+          )}
           {deal.status === "completed" && !myReview && role !== "admin" && (
             <div className={actions.length > 0 ? "mt-3" : "mt-4"}>
               <ReviewModal dealId={deal.id} action={submitReview} />
@@ -289,44 +280,51 @@ export default async function DealPage({
         </section>
       )}
 
-      {conversationMessages.length > 0 && (
-        <details className="mt-6 rounded-xl border p-5">
-          <summary className="cursor-pointer text-base font-bold">
-            Pre-deal discussion
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              {conversationMessages.length} message{conversationMessages.length !== 1 ? "s" : ""}
-            </span>
-          </summary>
-          <ul className="mt-3 flex flex-col gap-2">
-            {conversationMessages.map((m) => (
-              <li
-                key={m.id}
+      <section className="mt-6 rounded-xl border p-5">
+        <h2 className="text-base font-bold">Messages</h2>
+        <ul className="mt-3 mb-4 flex flex-col gap-2">
+          {(threadMessages ?? []).map((m) => (
+            m.kind === "system" ? (
+              <li key={m.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                {m.body}
+                <span className="h-px flex-1 bg-border" />
+              </li>
+            ) : (
+              <li key={m.id}
                 className={`max-w-[85%] rounded-lg p-3 text-sm ${
-                  m.sender_id === user.id
-                    ? "self-end bg-primary/10 text-foreground"
-                    : "self-start bg-secondary"
-                }`}
-              >
+                  m.sender_id === user.id ? "self-end bg-primary text-primary-foreground" : "self-start bg-secondary"
+                }`}>
                 <p className="whitespace-pre-line break-words">{m.body}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className={`mt-1 text-xs ${m.sender_id === user.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                   {new Date(m.created_at).toLocaleString()}
                 </p>
               </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            Deal started
-            <span className="h-px flex-1 bg-border" />
-          </div>
-        </details>
-      )}
-
-      <DealMessages dealId={deal.id} userId={user.id} />
+            )
+          ))}
+          {(threadMessages ?? []).length === 0 && (
+            <li className="text-sm text-muted-foreground">No messages yet. Say hello!</li>
+          )}
+        </ul>
+        {deal.conversation_id && (
+          <form action={sendThreadMessage} className="flex gap-2">
+            <input type="hidden" name="conversation_id" value={deal.conversation_id} />
+            <Input
+              name="body"
+              placeholder="Write a message"
+              aria-label="Write a message"
+              required
+              maxLength={5000}
+              className="flex-1"
+            />
+            <Button type="submit">Send</Button>
+          </form>
+        )}
+      </section>
 
       {role !== "admin" && myRole === "brand" && deal.payment_mode === "off_platform" &&
         !deal.marked_paid_at &&
-        ["accepted", "in_production", "submitted", "revision_requested", "published", "completed"]
+        ["accepted", "submitted", "revision_requested", "published", "completed"]
           .includes(deal.status) && (
         <form action={markPaid} className="mt-6">
           <input type="hidden" name="deal_id" value={deal.id} />

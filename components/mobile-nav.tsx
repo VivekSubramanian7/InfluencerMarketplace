@@ -8,24 +8,21 @@ import {
   MessageIcon,
   HandshakeIcon,
   HomeIcon,
-  BellIcon,
   CampaignsIcon,
 } from "@/components/ui/icons";
 
 const CREATOR_TABS = [
   { href: "/dashboard", label: "Studio", icon: DashboardIcon },
-  { href: "/inbox", label: "Inbox", icon: MessageIcon, inbox: true },
-  { href: "/deals", label: "Deals", icon: HandshakeIcon },
-  { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon },
-  { href: "/notifications", label: "Alerts", icon: BellIcon, alerts: true },
+  { href: "/inbox", label: "Inbox", icon: MessageIcon, key: "inbox" as const },
+  { href: "/deals", label: "Deals", icon: HandshakeIcon, key: "deals" as const },
+  { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, key: "campaigns" as const },
 ] as const;
 
 const BRAND_TABS = [
   { href: "/brand", label: "Home", icon: HomeIcon },
   { href: "/discover", label: "Discover", icon: SearchIcon },
-  { href: "/inbox", label: "Inbox", icon: MessageIcon, inbox: true },
-  { href: "/deals", label: "Deals", icon: HandshakeIcon },
-  { href: "/notifications", label: "Alerts", icon: BellIcon, alerts: true },
+  { href: "/inbox", label: "Inbox", icon: MessageIcon, key: "inbox" as const },
+  { href: "/deals", label: "Deals", icon: HandshakeIcon, key: "deals" as const },
 ] as const;
 
 function tabActive(pathname: string, href: string) {
@@ -36,17 +33,24 @@ function tabActive(pathname: string, href: string) {
 
 export function MobileNav({
   role,
-  unread = 0,
-  inboxUnread = 0,
+  unreadInbox = false,
+  unreadDeals = false,
+  unreadCampaigns = false,
 }: {
   role: "creator" | "brand" | "admin";
-  unread?: number;
-  inboxUnread?: number;
+  unreadInbox?: boolean;
+  unreadDeals?: boolean;
+  unreadCampaigns?: boolean;
 }) {
   const pathname = usePathname();
   if (role === "admin") return null;
 
   const tabs = role === "creator" ? CREATOR_TABS : BRAND_TABS;
+  const flagMap: Record<string, boolean> = {
+    inbox: unreadInbox,
+    deals: unreadDeals,
+    campaigns: unreadCampaigns,
+  };
 
   return (
     <nav
@@ -57,9 +61,7 @@ export function MobileNav({
         {tabs.map((tab) => {
           const active = tabActive(pathname, tab.href);
           const Icon = tab.icon;
-          const badge =
-            "alerts" in tab && tab.alerts ? unread :
-            "inbox" in tab && tab.inbox ? inboxUnread : 0;
+          const hasUnread = "key" in tab ? flagMap[tab.key] ?? false : false;
           return (
             <li key={tab.href} className="flex-1">
               <Link
@@ -71,13 +73,11 @@ export function MobileNav({
               >
                 <span className="relative">
                   <Icon size={24} strokeWidth={active ? 2.5 : 1.5} aria-hidden />
-                  {badge > 0 && (
+                  {hasUnread && (
                     <span
                       aria-hidden
-                      className="absolute -right-1.5 -top-1 grid min-w-4 place-items-center rounded-full bg-[var(--ink)] px-1 text-[9px] font-medium leading-4 text-[var(--primary-foreground)] tabular-nums"
-                    >
-                      {badge > 9 ? "9+" : badge}
-                    </span>
+                      className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-amber"
+                    />
                   )}
                 </span>
                 <span className={`text-[10px] leading-tight ${active ? "font-semibold" : "font-medium"}`}>

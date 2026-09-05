@@ -1,26 +1,19 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getUnreadFlags } from "@/lib/feature-cursors";
 import type { Role } from "@/lib/auth/home";
 
 export async function getAppShellData(userId: string, role: Role) {
   const supabase = await createServerSupabase();
   const [
-    { count: unreadNotifications },
-    { count: unreadInbox },
+    unreadFlags,
     { data: profile },
     brandProfileRes,
     creatorProfileRes,
     { data: authData },
   ] = await Promise.all([
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .is("read_at", null),
-    supabase
-      .from("conversations")
-      .select("id", { count: "exact", head: true })
-      .eq("creator_id", userId)
-      .eq("status", "invited"),
+    role === "admin"
+      ? Promise.resolve({ inbox: false, deals: false, campaigns: false })
+      : getUnreadFlags(userId, role),
     supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
     role === "brand"
       ? supabase.from("brand_profiles").select("company").eq("user_id", userId).maybeSingle()
@@ -45,8 +38,9 @@ export async function getAppShellData(userId: string, role: Role) {
   return {
     role,
     userId,
-    unreadInbox: unreadInbox ?? 0,
-    unreadNotifications: unreadNotifications ?? 0,
+    unreadInbox: unreadFlags.inbox,
+    unreadDeals: unreadFlags.deals,
+    unreadCampaigns: unreadFlags.campaigns,
     displayName: profile?.display_name ?? null,
     email: authData.user?.email ?? "",
     workspaceName,

@@ -5,26 +5,15 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseMediaUrl, parseText } from "@/lib/storefront/validation";
-import { notify } from "@/lib/notify";
+import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { trackServerEvent } from "@/lib/analytics";
+import { ACTION_TITLES } from "@/lib/deals/constants";
 
 const USER_ACTIONS = new Set([
-  "accept", "decline", "begin_production", "submit_preview",
+  "accept", "decline", "submit_preview", "approve_preview",
   "request_revision", "mark_published", "approve", "cancel", "dispute",
 ]);
-
-const ACTION_TITLES: Record<string, string> = {
-  accept: "Your booking was accepted",
-  decline: "Your booking was declined",
-  begin_production: "Production has started",
-  submit_preview: "A preview is ready for your review",
-  request_revision: "Changes were requested on your preview",
-  mark_published: "The video is live — verify and approve",
-  approve: "Your work was approved",
-  cancel: "The deal was cancelled",
-  dispute: "The deal was disputed",
-};
 
 export async function performDealAction(formData: FormData) {
   const { role } = await requireUser();
@@ -66,20 +55,12 @@ export async function performDealAction(formData: FormData) {
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
 
-  if (action === "request_revision") {
-    const note = parseText(String(formData.get("note") ?? ""), 2000);
-    if (note) {
-      await supabase.from("deals").update({ last_revision_note: note }).eq("id", dealId);
-    }
-  }
-
   if (deal) {
-    await notify({
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await emailUser({
       userId: role === "brand" ? deal.creator_id : deal.brand_id,
-      kind: "deal",
-      title: `${ACTION_TITLES[action] ?? "Deal updated"} · ${deal.offering_title}`,
-      href: `/deals/${dealId}`,
-      email: true,
+      subject: `${ACTION_TITLES[action] ?? "Deal updated"} · ${deal.offering_title}`,
+      text: `Open it on Clipline: ${site}/deals/${dealId}`,
     });
     trackServerEvent("deal_state_changed", role === "brand" ? deal.brand_id : deal.creator_id, {
       deal_id: dealId,

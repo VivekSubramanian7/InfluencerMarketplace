@@ -1,10 +1,10 @@
 export type DealStatus =
-  | "requested" | "funded" | "accepted" | "in_production" | "submitted"
+  | "requested" | "accepted" | "submitted"
   | "revision_requested" | "published" | "completed" | "cancelled" | "disputed";
 
 export type DealAction =
-  | "fund" | "accept" | "decline" | "expire_accept" | "begin_production"
-  | "submit_preview" | "request_revision" | "mark_published" | "approve"
+  | "accept" | "decline" | "expire_accept" | "submit_preview"
+  | "approve_preview" | "request_revision" | "mark_published" | "approve"
   | "auto_approve" | "cancel" | "dispute" | "resolve_release" | "resolve_refund";
 
 export type Actor = "brand" | "creator" | "system" | "admin";
@@ -15,46 +15,36 @@ export interface Transition {
   action: DealAction;
   to: DealStatus;
   actor: Actor;
-  /** null = allowed in both payment modes */
   mode: PaymentMode | null;
 }
 
 const DISPUTABLE: DealStatus[] = [
-  "accepted", "in_production", "submitted", "revision_requested", "published",
+  "accepted", "submitted", "revision_requested", "published",
 ];
 
 export const TRANSITIONS: Transition[] = [
-  // funding gate (escrow only; Stripe webhook is the caller)
-  { from: "requested", action: "fund", to: "funded", actor: "system", mode: "escrow" },
-
-  // creator acceptance — entry state differs by mode
-  { from: "funded", action: "accept", to: "accepted", actor: "creator", mode: "escrow" },
-  { from: "requested", action: "accept", to: "accepted", actor: "creator", mode: "off_platform" },
-  { from: "funded", action: "decline", to: "cancelled", actor: "creator", mode: "escrow" },
-  { from: "requested", action: "decline", to: "cancelled", actor: "creator", mode: "off_platform" },
+  // creator acceptance — no funding gate (escrow not live)
+  { from: "requested", action: "accept", to: "accepted", actor: "creator", mode: null },
+  { from: "requested", action: "decline", to: "cancelled", actor: "creator", mode: null },
 
   // 72h accept deadline (worker)
-  { from: "funded", action: "expire_accept", to: "cancelled", actor: "system", mode: "escrow" },
   { from: "requested", action: "expire_accept", to: "cancelled", actor: "system", mode: null },
 
-  // production flow
-  { from: "accepted", action: "begin_production", to: "in_production", actor: "creator", mode: null },
-  { from: "in_production", action: "submit_preview", to: "submitted", actor: "creator", mode: null },
+  // production flow — creator submits directly from accepted
+  { from: "accepted", action: "submit_preview", to: "submitted", actor: "creator", mode: null },
   { from: "revision_requested", action: "submit_preview", to: "submitted", actor: "creator", mode: null },
   { from: "submitted", action: "request_revision", to: "revision_requested", actor: "brand", mode: null },
-  { from: "submitted", action: "mark_published", to: "published", actor: "creator", mode: null },
+  { from: "submitted", action: "approve_preview", to: "submitted", actor: "brand", mode: null },
+  { from: "submitted", action: "mark_published", to: "completed", actor: "creator", mode: null },
 
-  // completion — brand approval or 5-day auto-approve (worker)
+  // completion
   { from: "published", action: "approve", to: "completed", actor: "brand", mode: null },
   { from: "published", action: "auto_approve", to: "completed", actor: "system", mode: null },
 
-  // cancellation before submission (either side; refund handled by payments layer)
+  // cancellation before submission
   { from: "requested", action: "cancel", to: "cancelled", actor: "brand", mode: null },
-  { from: "funded", action: "cancel", to: "cancelled", actor: "brand", mode: "escrow" },
   { from: "accepted", action: "cancel", to: "cancelled", actor: "brand", mode: null },
-  { from: "in_production", action: "cancel", to: "cancelled", actor: "brand", mode: null },
   { from: "accepted", action: "cancel", to: "cancelled", actor: "creator", mode: null },
-  { from: "in_production", action: "cancel", to: "cancelled", actor: "creator", mode: null },
 
   // disputes
   ...DISPUTABLE.flatMap((from): Transition[] => [

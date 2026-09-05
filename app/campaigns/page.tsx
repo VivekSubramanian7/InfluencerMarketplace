@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
+import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { TemplatePicker } from "@/components/campaigns/template-picker";
@@ -40,6 +41,7 @@ export default async function CampaignsPage({
   }>;
 }) {
   const { user, role } = await requireUser("/campaigns");
+  await touchCursor("campaigns");
   const sp = await searchParams;
   const { error, saved } = sp;
   const filterSp = new URLSearchParams();

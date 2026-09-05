@@ -14,13 +14,12 @@ import { saveOffering, toggleOffering, deleteOffering } from "./offerings/action
 import { addPortfolioItem, deletePortfolioItem } from "./portfolio/actions";
 
 const ACTIVE_STATUSES = [
-  "requested", "funded", "accepted", "in_production",
-  "submitted", "revision_requested", "published",
+  "requested", "accepted", "submitted", "revision_requested", "published",
 ];
 
 const STATUS_LABELS: Record<string, string> = {
-  requested: "Awaiting your response", funded: "Funded, respond",
-  accepted: "Accepted", in_production: "In production",
+  requested: "Awaiting your response",
+  accepted: "In production",
   submitted: "Preview submitted", revision_requested: "Changes requested",
   published: "Awaiting brand approval", completed: "Completed",
   cancelled: "Cancelled", disputed: "Disputed",
@@ -250,7 +249,7 @@ function OverviewTab({
                   <Link href={`/deals/${d.id}`} className="deal-row flex items-center justify-between gap-4 rounded-xl border border-transparent bg-secondary/40 px-4 py-3.5 transition-all hover:border-border hover:bg-card">
                     <span className="min-w-0 truncate font-semibold">{d.offering_title}</span>
                     <span className="flex shrink-0 items-center gap-3">
-                      <Badge variant="secondary" className={["requested", "funded", "revision_requested"].includes(d.status) ? "bg-amber text-amber-foreground hover:bg-amber" : ""}>
+                      <Badge variant="secondary" className={["requested", "revision_requested"].includes(d.status) ? "bg-amber text-amber-foreground hover:bg-amber" : ""}>
                         {STATUS_LABELS[d.status] ?? d.status}
                       </Badge>
                       <span className="font-black tabular-nums">${(d.price_cents / 100).toFixed(0)}</span>

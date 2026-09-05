@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 const DEAL_LABELS: Record<string, string> = {
-  requested: "Awaiting creator", funded: "Funded",
-  accepted: "Accepted", in_production: "In production",
+  requested: "Awaiting creator",
+  accepted: "In production",
   submitted: "Preview submitted", revision_requested: "Changes requested",
   published: "Published, awaiting approval", completed: "Completed",
   cancelled: "Cancelled", disputed: "Disputed",
