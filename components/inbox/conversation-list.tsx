@@ -90,8 +90,8 @@ export function ConversationList({
           {filtered.map((c) => (
             <li key={c.id}>
               <Link
-                href={`/inbox/${c.id}`}
-                className="deal-row flex items-center gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                href={`/inbox?c=${c.id}`}
+                className="hidden items-center gap-4 rounded-lg border border-transparent p-4 transition-colors hover:bg-[var(--row-hover)] md:flex"
               >
                 <div className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
@@ -99,6 +99,35 @@ export function ConversationList({
                       <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
                     )}
                     <span className={`truncate ${c.waiting ? "font-bold" : "font-medium"}`}>
+                      {c.label}
+                    </span>
+                  </span>
+                  {c.lastMessage && (
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                      {c.lastMessage.senderIsMe ? "You: " : ""}
+                      {c.lastMessage.body.slice(0, 80)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <Badge variant="secondary">{STATUS_LABELS[c.status] ?? c.status}</Badge>
+                  {c.lastMessage && (
+                    <span className="text-xs text-muted-foreground">
+                      {timeAgo(c.lastMessage.created_at)}
+                    </span>
+                  )}
+                </div>
+              </Link>
+              <Link
+                href={`/inbox/${c.id}`}
+                className="flex items-center gap-4 rounded-lg border border-transparent p-4 transition-colors hover:bg-[var(--row-hover)] md:hidden"
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    {c.waiting && (
+                      <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
+                    )}
+                    <span className={`truncate ${c.waiting ? "font-semibold" : "font-medium"}`}>
                       {c.label}
                     </span>
                   </span>

@@ -6,7 +6,7 @@ import { addProduct, createInvite, removeProduct } from "../actions";
 import { BrandProfileForm } from "@/components/brand/brand-profile-form";
 import { WebsiteIngest } from "@/components/brand/website-ingest";
 import type { IngestProposal } from "@/lib/brand/ingest";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { CopyInviteMessage } from "@/components/brand/copy-invite-message";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,13 +60,11 @@ export default async function BrandSettingsPage({
   const template = profile?.outreach_template || DEFAULT_TEMPLATE;
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
         <Link href="/brand" className="text-sm text-muted-foreground hover:text-foreground">
           ← Brand home
         </Link>
-        <h1 className="mt-3 text-3xl font-extrabold tracking-tight">Brand settings</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Brand settings</h1>
 
         <nav className="mt-3 flex flex-wrap gap-1" aria-label="Settings sections">
           {[
@@ -243,7 +241,6 @@ export default async function BrandSettingsPage({
             </ul>
           )}
         </section>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

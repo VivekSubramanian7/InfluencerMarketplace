@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nextIncompleteStep, stepIndex, isWizardStep, OnboardingState } from "@/lib/onboarding/steps";
+import { nextIncompleteStep, stepIndex, isWizardStep, previousStep, OnboardingState } from "@/lib/onboarding/steps";
 
 const base: OnboardingState = {
   hasProfile: false,
@@ -49,5 +49,11 @@ describe("stepIndex / isWizardStep", () => {
   it("guards arbitrary strings", () => {
     expect(isWizardStep("socials")).toBe(true);
     expect(isWizardStep("hack")).toBe(false);
+  });
+
+  it("previousStep walks backward and stops at profile", () => {
+    expect(previousStep("profile")).toBeNull();
+    expect(previousStep("socials")).toBe("profile");
+    expect(previousStep("publish")).toBe("highlights");
   });
 });

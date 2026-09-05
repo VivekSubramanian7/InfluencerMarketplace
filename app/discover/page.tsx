@@ -5,7 +5,7 @@ import { parseDiscoveryFilters, SAVED_FILTER_KEYS } from "@/lib/discovery/filter
 import { searchCreators, type SearchScope } from "@/lib/discovery/queries";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { deleteSearch, saveSearch, sendReachouts } from "./actions";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,7 +122,7 @@ export default async function DiscoverPage({
     (active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground");
 
   return (
-    <>
+    <AuthenticatedShell userId={user.id} role={role}>
       <SearchTracker
         query={filters.q}
         filters={{
@@ -135,11 +135,9 @@ export default async function DiscoverPage({
         totalResults={total}
         page={page}
       />
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <h1 className="text-2xl font-semibold tracking-tight">
               Find video creators
             </h1>
             <p className="mt-1 text-muted-foreground">
@@ -496,7 +494,6 @@ export default async function DiscoverPage({
             )}
           </nav>
         )}
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

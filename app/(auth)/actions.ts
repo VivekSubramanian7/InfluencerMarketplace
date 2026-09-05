@@ -90,3 +90,26 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+export async function requestPasswordReset(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) redirect("/forgot?error=" + encodeURIComponent("Enter the email on your account"));
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/reset`,
+  });
+  if (error) redirect("/forgot?error=" + encodeURIComponent(error.message));
+  redirect("/forgot?sent=1");
+}
+
+export async function updatePassword(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) {
+    redirect("/reset?error=" + encodeURIComponent("Use at least 8 characters"));
+  }
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) redirect("/reset?error=" + encodeURIComponent(error.message));
+  redirect("/login");
+}

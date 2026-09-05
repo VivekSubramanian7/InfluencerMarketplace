@@ -66,6 +66,8 @@ export async function sendThreadMessage(formData: FormData) {
     redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(msg));
   }
 
+  await supabase.from("agent_drafts").delete().eq("conversation_id", conversationId);
+
   trackServerEvent("message_sent", user.id, {
     conversation_id: conversationId,
     sender_role: role,

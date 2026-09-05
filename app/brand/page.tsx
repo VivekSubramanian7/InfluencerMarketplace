@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { performDealAction } from "@/app/deals/[id]/actions";
 import { unblockCreator } from "./actions";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +30,7 @@ export default async function BrandOverviewPage({
   const { error } = await searchParams;
   const supabase = await createServerSupabase();
 
-  const [profileRes, convRes, dealsRes, blockRes, productCountRes, openCampaignRes, campaignCountRes] =
+  const [profileRes, convRes, dealsRes, blockRes, productCountRes, openCampaignRes, campaignCountRes, liveCreatorsRes] =
     await Promise.all([
     supabase.from("brand_profiles").select("company").eq("user_id", user.id).maybeSingle(),
     supabase
@@ -58,9 +57,13 @@ export default async function BrandOverviewPage({
       .from("campaigns")
       .select("id", { count: "exact", head: true })
       .eq("brand_id", user.id),
+    supabase
+      .from("creator_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "live"),
   ]);
-  // never onboarded — send them through the form first
-  if (!profileRes.data) redirect("/brand/onboarding");
+
+  const hasProfile = !!profileRes.data;
 
   const conversations = convRes.data ?? [];
   const deals = dealsRes.data ?? [];
@@ -68,6 +71,7 @@ export default async function BrandOverviewPage({
   const productCount = productCountRes.count ?? 0;
   const openCampaigns = openCampaignRes.count ?? 0;
   const campaignCount = campaignCountRes.count ?? 0;
+  const liveCreators = liveCreatorsRes.count ?? 0;
 
   const creatorIds = [
     ...new Set([
@@ -130,11 +134,9 @@ export default async function BrandOverviewPage({
   const doneCount = checklist.filter((c) => c.done).length;
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-6xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
         <div className="flex flex-wrap items-baseline justify-between gap-4">
-          <h1 className="text-3xl font-extrabold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight">
             {profileRes.data?.company || "Your brand"}
           </h1>
           <div className="flex flex-wrap gap-2">
@@ -152,6 +154,27 @@ export default async function BrandOverviewPage({
             <Button asChild size="sm">
               <Link href="/discover">Find creators</Link>
             </Button>
+          </div>
+        </div>
+
+        {!hasProfile && (
+          <div className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] bg-[var(--card)] p-4">
+            <h2 className="text-lg font-semibold text-[var(--ink)]">Finish setting up your brand</h2>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Add your company name and the formats you book. Then you can post a campaign.
+            </p>
+            <Button asChild size="sm" className="mt-4">
+              <Link href="/brand/onboarding">Continue setup</Link>
+            </Button>
+          </div>
+        )}
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[var(--radius-tile)] border border-[var(--border)] p-4">
+            <p className="text-xl font-semibold tabular-nums">{liveCreators}</p>
+            <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+              Live creators
+            </p>
           </div>
         </div>
 
@@ -335,7 +358,6 @@ export default async function BrandOverviewPage({
             </ul>
           )}
         </section>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

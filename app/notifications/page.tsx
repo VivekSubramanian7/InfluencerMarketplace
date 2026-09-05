@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { BellIcon } from "@/components/ui/icons";
 import { NotificationList } from "@/components/notifications/notification-list";
 
@@ -45,10 +45,8 @@ export default async function NotificationsPage({
   const rows = notifications ?? [];
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-3xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">Notifications</h1>
+    <AuthenticatedShell userId={user.id} role={role}>
+        <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
 
         <nav className="mt-3 flex flex-wrap gap-1" aria-label="Filter notifications">
           {[
@@ -90,7 +88,6 @@ export default async function NotificationsPage({
             activeKinds={kinds ?? undefined}
           />
         )}
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { resolveDispute } from "../../actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +28,9 @@ export default async function AdminDealPage({
   ]);
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
         <Link href="/admin" className="text-sm text-muted-foreground hover:underline">← Admin</Link>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight">{deal.offering_title}</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{deal.offering_title}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
           Status: <Badge variant="secondary">{deal.status}</Badge> ·
           <span className="font-extrabold tabular-nums text-primary">
@@ -107,7 +105,6 @@ export default async function AdminDealPage({
             ))}
           </ul>
         </section>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

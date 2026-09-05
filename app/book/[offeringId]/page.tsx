@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createBooking } from "./actions";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Label } from "@/components/ui/label";
 import { CharCountTextarea } from "@/components/book/char-count-textarea";
 import { BookingConfirmButton } from "@/components/book/booking-confirm-button";
@@ -71,10 +71,8 @@ export default async function BookOfferingPage({
     .join("\n");
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-2xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">Book {offering.title}</h1>
+    <AuthenticatedShell userId={user.id} role={role}>
+        <h1 className="text-2xl font-semibold tracking-tight">Book {offering.title}</h1>
 
         <div className="mt-4 rounded-xl border p-5">
           {creator && (
@@ -179,7 +177,6 @@ export default async function BookOfferingPage({
             creatorHandle={creator?.handle ?? null}
           />
         </form>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

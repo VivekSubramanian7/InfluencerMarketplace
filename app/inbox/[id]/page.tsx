@@ -6,7 +6,7 @@ import { draftReply, respondInvite, respondOffer, sendOffer, sendThreadMessage }
 import { AutoScroll } from "@/components/inbox/auto-scroll";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { blockCreator } from "@/app/brand/actions";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,15 +121,13 @@ export default async function ConversationPage({
     : { data: null };
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-3xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
         <AutoScroll />
         <Link href="/inbox" className="text-sm text-muted-foreground hover:text-foreground">
           ← Inbox
         </Link>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-extrabold tracking-tight">{otherLabel}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{otherLabel}</h1>
           <span className="flex items-center gap-3">
             {iAmBrand && creatorProfile?.handle && (
               <Link
@@ -382,7 +380,6 @@ export default async function ConversationPage({
             </Button>
           </form>
         )}
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

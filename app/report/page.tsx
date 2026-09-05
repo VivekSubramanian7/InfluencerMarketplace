@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth/require";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { fileReport } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,10 +14,8 @@ export default async function ReportPage({
   const { deal, error } = await searchParams;
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-2xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">Report a problem</h1>
+    <AuthenticatedShell userId={user.id} role={role}>
+        <h1 className="text-2xl font-semibold tracking-tight">Report a problem</h1>
         <p className="mt-1 text-muted-foreground">
           Tell us what went wrong{deal ? " with this deal" : ""}. Our team reviews every report.
         </p>
@@ -51,7 +49,6 @@ export default async function ReportPage({
             Submit report
           </Button>
         </form>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

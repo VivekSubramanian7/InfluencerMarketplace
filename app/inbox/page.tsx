@@ -2,17 +2,19 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { respondInvite } from "./actions";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Button } from "@/components/ui/button";
 import { ConversationList } from "@/components/inbox/conversation-list";
+
+import { ConversationThread } from "@/components/inbox/conversation-thread";
 
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; sent?: string; status?: string }>;
+  searchParams: Promise<{ error?: string; sent?: string; status?: string; c?: string }>;
 }) {
   const { user, role } = await requireUser("/inbox");
-  const { error, sent, status } = await searchParams;
+  const { error, sent, status, c: selectedId } = await searchParams;
   const supabase = await createServerSupabase();
 
   const { data: conversations, error: qErr } = await supabase
@@ -79,11 +81,16 @@ export default async function InboxPage({
   const rest =
     status && status !== "all" ? allRest.filter((c) => c.status === status) : allRest;
 
+  const ownedSelected =
+    selectedId && mine.some((conv) => conv.id === selectedId) ? selectedId : null;
+
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">Inbox</h1>
+    <AuthenticatedShell
+      userId={user.id}
+      role={role}
+      pane={ownedSelected ? <ConversationThread conversationId={ownedSelected} compact /> : undefined}
+    >
+        <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
 
         <nav className="mt-3 flex flex-wrap gap-1" aria-label="Filter conversations">
           {[
@@ -180,7 +187,6 @@ export default async function InboxPage({
           totalCount={allRest.length}
           role={role}
         />
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

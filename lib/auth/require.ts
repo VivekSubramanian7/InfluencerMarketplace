@@ -1,8 +1,9 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { homeForRole, type Role } from "./home";
 
-type Role = "creator" | "brand" | "admin";
+export type { Role };
 
 export function gateDecision(
   user: { id: string } | null,
@@ -10,7 +11,9 @@ export function gateDecision(
   requiredRole: Role | null
 ): { ok: true } | { redirect: string } {
   if (!user) return { redirect: "/login" };
-  if (requiredRole && actualRole !== requiredRole) return { redirect: "/" };
+  if (requiredRole && actualRole !== requiredRole) {
+    return { redirect: actualRole ? homeForRole(actualRole) : "/" };
+  }
   return { ok: true };
 }
 

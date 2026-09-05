@@ -83,7 +83,9 @@ export function OnboardingWizard({
             The basics — who you are and what you do.
           </p>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="company">Company name</Label>
+            <Label htmlFor="company">
+              Company name <span aria-hidden className="text-[var(--destructive)]">*</span>
+            </Label>
             <Input
               id="company"
               name="company"

@@ -46,7 +46,9 @@ export function BrandProfileForm({
       {/* ── Basics ── */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="company">Company name</Label>
+          <Label htmlFor="company">
+            Company name <span aria-hidden className="text-[var(--destructive)]">*</span>
+          </Label>
           <Input id="company" name="company" defaultValue={defaults?.company ?? ""} placeholder="Acme Skincare" />
         </div>
         <div className="flex flex-col gap-1.5">

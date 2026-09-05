@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckedIcon } from "@/components/ui/icons";
-import { WIZARD_STEPS, WizardStep, stepIndex } from "@/lib/onboarding/steps";
+import { WIZARD_STEPS, WizardStep, stepIndex, previousStep } from "@/lib/onboarding/steps";
 
 const STEP_LABELS: Record<WizardStep, string> = {
   profile: "Claim your handle",
@@ -24,6 +24,7 @@ export function WizardShell({
   children: React.ReactNode;
 }) {
   const idx = stepIndex(step);
+  const prev = previousStep(step);
   const completedSteps = idx + 1; // +1 for account creation
   const pct = Math.round((completedSteps / TOTAL_STEPS) * 100);
 
@@ -45,24 +46,42 @@ export function WizardShell({
       </div>
       <ol className="mt-4 flex items-center gap-1" aria-label="Steps">
         {WIZARD_STEPS.map((s, i) => (
-          <li
-            key={s}
-            title={STEP_LABELS[s]}
-            aria-current={s === step ? "step" : undefined}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-              i < idx
-                ? "bg-primary/10 text-primary"
-                : i === idx
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground"
-            }`}
-          >
-            {i < idx && <CheckedIcon size={12} aria-hidden />}
-            <span className="hidden sm:inline">{STEP_LABELS[s].split(" ").slice(0, 2).join(" ")}</span>
-            <span className="sm:hidden">{i + 1}</span>
+          <li key={s}>
+            {i < idx ? (
+              <Link
+                href={`/onboarding/${s}`}
+                title={STEP_LABELS[s]}
+                className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors"
+              >
+                <CheckedIcon size={12} aria-hidden />
+                <span className="hidden sm:inline">{STEP_LABELS[s].split(" ").slice(0, 2).join(" ")}</span>
+                <span className="sm:hidden">{i + 1}</span>
+              </Link>
+            ) : (
+              <span
+                title={STEP_LABELS[s]}
+                aria-current={s === step ? "step" : undefined}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                  i === idx
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <span className="hidden sm:inline">{STEP_LABELS[s].split(" ").slice(0, 2).join(" ")}</span>
+                <span className="sm:hidden">{i + 1}</span>
+              </span>
+            )}
           </li>
         ))}
       </ol>
+      {prev && (
+        <Link
+          href={`/onboarding/${prev}`}
+          className="mt-4 inline-block text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← Back
+        </Link>
+      )}
       <div className="mt-6 flex items-baseline justify-between gap-4">
         <h1 className="text-3xl font-extrabold tracking-tight">{STEP_LABELS[step]}</h1>
         {skip && (

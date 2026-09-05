@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { applyToCampaign, withdrawApplication } from "./actions";
+import { creatorCanApply } from "@/lib/campaigns/offering-match";
 import { setCampaignStatus } from "../actions";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,14 +77,12 @@ export default async function CampaignPage({
     .from("profiles").select("display_name").eq("id", campaign.brand_id).maybeSingle();
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
         <Link href="/campaigns" className="text-sm text-muted-foreground hover:text-foreground">
           ← Campaigns
         </Link>
         <div className="mt-3 flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-3xl font-extrabold tracking-tight">{campaign.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{campaign.title}</h1>
           <span className="text-2xl font-extrabold tabular-nums text-primary">
             {budgetRange(campaign.budget_min_cents, campaign.budget_max_cents)}
           </span>
@@ -146,8 +145,7 @@ export default async function CampaignPage({
             supabase={supabase}
           />
         ) : null}
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }
 
@@ -294,10 +292,12 @@ async function CreatorPanel({
     .eq("creator_id", userId)
     .maybeSingle();
 
-  const [{ data: stats }, { data: reviews }, { count: completedDealCount }] = await Promise.all([
+  const [{ data: stats }, { data: reviews }, { count: completedDealCount }, { data: offerings }, { data: creatorProfile }] = await Promise.all([
     supabase.from("public_creator_stats").select("platform, follower_count").eq("creator_id", userId),
     supabase.from("public_creator_reviews").select("rating").eq("creator_id", userId),
     supabase.from("deals").select("id", { count: "exact", head: true }).eq("creator_id", userId).eq("status", "completed"),
+    supabase.from("offerings").select("type").eq("creator_id", userId).eq("active", true),
+    supabase.from("creator_profiles").select("handle").eq("user_id", userId).maybeSingle(),
   ]);
   const totalFollowers = (stats ?? []).reduce((sum, s) => sum + (s.follower_count ?? 0), 0);
   const avgRating = (reviews ?? []).length > 0
@@ -355,6 +355,31 @@ async function CreatorPanel({
       <p className="mt-10 rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
         This campaign is no longer accepting applications.
       </p>
+    );
+  }
+
+  const activeTypes = (offerings ?? []).map((o) => o.type);
+  const canApply = creatorCanApply({ campaignType: offeringType, activeOfferingTypes: activeTypes });
+  const typeLabel = TYPE_LABELS[offeringType] ?? offeringType.replace(/_/g, " ");
+
+  if (!canApply) {
+    return (
+      <section className="mt-10 max-w-xl">
+        <h2 className="text-lg font-bold">Apply to this campaign</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This campaign needs a {typeLabel} offering. Add one to your storefront, or ask the brand to book another format.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/dashboard?tab=offerings">Add a {typeLabel} offering</Link>
+          </Button>
+          {creatorProfile?.handle && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/c/${creatorProfile.handle}`}>View your storefront</Link>
+            </Button>
+          )}
+        </div>
+      </section>
     );
   }
 

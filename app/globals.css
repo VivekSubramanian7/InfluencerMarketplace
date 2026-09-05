@@ -7,6 +7,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-heading: var(--font-sans);
+  --color-ground: var(--ground);
+  --color-rail: var(--rail);
+  --color-ink: var(--ink);
+  --color-row-hover: var(--row-hover);
+  --color-divider: var(--divider);
+  --color-faint: var(--faint);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -23,15 +29,15 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Gallery Frame extensions */
   --color-band: var(--band);
   --color-band-foreground: var(--band-foreground);
   --color-amber: var(--amber);
   --color-amber-foreground: var(--amber-foreground);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
-  --shadow-card: 0 1px 2px rgb(27 25 23 / 0.05), 0 6px 20px rgb(27 25 23 / 0.06);
-  --shadow-card-hover: 0 2px 4px rgb(27 25 23 / 0.06), 0 10px 28px rgb(27 25 23 / 0.10);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-float: var(--shadow-float);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -42,39 +48,52 @@
 }
 
 /*
- * Clipline — "Gallery Frame" (DESIGN.md, 2026-08-18). Quiet premium chrome:
- * warm near-white ground, warm ink, black pill CTAs, soft shadows. Creator
- * gradients (lib/identity/gradient.ts) supply the color; amber is reserved
- * for the trust voice (ratings, Verified). Light-only by commitment.
+ * Clipline — Workspace App register (DESIGN.md, 2026-09-04). Public pages
+ * may still use --shadow-card; authenticated surfaces use hairlines and
+ * --shadow-float for floating layers only.
  */
 :root {
   --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
-  --background: #faf9f6;
-  --foreground: #1b1917;
+  --ground: #f8f7f3;
+  --rail: #f5f3ea;
+  --background: var(--ground);
+  --foreground: #2e2d2a;
+  --ink: #2e2d2a;
   --card: #ffffff;
-  --card-foreground: #1b1917;
+  --card-foreground: #2e2d2a;
   --popover: #ffffff;
-  --popover-foreground: #1b1917;
-  --primary: #1b1917;
-  --primary-foreground: #faf9f6;
-  --secondary: #f3f1ec;
-  --secondary-foreground: #1b1917;
-  --muted: #f3f1ec;
-  --muted-foreground: #6b6660;
-  --accent: #f3f1ec;
-  --accent-foreground: #1b1917;
+  --popover-foreground: #2e2d2a;
+  --row-hover: #f8f7f3;
+  --secondary: #f1eee8;
+  --secondary-foreground: #2e2d2a;
+  --muted: #f1eee8;
+  --muted-foreground: #6e6a64;
+  --faint: #9a958d;
+  --accent: #f1eee8;
+  --accent-foreground: #2e2d2a;
   --destructive: #b3362b;
-  --border: #e7e3dc;
-  --input: #e7e3dc;
-  --ring: #1b1917;
-  --radius: 0.875rem;
-  /* extensions */
-  --band: #1b1917;
-  --band-foreground: #faf9f6;
+  --border: #e9e5de;
+  --divider: #f1eee8;
+  --input: #e9e5de;
+  --ring: #2e2d2a;
+  --primary: #2e2d2a;
+  --primary-foreground: #f8f7f3;
+  --ok: #2e7d4f;
+  --warn: #8f6318;
   --amber: #c9962b;
   --amber-foreground: #2c2412;
-  --ok: #2e7d4f;
-  --warn: #b07c24;
+  --role-creator: #fff2eb;
+  --role-creator-foreground: #8a4a22;
+  --role-brand: #eaf7f0;
+  --role-brand-foreground: #1f6b47;
+  --band: #2e2d2a;
+  --band-foreground: #f8f7f3;
+  --radius: 0.5rem;
+  --radius-tile: 0.75rem;
+  --radius-panel: 1rem;
+  --shadow-float: 0 8px 24px rgb(27 25 23 / 0.12);
+  --shadow-card: 0 1px 2px rgb(27 25 23 / 0.05), 0 6px 20px rgb(27 25 23 / 0.06);
+  --shadow-card-hover: 0 2px 4px rgb(27 25 23 / 0.06), 0 10px 28px rgb(27 25 23 / 0.10);
 }
 
 @layer base {
@@ -89,7 +108,7 @@
   }
   h1, h2, h3 {
     text-wrap: balance;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
   ::selection {
     background: rgb(27 25 23 / 0.12);

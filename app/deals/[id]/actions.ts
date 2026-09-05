@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { parseMediaUrl } from "@/lib/storefront/validation";
+import { parseMediaUrl, parseText } from "@/lib/storefront/validation";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
 import { trackServerEvent } from "@/lib/analytics";
@@ -46,6 +46,13 @@ export async function performDealAction(formData: FormData) {
     }
     payload[action === "submit_preview" ? "preview_url" : "live_url"] = url;
   }
+  if (action === "request_revision") {
+    const note = parseText(String(formData.get("note") ?? ""), 2000);
+    if (!note) {
+      redirect(`/deals/${dealId}?error=` + encodeURIComponent("Say what to change (max 2000 characters)"));
+    }
+    payload.revision_note = note;
+  }
 
   const { data: deal, error } = await supabase.rpc("transition_deal", {
     p_deal_id: dealId,
@@ -55,6 +62,13 @@ export async function performDealAction(formData: FormData) {
   });
   if (error) {
     redirect(`/deals/${dealId}?error=` + encodeURIComponent(friendlyDbError(error)));
+  }
+
+  if (action === "request_revision") {
+    const note = parseText(String(formData.get("note") ?? ""), 2000);
+    if (note) {
+      await supabase.from("deals").update({ last_revision_note: note }).eq("id", dealId);
+    }
   }
 
   if (deal) {

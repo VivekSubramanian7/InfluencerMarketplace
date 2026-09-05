@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { resolveReport, setCreatorSuspension } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,10 +28,8 @@ export default async function AdminPage({
   ]);
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">Admin</h1>
+    <AuthenticatedShell userId={user.id} role={role}>
+        <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
         {error && (
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
@@ -122,7 +120,6 @@ export default async function AdminPage({
             ))}
           </ul>
         </section>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

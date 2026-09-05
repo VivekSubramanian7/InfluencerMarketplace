@@ -57,7 +57,15 @@ export function ProfileForm({ profile, action, statusAction, mode, suggestedHand
 
       <form action={action} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="handle">{mode === "wizard" ? "Handle" : "Handle (your public URL: /c/…)"}</Label>
+          <Label htmlFor="handle">
+            {mode === "wizard" ? "Handle" : "Handle (your public URL: /c/…)"}{" "}
+            <span aria-hidden className="text-[var(--destructive)]">*</span>
+          </Label>
+          {mode === "wizard" && (
+            <p className="text-xs text-muted-foreground">
+              This is your public URL: clipline.app/c/your-handle.
+            </p>
+          )}
           <Input
             id="handle"
             name="handle"

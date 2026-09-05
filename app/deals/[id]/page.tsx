@@ -7,7 +7,7 @@ import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { markPaid, performDealAction } from "./actions";
 import { submitReview } from "./review-actions";
 import { DealMessages } from "./messages";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { ReviewModal } from "@/components/deals/review-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,11 +84,9 @@ export default async function DealPage({
   const currentStep = STATUS_TO_STEP[deal.status] ?? 0;
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-2xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
       <Link href="/deals" className="text-sm text-muted-foreground hover:underline">← All deals</Link>
-      <h1 className="mt-2 text-3xl font-extrabold tracking-tight">{deal.offering_title}</h1>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight">{deal.offering_title}</h1>
       <p className="mt-1 text-muted-foreground">
         {myRole === "brand" ? "You booked" : "Booked by"}{" "}
         {creatorHandle?.handle && myRole === "brand" ? (
@@ -173,7 +171,32 @@ export default async function DealPage({
           {actions.length > 0 && (
             <div className="mt-4 flex flex-col gap-3">
               {actions.map((a) => (
-                <form key={a.action} action={performDealAction} className="flex items-start gap-2">
+                a.needsPreview ? (
+                  <div key={a.action} className="flex flex-col gap-2">
+                    {(deal.preview_url || deal.live_url) ? (
+                      <>
+                        <a
+                          href={deal.live_url ?? deal.preview_url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-9 items-center justify-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium"
+                        >
+                          Review preview
+                        </a>
+                        <form action={performDealAction} className="flex items-start gap-2">
+                          <input type="hidden" name="deal_id" value={deal.id} />
+                          <input type="hidden" name="action" value={a.action} />
+                          <Button type="submit">{a.label}</Button>
+                        </form>
+                      </>
+                    ) : (
+                      <p className="text-sm text-destructive">
+                        No preview or live URL on this deal yet. Ask the creator to publish first.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                <form key={a.action} action={performDealAction} className="flex flex-col items-start gap-2">
                   <input type="hidden" name="deal_id" value={deal.id} />
                   <input type="hidden" name="action" value={a.action} />
                   {a.needsUrl && (
@@ -183,7 +206,17 @@ export default async function DealPage({
                       required
                       placeholder={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
                       aria-label={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
-                      className="flex-1"
+                      className="w-full"
+                    />
+                  )}
+                  {a.needsNote && (
+                    <textarea
+                      name="note"
+                      required
+                      maxLength={2000}
+                      rows={3}
+                      placeholder="What should change?"
+                      className="w-full rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm"
                     />
                   )}
                   <Button
@@ -194,8 +227,14 @@ export default async function DealPage({
                     {a.label}
                   </Button>
                 </form>
+                )
               ))}
             </div>
+          )}
+          {deal.last_revision_note && myRole === "creator" && (
+            <p className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--secondary)] p-3 text-sm">
+              <span className="font-medium">Brand feedback:</span> {deal.last_revision_note}
+            </p>
           )}
           {deal.status === "completed" && !myReview && role !== "admin" && (
             <div className={actions.length > 0 ? "mt-3" : "mt-4"}>
@@ -336,7 +375,6 @@ export default async function DealPage({
           )}
         </ul>
       </details>
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }

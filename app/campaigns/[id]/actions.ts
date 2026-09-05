@@ -6,6 +6,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { parsePriceCents, parseText } from "@/lib/storefront/validation";
 import { notify } from "@/lib/notify";
 import { friendlyDbError } from "@/lib/errors";
+import { creatorCanApply } from "@/lib/campaigns/offering-match";
 
 export async function applyToCampaign(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -26,6 +27,20 @@ export async function applyToCampaign(formData: FormData) {
       encodeURIComponent("Create your creator profile before applying to campaigns"));
   }
 
+  const { data: campaign } = await supabase
+    .from("campaigns").select("brand_id, title, offering_type").eq("id", campaignId).maybeSingle();
+  const { data: offerings } = await supabase
+    .from("offerings")
+    .select("type")
+    .eq("creator_id", user.id)
+    .eq("active", true);
+  const activeTypes = (offerings ?? []).map((o) => o.type);
+  if (!campaign || !creatorCanApply({ campaignType: campaign.offering_type, activeOfferingTypes: activeTypes })) {
+    const typeLabel = campaign?.offering_type?.replace(/_/g, " ") ?? "matching";
+    redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(
+      `This campaign needs a ${typeLabel} offering. Add one to your storefront, or ask the brand to book another format.`));
+  }
+
   const { error } = await supabase.from("campaign_applications").insert({
     campaign_id: campaignId,
     creator_id: user.id,
@@ -40,8 +55,6 @@ export async function applyToCampaign(formData: FormData) {
     redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(msg));
   }
 
-  const { data: campaign } = await supabase
-    .from("campaigns").select("brand_id, title").eq("id", campaignId).maybeSingle();
   if (campaign) {
     await notify({
       userId: campaign.brand_id,

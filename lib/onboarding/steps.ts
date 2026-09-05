@@ -29,3 +29,8 @@ export function nextIncompleteStep(s: OnboardingState): WizardStep | "done" {
 export function stepIndex(step: WizardStep): number {
   return WIZARD_STEPS.indexOf(step);
 }
+
+export function previousStep(step: WizardStep): WizardStep | null {
+  const i = stepIndex(step);
+  return i <= 0 ? null : WIZARD_STEPS[i - 1];
+}

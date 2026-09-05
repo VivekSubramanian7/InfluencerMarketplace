@@ -50,6 +50,11 @@ export default async function LoginPage({
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" name="password" type="password" placeholder="Password" required />
+                <p className="text-sm">
+                  <Link href="/forgot" className="font-medium text-primary hover:underline">
+                    Forgot password?
+                  </Link>
+                </p>
               </div>
               <Button type="submit" className="mt-2">
                 Log in

@@ -53,4 +53,16 @@ describe("actionsFor", () => {
     expect(acts("requested", "creator", "escrow")).toEqual([]);
     expect(acts("funded", "creator", "escrow")).toEqual(["accept", "decline"]);
   });
+
+  it("request changes requires a note", () => {
+    const a = actionsFor("submitted", "brand", "off_platform")
+      .find((x) => x.action === "request_revision");
+    expect(a?.needsNote).toBe(true);
+  });
+
+  it("approve is the brand action on published, with preview", () => {
+    const a = actionsFor("published", "brand", "off_platform")
+      .find((x) => x.action === "approve");
+    expect(a?.needsPreview).toBe(true);
+  });
 });

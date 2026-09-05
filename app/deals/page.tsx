@@ -3,8 +3,11 @@ import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { FilterTokenBar } from "@/components/filters/filter-token-bar";
+import { parseFilterTokens } from "@/lib/filters/tokens";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const STATUS_LABELS: Record<string, string> = {
   requested: "Awaiting creator", funded: "Funded",
@@ -16,8 +19,16 @@ const STATUS_LABELS: Record<string, string> = {
 
 const DONE: DealStatus[] = ["completed", "cancelled"];
 
-export default async function DealsPage() {
+export default async function DealsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ needs_me?: string }>;
+}) {
   const { user, role } = await requireUser("/deals");
+  const sp = await searchParams;
+  const filterSp = new URLSearchParams();
+  if (sp.needs_me === "1") filterSp.set("needs_me", "1");
+  const tokens = parseFilterTokens(filterSp, ["needs_me"]);
   const supabase = await createServerSupabase();
 
   const { data: deals, error } = await supabase
@@ -34,10 +45,13 @@ export default async function DealsPage() {
       actionsFor(d.status as DealStatus, myRole(d), d.payment_mode as PaymentMode)
         .some((a) => !a.confirm)
   );
-  const inFlight = mine.filter(
+  const filterNeedsMe = tokens.some((t) => t.key === "needs_me" && t.value === "1");
+  const filteredMine = filterNeedsMe ? needsMe : mine;
+  const inFlight = filteredMine.filter(
     (d) => !DONE.includes(d.status as DealStatus) && !needsMe.includes(d)
   );
-  const done = mine.filter((d) => DONE.includes(d.status as DealStatus));
+  const done = filteredMine.filter((d) => DONE.includes(d.status as DealStatus));
+  const displayNeedsMe = filterNeedsMe ? filteredMine : needsMe;
 
   const section = (title: string, rows: typeof mine, accent?: boolean) => (
     <section className="mb-10">
@@ -84,19 +98,39 @@ export default async function DealsPage() {
   );
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">Your deals</h1>
-        <p className="mt-1 text-muted-foreground">
-          {mine.length} total · {needsMe.length} need your action
+    <AuthenticatedShell userId={user.id} role={role}>
+        <h1 className="text-2xl font-semibold tracking-tight">Deals</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Bookings and campaigns you accepted live here. Open campaigns are under Campaigns.
         </p>
+        <FilterTokenBar
+          tokens={tokens}
+          basePath="/deals"
+          allowedKeys={[{ key: "needs_me", label: "Needs me", options: [{ value: "1", label: "Yes" }] }]}
+        />
+        {mine.length === 0 ? (
+          <div className="mt-8 rounded-[var(--radius-tile)] border border-[var(--border)] p-6 text-center">
+            <p className="text-sm text-muted-foreground">No deals yet.</p>
+            <Button asChild size="sm" className="mt-4">
+              <Link href={role === "brand" ? "/campaigns" : "/campaigns"}>
+                {role === "brand" ? "Start a campaign" : "See open campaigns"}
+              </Link>
+            </Button>
+          </div>
+        ) : filteredMine.length === 0 && tokens.length > 0 ? (
+          <div className="mt-8 text-center">
+            <p className="text-sm text-muted-foreground">No results match your filters.</p>
+            <Link href="/deals" className="mt-2 inline-block text-sm font-medium underline">
+              Reset filters
+            </Link>
+          </div>
+        ) : (
         <div className="mt-8">
-          {section("Action needed", needsMe, true)}
+          {section("Action needed", displayNeedsMe, true)}
           {section("In progress", inFlight)}
           {section("Done", done)}
         </div>
-      </main>
-    </>
+        )}
+    </AuthenticatedShell>
   );
 }

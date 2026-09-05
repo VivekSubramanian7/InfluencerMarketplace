@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { creatorGradient } from "@/lib/identity/gradient";
-import { SiteNav } from "@/components/site-nav";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SendIcon } from "@/components/ui/icons";
@@ -73,12 +73,10 @@ export default async function DashboardPage({
   const gradient = profile ? creatorGradient(profile.handle) : null;
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-6xl px-6 py-10">
+    <AuthenticatedShell userId={user.id} role={role}>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight">Your studio</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Your studio</h1>
             <p className="mt-1 text-muted-foreground">
               {profile?.status === "live"
                 ? "Your storefront is live and bookable."
@@ -167,8 +165,7 @@ export default async function DashboardPage({
             />
           </div>
         )}
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }
 
@@ -209,30 +206,27 @@ function OverviewTab({
 
   return (
     <>
-      <div className="card-grid mt-8 grid gap-4 sm:grid-cols-3">
-        <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
-          <p className="text-sm font-medium text-muted-foreground">Earned on Clipline</p>
-          <p className="mt-2 text-3xl font-black tabular-nums">
+      <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-[var(--radius-tile)] border border-[var(--border)] p-4">
+          <p className="text-xl font-semibold tabular-nums">
             ${(earnedCents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {completedDeals.length} completed deal{completedDeals.length === 1 ? "" : "s"}
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+            Earned
           </p>
         </div>
-        <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
-          <p className="text-sm font-medium text-muted-foreground">Active deals</p>
-          <p className="mt-2 text-3xl font-black tabular-nums">{activeDeals.length}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {activeDeals.filter((d) => ["requested", "funded"].includes(d.status)).length} awaiting your response
+        <div className="rounded-[var(--radius-tile)] border border-[var(--border)] p-4">
+          <p className="text-xl font-semibold tabular-nums">{activeDeals.length}</p>
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+            Active deals
           </p>
         </div>
-        <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
-          <p className="text-sm font-medium text-muted-foreground">Brand rating</p>
-          <p className="mt-2 text-3xl font-black tabular-nums">
-            {avgRating !== null ? (<><span className="text-amber">★</span> {avgRating}</>) : (<span className="text-muted-foreground">—</span>)}
+        <div className="rounded-[var(--radius-tile)] border border-[var(--border)] p-4">
+          <p className="text-xl font-semibold tabular-nums">
+            {avgRating !== null ? avgRating : "—"}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {myRatings.length > 0 ? `${myRatings.length} brand review${myRatings.length === 1 ? "" : "s"}` : "No reviews yet, they arrive with completed deals"}
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+            {avgRating !== null ? "Brand rating" : "No rating yet"}
           </p>
         </div>
       </div>

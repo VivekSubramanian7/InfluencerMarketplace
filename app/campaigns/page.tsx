@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { createCampaign } from "./actions";
-import { SiteNav } from "@/components/site-nav";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { AuthenticatedShell } from "@/components/authenticated-shell";
+import { TemplatePicker } from "@/components/campaigns/template-picker";
 import { Badge } from "@/components/ui/badge";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -44,10 +40,8 @@ export default async function CampaignsPage({
   const supabase = await createServerSupabase();
 
   return (
-    <>
-      <SiteNav role={role} userId={user.id} />
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight">
+    <AuthenticatedShell userId={user.id} role={role}>
+        <h1 className="text-2xl font-semibold tracking-tight">
           {role === "brand" ? "Your campaigns" : "Open campaigns"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -66,18 +60,11 @@ export default async function CampaignsPage({
           </p>
         )}
         {role === "brand" ? (
-          <BrandCampaigns
-            userId={user.id}
-            supabase={supabase}
-            cloneId={clone}
-            prefillType={prefill_type}
-            prefillNiche={prefill_niche}
-          />
+          <BrandCampaigns userId={user.id} supabase={supabase} />
         ) : (
           <CreatorCampaigns userId={user.id} supabase={supabase} />
         )}
-      </main>
-    </>
+    </AuthenticatedShell>
   );
 }
 
@@ -86,21 +73,21 @@ type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 async function BrandCampaigns({
   userId,
   supabase,
-  cloneId,
-  prefillType,
-  prefillNiche,
 }: {
   userId: string;
   supabase: Supabase;
-  cloneId?: string;
-  prefillType?: string;
-  prefillNiche?: string;
 }) {
-  const { data: campaigns, error } = await supabase
-    .from("campaigns")
-    .select("id, title, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at")
-    .eq("brand_id", userId)
-    .order("created_at", { ascending: false });
+  const [{ data: campaigns, error }, { count: liveCreators }] = await Promise.all([
+    supabase
+      .from("campaigns")
+      .select("id, title, description, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at")
+      .eq("brand_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("creator_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "live"),
+  ]);
   if (error) throw new Error("campaigns query failed: " + error.message);
 
   const ids = (campaigns ?? []).map((c) => c.id);
@@ -122,26 +109,20 @@ async function BrandCampaigns({
     }
   }
 
-  let cloneData: {
-    title: string;
-    description: string;
-    offering_type: string;
-    budget_min_cents: number;
-    budget_max_cents: number;
-  } | null = null;
-  if (cloneId) {
-    const { data } = await supabase
-      .from("campaigns")
-      .select("title, description, offering_type, budget_min_cents, budget_max_cents")
-      .eq("id", cloneId)
-      .eq("brand_id", userId)
-      .maybeSingle();
-    cloneData = data;
-  }
-
   return (
     <>
-      <ul className="mt-6 mb-10 flex flex-col gap-2">
+      <TemplatePicker
+        campaigns={(campaigns ?? []).map((c) => ({
+          id: c.id,
+          title: c.title,
+          description: c.description ?? "",
+          offering_type: c.offering_type,
+          budget_min_cents: c.budget_min_cents,
+          budget_max_cents: c.budget_max_cents,
+        }))}
+        liveCreatorCount={liveCreators ?? 0}
+      />
+      <ul className="mt-6 flex flex-col gap-2">
         {(campaigns ?? []).map((c) => {
           const stats = statsByCampaign.get(c.id);
           return (
@@ -179,83 +160,11 @@ async function BrandCampaigns({
           );
         })}
         {(campaigns ?? []).length === 0 && (
-          <li className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No campaigns yet. Start your first below.
+          <li className="rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center text-sm text-muted-foreground">
+            No campaigns yet. Post your first brief with New campaign.
           </li>
         )}
       </ul>
-
-      <h2 className="text-lg font-bold">{cloneData ? "Clone campaign" : "Start a campaign"}</h2>
-      <form action={createCampaign} className="mt-3 flex max-w-xl flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            name="title"
-            required
-            defaultValue={cloneData?.title ?? ""}
-            placeholder="Spring launch, honest review videos"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="description">What you&apos;re looking for</Label>
-          <Textarea
-            id="description"
-            name="description"
-            rows={5}
-            required
-            defaultValue={
-              cloneData?.description ??
-              (prefillNiche ? `Looking for ${prefillNiche} creators to…` : "")
-            }
-            placeholder="The product, the audience you want to reach, and what a great video looks like to you."
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="type">Content type</Label>
-          <select
-            id="type"
-            name="type"
-            className="h-10 rounded-lg border bg-background px-3 text-sm"
-            defaultValue={cloneData?.offering_type ?? prefillType ?? "dedicated_video"}
-          >
-            {Object.entries(TYPE_LABELS).map(([v, label]) => (
-              <option key={v} value={v}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="budget_min">Budget from (USD)</Label>
-            <Input
-              id="budget_min"
-              name="budget_min"
-              inputMode="decimal"
-              required
-              defaultValue={cloneData ? (cloneData.budget_min_cents / 100).toFixed(2) : ""}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="budget_max">Budget to (USD)</Label>
-            <Input
-              id="budget_max"
-              name="budget_max"
-              inputMode="decimal"
-              required
-              defaultValue={cloneData ? (cloneData.budget_max_cents / 100).toFixed(2) : ""}
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="apply_by">Applications close (optional)</Label>
-          <Input id="apply_by" name="apply_by" type="date" />
-        </div>
-        <Button type="submit" className="mt-2">
-          {cloneData ? "Create from template" : "Start campaign"}
-        </Button>
-      </form>
     </>
   );
 }
@@ -319,8 +228,8 @@ async function CreatorCampaigns({ userId, supabase }: { userId: string; supabase
         );
       })}
       {(campaigns ?? []).length === 0 && (
-        <li className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No open campaigns right now. Check back soon.
+        <li className="rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center text-sm text-muted-foreground">
+          No open campaigns right now. Brands post briefs here.
         </li>
       )}
     </ul>
