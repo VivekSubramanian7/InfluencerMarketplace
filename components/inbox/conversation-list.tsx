@@ -36,11 +36,13 @@ export function ConversationList({
   status,
   totalCount,
   role,
+  hasFilters = false,
 }: {
   conversations: ConversationRow[];
   status: string | null;
   totalCount: number;
   role: string;
+  hasFilters?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const filtered = search
@@ -52,7 +54,7 @@ export function ConversationList({
       <h2 className="text-lg font-bold">
         Conversations
         <span className="ml-2 text-sm font-medium text-muted-foreground tabular-nums">
-          ({filtered.length}{status && status !== "all" ? ` of ${totalCount}` : ""})
+          ({filtered.length}{status && status !== "active" ? ` of ${totalCount}` : ""})
         </span>
       </h2>
       <Input
@@ -64,24 +66,28 @@ export function ConversationList({
         aria-label="Search conversations"
       />
       {filtered.length === 0 ? (
-        <div className="mt-3 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+        <div className="mt-3 rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center">
           {search ? (
-            <p>No conversations match your search.</p>
+            <p className="text-sm text-[var(--muted)]">No conversations match &ldquo;{search}&rdquo;.</p>
+          ) : hasFilters ? (
+            <>
+              <p className="text-sm text-[var(--muted)]">No conversations match your filters.</p>
+              <Link href="/inbox" className="mt-2 inline-block text-sm font-medium underline underline-offset-2">
+                Reset filters
+              </Link>
+            </>
           ) : role === "brand" ? (
             <>
-              <p className="font-semibold text-foreground">No conversations yet</p>
-              <p className="mt-1">
+              <p className="font-medium text-[var(--ink)]">No conversations yet</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
                 Reach out to creators from{" "}
-                <Link href="/discover" className="font-medium underline underline-offset-2">
-                  Discover
-                </Link>
-                .
+                <Link href="/discover" className="font-medium underline underline-offset-2">Discover</Link>.
               </p>
             </>
           ) : (
             <>
-              <p className="font-semibold text-foreground">No conversations yet</p>
-              <p className="mt-1">Brands you accept will appear here.</p>
+              <p className="font-medium text-[var(--ink)]">No conversations yet</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">Brands you accept will appear here.</p>
             </>
           )}
         </div>
@@ -91,8 +97,14 @@ export function ConversationList({
             <li key={c.id}>
               <Link
                 href={`/inbox?c=${c.id}`}
-                className="hidden items-center gap-4 rounded-lg border border-transparent p-4 transition-colors hover:bg-[var(--row-hover)] md:flex"
+                className="hidden items-center gap-4 rounded-lg border border-transparent px-2 py-3 transition-colors hover:bg-[var(--row-hover)] md:flex"
               >
+                <span
+                  aria-hidden
+                  className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--ground)] text-xs font-semibold text-[var(--ink)]"
+                >
+                  {c.label.charAt(0).toUpperCase()}
+                </span>
                 <div className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     {c.waiting && (
@@ -120,8 +132,14 @@ export function ConversationList({
               </Link>
               <Link
                 href={`/inbox/${c.id}`}
-                className="flex items-center gap-4 rounded-lg border border-transparent p-4 transition-colors hover:bg-[var(--row-hover)] md:hidden"
+                className="flex items-center gap-4 rounded-lg border border-transparent px-2 py-3 transition-colors hover:bg-[var(--row-hover)] md:hidden"
               >
+                <span
+                  aria-hidden
+                  className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--ground)] text-xs font-semibold text-[var(--ink)]"
+                >
+                  {c.label.charAt(0).toUpperCase()}
+                </span>
                 <div className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     {c.waiting && (

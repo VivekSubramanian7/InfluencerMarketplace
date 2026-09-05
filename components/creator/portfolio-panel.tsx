@@ -72,7 +72,7 @@ export function PortfolioPanel({
       )}
 
       {mode === "settings" && (
-        <section className="mt-8 rounded-2xl bg-card p-6 shadow-card">
+        <section className="mt-8 rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
           <h2 className="font-bold">Add a video</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Paste any video link and we detect the platform automatically.

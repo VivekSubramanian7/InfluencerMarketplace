@@ -3,6 +3,8 @@ export type FilterToken = { key: string; label: string; value: string };
 const LABELS: Record<string, string> = {
   status: "Status",
   needs_me: "Needs me",
+  offering_type: "Format",
+  applied: "Applied",
 };
 
 export function parseFilterTokens(sp: URLSearchParams, allowed: string[]): FilterToken[] {

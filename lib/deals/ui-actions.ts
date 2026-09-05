@@ -31,3 +31,12 @@ export function actionsFor(
 ): UiAction[] {
   return CANDIDATES.filter((c) => canTransition(status, c.action, role, mode));
 }
+
+export function primaryActionLabel(
+  status: DealStatus,
+  role: "brand" | "creator",
+  mode: PaymentMode,
+): string | null {
+  const first = actionsFor(status, role, mode).find((a) => !a.confirm);
+  return first?.label ?? null;
+}

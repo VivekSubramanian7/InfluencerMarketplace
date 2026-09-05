@@ -168,7 +168,7 @@ export default async function DiscoverPage({
         <form
           key={flatParams.toString()}
           method="get"
-          className="mt-6 rounded-2xl bg-card p-5 shadow-card"
+          className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5"
         >
           {filters.tab === "worked" && <input type="hidden" name="tab" value="worked" />}
           <div className="flex flex-wrap gap-2">

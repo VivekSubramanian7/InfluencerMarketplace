@@ -139,6 +139,8 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+  /* ponytail: shadow-card is Public-register only (landing, /c/[handle], auth).
+     App-register surfaces use hairlines + color steps per DESIGN.md. */
   .shadow-card {
     box-shadow: var(--shadow-card);
   }

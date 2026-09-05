@@ -91,7 +91,7 @@ export function NotificationList({
                       <input type="hidden" name="href" value={n.href} />
                       <button
                         type="submit"
-                        className="deal-row flex w-full items-center justify-between gap-4 rounded-2xl bg-card p-4 text-left shadow-card ring-1 ring-amber/20 transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                        className="flex w-full items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4 text-left transition-colors hover:bg-[var(--row-hover)] ring-1 ring-amber/20"
                       >
                         <NotificationInner n={n} />
                       </button>
@@ -99,14 +99,14 @@ export function NotificationList({
                   ) : n.href ? (
                     <Link
                       href={n.href}
-                      className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                      className="flex items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4 transition-colors hover:bg-[var(--row-hover)]"
                     >
                       <NotificationInner n={n} />
                     </Link>
                   ) : (
                     <div
-                      className={`flex items-center justify-between gap-4 rounded-2xl p-4 ${
-                        n.read_at ? "bg-card shadow-card" : "bg-card shadow-card ring-1 ring-amber/20"
+                      className={`flex items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4 ${
+                        n.read_at ? "" : "ring-1 ring-amber/20"
                       }`}
                     >
                       <NotificationInner n={n} />

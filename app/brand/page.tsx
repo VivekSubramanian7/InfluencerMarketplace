@@ -97,7 +97,7 @@ export default async function BrandOverviewPage({
   const completed = deals.filter((d) => d.status === "completed");
 
   const stat = (label: string, value: number) => (
-    <div className="stat-card rounded-2xl bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
+    <div className="stat-card rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
       <p className="text-3xl font-extrabold tabular-nums">{value}</p>
       <p className="mt-1 text-sm text-muted-foreground">{label}</p>
     </div>
@@ -185,7 +185,7 @@ export default async function BrandOverviewPage({
         )}
 
         {!allDone && (
-          <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+          <section className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-base font-bold">Getting started</h2>
               <span className="text-xs font-medium tabular-nums text-muted-foreground">
@@ -244,7 +244,7 @@ export default async function BrandOverviewPage({
                 <li key={c.id}>
                   <Link
                     href={`/inbox/${c.id}`}
-                    className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                    className="flex items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4 transition-colors hover:bg-[var(--row-hover)]"
                   >
                     <span className="min-w-0 truncate font-medium">{creatorLabel(c.creator_id)}</span>
                     <Badge variant="secondary">{INVITE_LABELS[c.status] ?? c.status}</Badge>
@@ -280,7 +280,7 @@ export default async function BrandOverviewPage({
                   <li key={d.id} className="flex items-center gap-2">
                     <Link
                       href={`/deals/${d.id}`}
-                      className="deal-row flex flex-1 items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                      className="deal-row flex flex-1 items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4 transition-colors hover:bg-[var(--row-hover)]"
                     >
                       <span className="min-w-0 truncate">
                         <span className="font-medium">{creatorLabel(d.creator_id)}</span>
@@ -319,7 +319,7 @@ export default async function BrandOverviewPage({
                 <li key={d.id}>
                   <Link
                     href={`/deals/${d.id}`}
-                    className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                    className="flex items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4 transition-colors hover:bg-[var(--row-hover)]"
                   >
                     <span className="min-w-0 truncate">
                       <span className="font-medium">{creatorLabel(d.creator_id)}</span>

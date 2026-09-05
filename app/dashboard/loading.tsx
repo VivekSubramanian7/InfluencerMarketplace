@@ -11,7 +11,7 @@ export default function DashboardLoading() {
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="rounded-2xl bg-card p-6 shadow-card">
+            <div key={i} className="rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="mt-3 h-8 w-24" />
               <Skeleton className="mt-2 h-3 w-28" />
@@ -20,7 +20,7 @@ export default function DashboardLoading() {
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <section className="min-w-0 rounded-2xl bg-card p-6 shadow-card">
+          <section className="min-w-0 rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
             <Skeleton className="h-6 w-36" />
             <div className="mt-5 flex flex-col gap-4">
               {[0, 1, 2, 3].map((i) => (
@@ -32,7 +32,7 @@ export default function DashboardLoading() {
             </div>
           </section>
           <aside className="flex min-w-0 flex-col gap-6">
-            <section className="overflow-hidden rounded-2xl bg-card shadow-card">
+            <section className="overflow-hidden rounded-[var(--radius-tile)] border border-[var(--border)]">
               <Skeleton className="h-16 rounded-none" />
               <div className="p-5">
                 <Skeleton className="h-5 w-32" />

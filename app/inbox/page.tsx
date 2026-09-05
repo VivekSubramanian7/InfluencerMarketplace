@@ -77,9 +77,11 @@ export default async function InboxPage({
   };
 
   const pendingForMe = mine.filter((c) => c.status === "invited" && c.creator_id === user.id);
+  const archived = status === "archived";
   const allRest = mine.filter((c) => !pendingForMe.includes(c));
-  const rest =
-    status && status !== "all" ? allRest.filter((c) => c.status === status) : allRest;
+  const rest = archived
+    ? []
+    : allRest;
 
   const ownedSelected =
     selectedId && mine.some((conv) => conv.id === selectedId) ? selectedId : null;
@@ -92,18 +94,16 @@ export default async function InboxPage({
     >
         <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
 
-        <nav className="mt-3 flex flex-wrap gap-1" aria-label="Filter conversations">
+        <nav className="mt-3 flex gap-1" aria-label="Filter conversations">
           {[
-            { value: "all", label: "All" },
-            { value: "accepted", label: "Active" },
-            { value: "invited", label: "Pending" },
-            { value: "declined", label: "Declined" },
+            { value: "active", label: "Active" },
+            { value: "archived", label: "Archived" },
           ].map((f) => {
-            const active = (status ?? "all") === f.value;
+            const active = (status ?? "active") === f.value;
             return (
               <Link
                 key={f.value}
-                href={f.value === "all" ? "/inbox" : `/inbox?status=${f.value}`}
+                href={f.value === "active" ? "/inbox" : `/inbox?status=${f.value}`}
                 className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                   active
                     ? "bg-foreground text-background"
@@ -138,7 +138,7 @@ export default async function InboxPage({
             </h2>
             <ul className="mt-3 flex flex-col gap-3">
               {pendingForMe.map((c) => (
-                <li key={c.id} className="rounded-2xl bg-card p-6 shadow-card ring-1 ring-amber/20">
+                <li key={c.id} className="rounded-[var(--radius-tile)] border border-[var(--border)] bg-[var(--card)] p-5 ring-1 ring-amber/20">
                   <p className="font-bold">{label(c)}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                     {c.invite_message}
@@ -186,6 +186,7 @@ export default async function InboxPage({
           status={status ?? null}
           totalCount={allRest.length}
           role={role}
+          hasFilters={status !== null && status !== "active"}
         />
     </AuthenticatedShell>
   );

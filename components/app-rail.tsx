@@ -144,6 +144,45 @@ export function AppRail({
         </div>
       )}
 
+      <div className="mt-3">
+        <details className="group">
+          <summary className="flex w-full cursor-pointer items-center gap-2 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-medium text-[var(--primary-foreground)] transition-colors hover:opacity-90 [&::-webkit-details-marker]:hidden">
+            <span aria-hidden className="text-base leading-none">+</span>
+            <span className="flex-1">New…</span>
+            <span aria-hidden className="text-xs transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <ul className="mt-1 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 shadow-[var(--shadow-float)]">
+            {role === "creator" ? (
+              <>
+                <li>
+                  <Link href="/dashboard?tab=offerings&new=1" className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-[var(--row-hover)]">
+                    New offering
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/inbox" className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-[var(--row-hover)]">
+                    Start conversation
+                  </Link>
+                </li>
+              </>
+            ) : role === "brand" ? (
+              <>
+                <li>
+                  <Link href="/campaigns?new=1" className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-[var(--row-hover)]">
+                    New campaign
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/discover" className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-[var(--row-hover)]">
+                    Find creators
+                  </Link>
+                </li>
+              </>
+            ) : null}
+          </ul>
+        </details>
+      </div>
+
       <nav className="mt-4 flex flex-1 flex-col" aria-label="Main">
         <ul className="flex flex-col gap-0.5">{core.map(renderItem)}</ul>
         <div className="my-3 h-px bg-[var(--divider)]" />

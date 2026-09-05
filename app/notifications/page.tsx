@@ -74,12 +74,12 @@ export default async function NotificationsPage({
         </nav>
 
         {rows.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+          <div className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center">
             <span aria-hidden className="mx-auto mb-3 block w-fit text-muted-foreground/40">
               <BellIcon size={36} />
             </span>
-            <p className="font-semibold text-foreground">All caught up</p>
-            <p className="mt-1">Invites, offers, and deal updates land here.</p>
+            <p className="font-medium text-[var(--ink)]">No notifications yet</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">Activity on your deals, campaigns, and messages will show up here.</p>
           </div>
         ) : (
           <NotificationList

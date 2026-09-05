@@ -318,7 +318,7 @@ export default async function ConversationPage({
         )}
 
         {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (
-          <section id="offer-section" className="mt-6 rounded-2xl bg-card p-6 shadow-card scroll-mt-20">
+          <section id="offer-section" className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5 scroll-mt-20">
             <h2 className="text-base font-bold">Send an offer</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Agree on the work in chat, then put a price on it. Accepting

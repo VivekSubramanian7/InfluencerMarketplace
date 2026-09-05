@@ -15,7 +15,7 @@ export default function DealsLoading() {
                 {[0, 1].map((i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-card"
+                    className="flex items-center justify-between gap-4 rounded-[var(--radius-tile)] border border-[var(--border)] p-4"
                   >
                     <Skeleton className="h-5 w-1/2" />
                     <div className="flex shrink-0 items-center gap-4">

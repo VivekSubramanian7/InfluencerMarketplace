@@ -245,7 +245,7 @@ export default async function DealPage({
       )}
 
       {(deal.preview_url || deal.live_url) && (
-        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+        <section className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
           <h2 className="text-base font-bold">Deliverables</h2>
           {deal.preview_url && (
             <p className="mt-3 text-sm">
@@ -266,7 +266,7 @@ export default async function DealPage({
       )}
 
       {brief && (
-        <section className="mt-6 rounded-2xl bg-card p-6 shadow-card">
+        <section className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
           <h2 className="text-base font-bold">Brief</h2>
           <div className="mt-3 flex flex-col gap-3 text-sm">
             <div>

@@ -3,6 +3,8 @@ import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { TemplatePicker } from "@/components/campaigns/template-picker";
+import { FilterTokenBar } from "@/components/filters/filter-token-bar";
+import { parseFilterTokens, type FilterToken } from "@/lib/filters/tokens";
 import { Badge } from "@/components/ui/badge";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -33,10 +35,17 @@ export default async function CampaignsPage({
     clone?: string;
     prefill_type?: string;
     prefill_niche?: string;
+    status?: string;
+    offering_type?: string;
   }>;
 }) {
   const { user, role } = await requireUser("/campaigns");
-  const { error, saved, clone, prefill_type, prefill_niche } = await searchParams;
+  const sp = await searchParams;
+  const { error, saved } = sp;
+  const filterSp = new URLSearchParams();
+  if (sp.status) filterSp.set("status", sp.status);
+  if (sp.offering_type) filterSp.set("offering_type", sp.offering_type);
+  const tokens = parseFilterTokens(filterSp, ["status", "offering_type"]);
   const supabase = await createServerSupabase();
 
   return (
@@ -49,6 +58,24 @@ export default async function CampaignsPage({
             ? "Post a brief and let creators come to you with a pitch and a price."
             : "Brands post briefs here. Pitch your take and name your price."}
         </p>
+        {role === "brand" && (
+          <FilterTokenBar
+            tokens={tokens}
+            basePath="/campaigns"
+            allowedKeys={[
+              { key: "status", label: "Status", options: [
+                { value: "open", label: "Open" },
+                { value: "closed", label: "Closed" },
+              ]},
+              { key: "offering_type", label: "Format", options: [
+                { value: "short_form_post", label: "Short-form post" },
+                { value: "dedicated_video", label: "Dedicated video" },
+                { value: "integration", label: "Integration" },
+                { value: "ugc_video", label: "UGC video" },
+              ]},
+            ]}
+          />
+        )}
         {error && (
           <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
@@ -60,7 +87,7 @@ export default async function CampaignsPage({
           </p>
         )}
         {role === "brand" ? (
-          <BrandCampaigns userId={user.id} supabase={supabase} />
+          <BrandCampaigns userId={user.id} supabase={supabase} tokens={tokens} />
         ) : (
           <CreatorCampaigns userId={user.id} supabase={supabase} />
         )}
@@ -73,9 +100,11 @@ type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 async function BrandCampaigns({
   userId,
   supabase,
+  tokens,
 }: {
   userId: string;
   supabase: Supabase;
+  tokens: FilterToken[];
 }) {
   const [{ data: campaigns, error }, { count: liveCreators }] = await Promise.all([
     supabase
@@ -90,7 +119,15 @@ async function BrandCampaigns({
   ]);
   if (error) throw new Error("campaigns query failed: " + error.message);
 
-  const ids = (campaigns ?? []).map((c) => c.id);
+  const filtered = (campaigns ?? []).filter((c) => {
+    for (const t of tokens) {
+      if (t.key === "status" && c.status !== t.value) return false;
+      if (t.key === "offering_type" && c.offering_type !== t.value) return false;
+    }
+    return true;
+  });
+
+  const ids = filtered.map((c) => c.id);
   type Stats = { pending: number; accepted: number; declined: number };
   const statsByCampaign = new Map<string, Stats>();
   if (ids.length > 0) {
@@ -122,49 +159,58 @@ async function BrandCampaigns({
         }))}
         liveCreatorCount={liveCreators ?? 0}
       />
-      <ul className="mt-6 flex flex-col gap-2">
-        {(campaigns ?? []).map((c) => {
-          const stats = statsByCampaign.get(c.id);
-          return (
-            <li key={c.id}>
-              <Link
-                href={`/campaigns/${c.id}`}
-                className="flex items-center justify-between gap-4 rounded-xl border p-5 transition-colors hover:border-primary/40"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-bold">{c.title}</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">
-                    {TYPE_LABELS[c.offering_type] ?? c.offering_type}
-                    {c.apply_by ? ` · apply by ${c.apply_by}` : ""}
-                  </span>
-                </span>
-                <span className="flex shrink-0 items-center gap-4">
-                  {stats && (stats.pending > 0 || stats.accepted > 0 || stats.declined > 0) && (
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {[
-                        stats.pending > 0 && `${stats.pending} pending`,
-                        stats.accepted > 0 && `${stats.accepted} accepted`,
-                        stats.declined > 0 && `${stats.declined} declined`,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+      {filtered.length === 0 && tokens.length > 0 ? (
+        <div className="mt-6 text-center">
+          <p className="text-sm text-[var(--muted)]">No campaigns match your filters.</p>
+          <Link href="/campaigns" className="mt-2 inline-block text-sm font-medium underline underline-offset-2">
+            Reset filters
+          </Link>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center">
+          <p className="font-medium text-[var(--ink)]">No campaigns yet</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Post your first brief and let creators pitch.</p>
+        </div>
+      ) : (
+        <ul className="mt-6 flex flex-col gap-2">
+          {filtered.map((c) => {
+            const stats = statsByCampaign.get(c.id);
+            return (
+              <li key={c.id}>
+                <Link
+                  href={`/campaigns/${c.id}`}
+                  className="flex items-center justify-between gap-4 rounded-xl border p-5 transition-colors hover:border-primary/40"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-bold">{c.title}</span>
+                    <span className="mt-0.5 block text-sm text-muted-foreground">
+                      {TYPE_LABELS[c.offering_type] ?? c.offering_type}
+                      {c.apply_by ? ` · apply by ${c.apply_by}` : ""}
                     </span>
-                  )}
-                  <Badge variant="secondary">{c.status}</Badge>
-                  <span className="font-extrabold tabular-nums text-primary">
-                    {budgetRange(c.budget_min_cents, c.budget_max_cents)}
                   </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-        {(campaigns ?? []).length === 0 && (
-          <li className="rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center text-sm text-muted-foreground">
-            No campaigns yet. Post your first brief with New campaign.
-          </li>
-        )}
-      </ul>
+                  <span className="flex shrink-0 items-center gap-4">
+                    {stats && (stats.pending > 0 || stats.accepted > 0 || stats.declined > 0) && (
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {[
+                          stats.pending > 0 && `${stats.pending} pending`,
+                          stats.accepted > 0 && `${stats.accepted} accepted`,
+                          stats.declined > 0 && `${stats.declined} declined`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
+                    <Badge variant="secondary">{c.status}</Badge>
+                    <span className="font-semibold tabular-nums text-primary">
+                      {budgetRange(c.budget_min_cents, c.budget_max_cents)}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </>
   );
 }
@@ -213,7 +259,7 @@ async function CreatorCampaigns({ userId, supabase }: { userId: string; supabase
             >
               <div className="flex items-baseline justify-between gap-3">
                 <span className="min-w-0 truncate font-bold">{c.title}</span>
-                <span className="shrink-0 font-extrabold tabular-nums text-primary">
+                <span className="shrink-0 font-semibold tabular-nums text-primary">
                   {budgetRange(c.budget_min_cents, c.budget_max_cents)}
                 </span>
               </div>
@@ -227,11 +273,12 @@ async function CreatorCampaigns({ userId, supabase }: { userId: string; supabase
           </li>
         );
       })}
-      {(campaigns ?? []).length === 0 && (
-        <li className="rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center text-sm text-muted-foreground">
-          No open campaigns right now. Brands post briefs here.
+      {(campaigns ?? []).length === 0 ? (
+        <li className="rounded-[var(--radius-tile)] border border-[var(--border)] p-8 text-center">
+          <p className="font-medium text-[var(--ink)]">No open campaigns right now</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Brands post briefs here — check back soon.</p>
         </li>
-      )}
+      ) : null}
     </ul>
   );
 }

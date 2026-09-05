@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { actionsFor } from "@/lib/deals/ui-actions";
+import { actionsFor, primaryActionLabel } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { FilterTokenBar } from "@/components/filters/filter-token-bar";
@@ -18,6 +18,18 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const DONE: DealStatus[] = ["completed", "cancelled"];
+
+function timeAgo(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 export default async function DealsPage({
   searchParams,
@@ -54,44 +66,61 @@ export default async function DealsPage({
   const displayNeedsMe = filterNeedsMe ? filteredMine : needsMe;
 
   const section = (title: string, rows: typeof mine, accent?: boolean) => (
-    <section className="mb-10">
-      <h2 className="flex items-center gap-2.5 text-lg font-bold">
+    <section className="mb-8">
+      <h2 className="flex items-center gap-2.5 text-lg font-semibold">
         {accent && rows.length > 0 && (
-          <span aria-hidden className="size-2 rounded-full bg-amber" />
+          <span aria-hidden className="size-2 rounded-full bg-[var(--amber)]" />
         )}
         {title}
-        <span className="text-sm font-medium text-muted-foreground tabular-nums">
-          ({rows.length})
+        <span className="ml-1 text-sm font-medium text-[var(--muted)] tabular-nums">
+          {rows.length}
         </span>
       </h2>
       {rows.length === 0 ? (
-        <p className="mt-3 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Nothing here.
+        <p className="mt-3 rounded-[var(--radius-tile)] border border-dashed border-[var(--border)] p-6 text-center text-sm text-[var(--muted)]">
+          Nothing matching this section right now.
         </p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2">
-          {rows.map((d) => (
-            <li key={d.id}>
-              <Link
-                href={`/deals/${d.id}`}
-                className="deal-row flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
-              >
-                <span className="min-w-0 truncate">
-                  <span className="font-semibold">{d.offering_title}</span>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    · {myRole(d) === "brand" ? "buying" : "selling"}
+        <ul className="mt-3 divide-y divide-[var(--divider)]">
+          {rows.map((d) => {
+            const r = myRole(d);
+            const action = primaryActionLabel(d.status as DealStatus, r, d.payment_mode as PaymentMode);
+            return (
+              <li key={d.id}>
+                <Link
+                  href={`/deals/${d.id}`}
+                  className="flex items-center gap-4 px-2 py-3 transition-colors hover:bg-[var(--row-hover)]"
+                >
+                  <span
+                    aria-hidden
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--ground)] text-xs font-semibold text-[var(--ink)]"
+                  >
+                    {(d.offering_title ?? "?").charAt(0).toUpperCase()}
                   </span>
-                </span>
-                <span className="flex shrink-0 items-center gap-4">
-                  <Badge variant="secondary">{STATUS_LABELS[d.status] ?? d.status}</Badge>
-                  <span className="font-extrabold tabular-nums text-primary">
-                    ${(d.price_cents / 100).toFixed(2)}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{d.offering_title}</span>
+                    <span className="block truncate text-xs text-[var(--muted)]">
+                      {r === "brand" ? "Buying" : "Selling"}
+                      {d.requested_at ? ` · ${timeAgo(d.requested_at)}` : ""}
+                    </span>
                   </span>
-                </span>
-              </Link>
-            </li>
-          ))}
+                  <Badge variant="secondary" className="shrink-0">
+                    {STATUS_LABELS[d.status] ?? d.status}
+                  </Badge>
+                  <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">
+                    ${(d.price_cents / 100).toFixed(0)}
+                  </span>
+                  {action ? (
+                    <span className="shrink-0 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-[var(--primary-foreground)]">
+                      {action} →
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-xs text-[var(--muted)]">→</span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -110,9 +139,14 @@ export default async function DealsPage({
         />
         {mine.length === 0 ? (
           <div className="mt-8 rounded-[var(--radius-tile)] border border-[var(--border)] p-6 text-center">
-            <p className="text-sm text-muted-foreground">No deals yet.</p>
+            <p className="font-medium text-[var(--ink)]">No deals yet</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {role === "brand"
+                ? "Start a campaign and deals will appear here as creators accept."
+                : "Apply to open campaigns — accepted deals show up here."}
+            </p>
             <Button asChild size="sm" className="mt-4">
-              <Link href={role === "brand" ? "/campaigns" : "/campaigns"}>
+              <Link href="/campaigns">
                 {role === "brand" ? "Start a campaign" : "See open campaigns"}
               </Link>
             </Button>
@@ -120,7 +154,7 @@ export default async function DealsPage({
         ) : filteredMine.length === 0 && tokens.length > 0 ? (
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">No results match your filters.</p>
-            <Link href="/deals" className="mt-2 inline-block text-sm font-medium underline">
+            <Link href="/deals" className="mt-2 inline-block text-sm font-medium underline underline-offset-2">
               Reset filters
             </Link>
           </div>

@@ -232,7 +232,7 @@ function OverviewTab({
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <section className="min-w-0 rounded-2xl bg-card p-6 shadow-card">
+        <section className="min-w-0 rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Recent deals</h2>
             <Link href="/deals" className="text-sm font-medium text-muted-foreground hover:text-foreground">All deals →</Link>
@@ -263,7 +263,7 @@ function OverviewTab({
         </section>
 
         <aside className="flex min-w-0 flex-col gap-6">
-          <section className="overflow-hidden rounded-2xl bg-card shadow-card">
+          <section className="overflow-hidden rounded-[var(--radius-tile)] border border-[var(--border)]">
             <div aria-hidden className="h-16" style={gradient ? { background: gradient.css } : { background: "var(--secondary)" }} />
             <div className="p-5">
               <div className="flex items-center justify-between">
@@ -284,7 +284,7 @@ function OverviewTab({
           </section>
 
           {openSteps.length > 0 && (
-            <section className="rounded-2xl bg-card p-5 shadow-card">
+            <section className="rounded-[var(--radius-tile)] border border-[var(--border)] p-5">
               <h2 className="font-bold">
                 Finish setup{" "}
                 <span className="text-sm font-medium text-muted-foreground">
