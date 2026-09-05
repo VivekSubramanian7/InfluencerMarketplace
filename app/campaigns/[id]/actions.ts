@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parsePriceCents, parseText } from "@/lib/storefront/validation";
-import { notify } from "@/lib/notify";
+import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
 import { trackServerEvent } from "@/lib/analytics";
@@ -56,15 +56,6 @@ export async function applyToCampaign(formData: FormData) {
     redirect(`/campaigns/${campaignId}?error=` + encodeURIComponent(msg));
   }
 
-  if (campaign) {
-    await notify({
-      userId: campaign.brand_id,
-      kind: "application",
-      title: `New application on "${campaign.title}"`,
-      href: `/campaigns/${campaignId}`,
-    });
-  }
-
   redirect(`/campaigns/${campaignId}?saved=1`);
 }
 
@@ -108,16 +99,15 @@ export async function decideApplication(formData: FormData) {
     if (app) {
       trackServerEvent("deal_created", app.creator_id, {
         deal_id: dealId,
-        source: "campaign_application",
+        source: "campaign",
         campaign_id: campaignId,
         application_id: id,
       });
-      await notify({
+      const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+      await emailUser({
         userId: app.creator_id,
-        kind: "application_response",
-        title: "Your campaign application was accepted — the deal has started",
-        href: `/deals/${dealId}`,
-        email: true,
+        subject: "Your campaign application was accepted — the deal has started",
+        text: `Open it on Clipline: ${site}/deals/${dealId}`,
       });
     }
     redirect(`/deals/${dealId}`);
@@ -138,12 +128,6 @@ export async function decideApplication(formData: FormData) {
     redirect(`/campaigns/${campaignId}?error=` +
       encodeURIComponent(error ? friendlyDbError(error) : "Application not found"));
   }
-  await notify({
-    userId: declined.creator_id,
-    kind: "application_response",
-    title: "Your campaign application was declined",
-    href: `/campaigns/${campaignId}`,
-  });
   redirect(`/campaigns/${campaignId}?saved=1`);
 }
 
@@ -174,16 +158,15 @@ export async function bulkDecideApplications(formData: FormData) {
         if (app) {
           trackServerEvent("deal_created", app.creator_id, {
             deal_id: dealId,
-            source: "campaign_application",
+            source: "campaign",
             campaign_id: campaignId,
             application_id: id,
           });
-          await notify({
+          const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+          await emailUser({
             userId: app.creator_id,
-            kind: "application_response",
-            title: "Your campaign application was accepted — the deal has started",
-            href: `/campaigns/${campaignId}`,
-            email: true,
+            subject: "Your campaign application was accepted — the deal has started",
+            text: `Open it on Clipline: ${site}/campaigns/${campaignId}`,
           });
         }
       }
@@ -197,14 +180,6 @@ export async function bulkDecideApplications(formData: FormData) {
         .select("creator_id")
         .maybeSingle();
       if (error) errors.push(error.message);
-      else if (declined) {
-        await notify({
-          userId: declined.creator_id,
-          kind: "application_response",
-          title: "Your campaign application was declined",
-          href: `/campaigns/${campaignId}`,
-        });
-      }
     }
   }
 

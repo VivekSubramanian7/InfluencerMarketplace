@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
+import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { draftReply, respondInvite, respondOffer, sendOffer, sendThreadMessage } from "../actions";
 import { AutoScroll } from "@/components/inbox/auto-scroll";
@@ -28,6 +29,7 @@ export default async function ConversationPage({
 }) {
   const { id } = await params;
   const { user, role } = await requireUser(`/inbox/${id}`);
+  await touchCursor("inbox");
   const { error, saved } = await searchParams;
   const supabase = await createServerSupabase();
 
@@ -85,7 +87,7 @@ export default async function ConversationPage({
       .order("created_at"),
     supabase
       .from("offers")
-      .select("id, offering_id, price_cents, note, status, deal_id, created_at")
+      .select("id, offering_id, price_cents, goals, status, deal_id, created_at")
       .eq("conversation_id", conv.id)
       .order("created_at"),
   ]);
@@ -228,7 +230,7 @@ export default async function ConversationPage({
                       </span>
                     </span>
                   </div>
-                  {o.note && <p className="mt-2 whitespace-pre-wrap text-sm">{o.note}</p>}
+                  {o.goals && <p className="mt-2 whitespace-pre-wrap text-sm">{o.goals}</p>}
                   {o.status === "pending" && !iAmBrand && (
                     <div className="mt-3 flex gap-2">
                       <form action={respondOffer}>
@@ -351,13 +353,34 @@ export default async function ConversationPage({
                   <Input id="offer-price" name="price" inputMode="decimal" required />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="offer-note">Scope note (optional, becomes the brief)</Label>
+                  <Label htmlFor="offer-goals">Goals</Label>
                   <Textarea
-                    id="offer-note"
-                    name="note"
+                    id="offer-goals"
+                    name="goals"
                     rows={3}
+                    required
                     maxLength={2000}
-                    placeholder="What you agreed on: deliverable, angle, timing."
+                    placeholder="What does success look like for this collaboration?"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="offer-product">Product (optional)</Label>
+                  <Textarea
+                    id="offer-product"
+                    name="product_description"
+                    rows={2}
+                    maxLength={2000}
+                    placeholder="Product or service to feature"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="offer-talking">Talking points (optional)</Label>
+                  <Textarea
+                    id="offer-talking"
+                    name="talking_points"
+                    rows={2}
+                    maxLength={2000}
+                    placeholder="Key messages or angles"
                   />
                 </div>
                 <Button type="submit" size="sm" className="self-start">Send offer</Button>

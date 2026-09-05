@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require";
+import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { applyToCampaign, withdrawApplication } from "./actions";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
@@ -57,6 +58,7 @@ export default async function CampaignPage({
 }) {
   const { id } = await params;
   const { user, role } = await requireUser(`/campaigns/${id}`);
+  await touchCursor("campaigns");
   const { error, saved, invited } = await searchParams;
   const supabase = await createServerSupabase();
 

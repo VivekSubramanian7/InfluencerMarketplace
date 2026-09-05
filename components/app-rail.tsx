@@ -11,7 +11,6 @@ import {
   HandshakeIcon,
   HomeIcon,
   CampaignsIcon,
-  BellIcon,
   LogOutIcon,
 } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
@@ -26,8 +25,9 @@ type NavItem = {
 export type AppRailProps = {
   role: "creator" | "brand" | "admin";
   userId: string;
-  unreadInbox: number;
-  unreadNotifications: number;
+  unreadInbox: boolean;
+  unreadDeals: boolean;
+  unreadCampaigns: boolean;
   displayName: string | null;
   email: string;
   workspaceName: string;
@@ -41,7 +41,8 @@ function isActive(pathname: string, href: string) {
 export function AppRail({
   role,
   unreadInbox,
-  unreadNotifications,
+  unreadDeals,
+  unreadCampaigns,
   displayName,
   email,
   workspaceName,
@@ -51,9 +52,9 @@ export function AppRail({
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   const core: NavItem[] = [
-    { href: "/inbox", label: "Inbox", icon: MessageIcon, badge: unreadInbox },
-    { href: "/deals", label: "Deals", icon: HandshakeIcon },
-    { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon },
+    { href: "/inbox", label: "Inbox", icon: MessageIcon, badge: unreadInbox ? 1 : 0 },
+    { href: "/deals", label: "Deals", icon: HandshakeIcon, badge: unreadDeals ? 1 : 0 },
+    { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, badge: unreadCampaigns ? 1 : 0 },
   ];
 
   const business: NavItem[] =
@@ -72,7 +73,6 @@ export function AppRail({
           ];
 
   const utility: NavItem[] = [
-    { href: "/notifications", label: "Notifications", icon: BellIcon, badge: unreadNotifications },
     {
       href: role === "brand" ? "/brand/settings" : "/dashboard?tab=profile",
       label: "Settings",
@@ -106,9 +106,10 @@ export function AppRail({
           <Icon size={16} strokeWidth={active ? 2 : 1.5} aria-hidden />
           <span className="flex-1">{item.label}</span>
           {item.badge != null && item.badge > 0 && (
-            <span className="grid min-w-5 place-items-center rounded-full bg-[var(--ink)] px-1.5 text-[11px] font-medium tabular-nums text-[var(--primary-foreground)]">
-              {item.badge > 9 ? "9+" : item.badge}
-            </span>
+            <span
+              aria-hidden
+              className="size-2 rounded-full bg-amber"
+            />
           )}
         </Link>
       </li>

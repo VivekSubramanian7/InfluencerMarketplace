@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { notify } from "@/lib/notify";
+import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { trackServerEvent } from "@/lib/analytics";
 
@@ -53,13 +53,11 @@ export async function inviteFromStorefront(formData: FormData) {
     duration_ms,
   });
 
-  await notify({
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  await emailUser({
     userId: creatorId,
-    kind: "invite",
-    title: `${brandLabel} wants to work with you`,
-    body: message,
-    href: "/inbox",
-    email: true,
+    subject: `${brandLabel} wants to work with you`,
+    text: `${message}\n\nOpen it on Clipline: ${site}/inbox`,
   });
 
   const sep = redirectBack.includes("?") ? "&" : "?";

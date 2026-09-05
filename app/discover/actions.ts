@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parseText } from "@/lib/storefront/validation";
 import { SAVED_FILTER_KEYS } from "@/lib/discovery/filters";
-import { notify } from "@/lib/notify";
+import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { trackServerEvent } from "@/lib/analytics";
 
@@ -35,6 +35,7 @@ export async function sendReachouts(formData: FormData) {
     .from("brand_profiles").select("company").eq("user_id", user.id).maybeSingle();
   const brandLabel = me?.company || "A brand";
 
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   // per-row inserts so one duplicate/blocked pair doesn't sink the batch
   let sent = 0;
   let firstError: string | null = null;
@@ -46,13 +47,10 @@ export async function sendReachouts(formData: FormData) {
     });
     if (!error) {
       sent++;
-      await notify({
+      await emailUser({
         userId: creatorId,
-        kind: "invite",
-        title: `${brandLabel} wants to work with you`,
-        body: message,
-        href: "/inbox",
-        email: true,
+        subject: `${brandLabel} wants to work with you`,
+        text: `${message}\n\nOpen it on Clipline: ${site}/inbox`,
       });
     } else if (error.code !== "23505" && !firstError) {
       firstError = friendlyDbError(error);

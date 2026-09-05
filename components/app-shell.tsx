@@ -29,8 +29,9 @@ export function AppShell({
       </div>
       <MobileNav
         role={railProps.role}
-        unread={railProps.unreadNotifications}
-        inboxUnread={railProps.unreadInbox}
+        unreadInbox={railProps.unreadInbox}
+        unreadDeals={railProps.unreadDeals}
+        unreadCampaigns={railProps.unreadCampaigns}
       />
     </div>
   );

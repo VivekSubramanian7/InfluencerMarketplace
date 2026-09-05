@@ -1,6 +1,5 @@
 "use client";
 
-export { default as BellIcon } from "./filled-bell-icon";
 export { default as LogOutIcon } from "./logout-icon";
 export { default as CheckedIcon } from "./checked-icon";
 export { default as ArrowRightIcon } from "./arrow-narrow-right-icon";

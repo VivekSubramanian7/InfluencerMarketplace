@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
+import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor, primaryActionLabel } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
@@ -8,14 +9,7 @@ import { FilterTokenBar } from "@/components/filters/filter-token-bar";
 import { parseFilterTokens } from "@/lib/filters/tokens";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const STATUS_LABELS: Record<string, string> = {
-  requested: "Awaiting creator", funded: "Funded",
-  accepted: "Accepted", in_production: "In production",
-  submitted: "Preview submitted", revision_requested: "Changes requested",
-  published: "Published, awaiting approval", completed: "Completed",
-  cancelled: "Cancelled", disputed: "Disputed",
-};
+import { STATUS_LABELS } from "@/lib/deals/constants";
 
 const DONE: DealStatus[] = ["completed", "cancelled"];
 
@@ -37,6 +31,7 @@ export default async function DealsPage({
   searchParams: Promise<{ needs_me?: string }>;
 }) {
   const { user, role } = await requireUser("/deals");
+  await touchCursor("deals");
   const sp = await searchParams;
   const filterSp = new URLSearchParams();
   if (sp.needs_me === "1") filterSp.set("needs_me", "1");
@@ -105,7 +100,7 @@ export default async function DealsPage({
                     </span>
                   </span>
                   <Badge variant="secondary" className="shrink-0">
-                    {STATUS_LABELS[d.status] ?? d.status}
+                    {STATUS_LABELS[d.status as DealStatus] ?? d.status}
                   </Badge>
                   <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">
                     ${(d.price_cents / 100).toFixed(0)}
