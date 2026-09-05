@@ -234,17 +234,21 @@
 
 ## Design System Constants
 
-- **Font:** Satoshi (400/500/700/900), geometric-humanist
-- **Background:** #FAF9F6 (warm near-white)
-- **Ink:** #1B1917 (near-black)
-- **Cards:** #FFFFFF with soft shadow (`0 1px 2px rgba(27,25,23,.05), 0 6px 20px rgba(27,25,23,.06)`)
-- **Primary action:** Black pill buttons (#1B1917 fill, #FAF9F6 text, fully rounded)
-- **Amber:** #C9962B — ratings/verified only
-- **Success:** #2E7D4F
-- **Error:** #B3362B
-- **Creator identity:** Deterministic duotone gradient per handle (8 curated warm/cool pairs)
-- **Card radius:** 18-24px, buttons/inputs fully rounded (pill)
-- **Motion:** Hover lifts (1-2px), 150-250ms ease-out, entrance stagger on card grids
-- **No dark mode** — light-only by design
-- **Max widths:** 72rem brand surfaces, 56rem forms
-- **Navigation:** Sticky top bar with pill-group tab links inside a secondary-tinted capsule, icon notification bell with unread badge, icon logout button
+Tokens are **not** duplicated here — see `DESIGN.md`, which is the source of
+truth, and `app/globals.css` for the implemented values.
+
+**This inventory describes the app as built under the superseded "Gallery Frame"
+system (top pill-tab nav, `max-w-6xl` centered columns, shadow-cards, weight-900
+headings, pill controls).** `DESIGN.md` was rewritten on 2026-09-04 to the
+"Workspace" direction, which changes the shell and density rules for every
+authenticated page listed above. Read the page descriptions as *current
+behaviour to be migrated*, not as the target. In particular these will change:
+
+- The sticky top nav becomes a persistent left rail (affects every app page).
+- `max-w-6xl` / `max-w-4xl` / `max-w-2xl` app containers become a full-bleed
+  inset panel, with `560px` reserved for forms only.
+- Inbox, deals, campaigns, applications and notifications move from
+  shadow-card lists to dense tables with the next action on the row.
+- Dashboard sub-tabs (`?tab=profile|offerings|portfolio`) are promoted to
+  top-level Storefront destinations.
+- Hero stat cards become a compact, filter-aware summary strip.

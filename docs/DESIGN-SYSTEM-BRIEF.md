@@ -5,6 +5,18 @@ designer or frontend developer needs to build or extend the system without
 spelunking the codebase. Source of truth for strategy is `PRODUCT.md`; for
 implemented tokens, `DESIGN.md` + `app/globals.css`.
 
+> **Styling sections are superseded (2026-09-04).** Sections covering
+> typography, shape/space/elevation, and the signature composites below still
+> describe the abandoned **crimson / weight-800** system — two design systems
+> out of date. `DESIGN.md` is the only source of truth for color, type, radii,
+> elevation, and layout.
+>
+> Still current and worth reading: the product framing, the user journeys, the
+> role model, and the *behavioural* rules embedded in the composites — that
+> off-platform payment banners are never dismissible, that unverified numbers
+> are never rendered, that status chips avoid a per-status rainbow. Those
+> survive the restyle; their class lists do not.
+
 ---
 
 ## 1. What Clipline is
