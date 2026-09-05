@@ -50,6 +50,9 @@ alter table public.messages
 alter table public.messages
   alter column sender_id drop not null;
 
+-- Drop XOR constraint before backfill (we drop the column after anyway)
+alter table public.messages drop constraint if exists messages_one_parent;
+
 -- Backfill: move deal messages to conversations
 do $$
 declare
@@ -81,8 +84,7 @@ begin
 end;
 $$;
 
--- Drop old constraint, policies, index, then column
-alter table public.messages drop constraint if exists messages_one_parent;
+-- Drop old policies, index, then column
 drop policy if exists "participants read messages" on public.messages;
 drop policy if exists "participants send messages" on public.messages;
 drop index if exists public.messages_deal_idx;
