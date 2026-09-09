@@ -75,6 +75,7 @@ export async function CampaignDetail({
   const isOwner = campaign.brand_id === user.id;
   const windowClosed =
     campaign.apply_by !== null && campaign.apply_by < new Date().toISOString().slice(0, 10);
+  const formReturnTo = compact ? `/campaigns?c=${campaignId}` : returnTo;
 
   const { data: brandProfile } = await supabase
     .from("brand_profiles").select("company, website").eq("user_id", campaign.brand_id).maybeSingle();
@@ -89,11 +90,18 @@ export async function CampaignDetail({
         </Link>
       )}
       <div className={`${compact ? "" : "mt-3 "}flex flex-wrap items-baseline justify-between gap-3`}>
-        <h1 className={`font-semibold tracking-tight ${compact ? "text-lg" : "text-2xl"}`}>
-          {campaign.title}
-        </h1>
-        <span className={`font-extrabold tabular-nums text-primary ${compact ? "text-lg" : "text-2xl"}`}>
-          {budgetRange(campaign.budget_min_cents, campaign.budget_max_cents)}
+        {compact ? (
+          <h2 className="text-lg font-semibold text-ink">{campaign.title}</h2>
+        ) : (
+          <h1 className="text-2xl font-semibold tracking-tight">{campaign.title}</h1>
+        )}
+        <span className="flex items-baseline gap-3">
+          <span className={`font-semibold tabular-nums text-primary ${compact ? "text-lg" : "text-2xl"}`}>
+            {budgetRange(campaign.budget_min_cents, campaign.budget_max_cents)}
+          </span>
+          {compact && returnTo && (
+            <Link href={returnTo} className="text-sm text-muted-foreground">Close</Link>
+          )}
         </span>
       </div>
       <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
@@ -143,7 +151,7 @@ export async function CampaignDetail({
           applyBy={campaign.apply_by}
           supabase={supabase}
           compact={compact}
-          returnTo={returnTo}
+          returnTo={formReturnTo}
         />
       ) : role === "creator" ? (
         <CreatorPanel
@@ -155,7 +163,7 @@ export async function CampaignDetail({
           offeringType={campaign.offering_type}
           supabase={supabase}
           compact={compact}
-          returnTo={returnTo}
+          returnTo={formReturnTo}
         />
       ) : null}
     </div>
@@ -337,7 +345,7 @@ async function CreatorPanel({
           <h2 className="text-lg font-bold">Your application</h2>
           <span className="flex items-center gap-3">
             <Badge variant="secondary">{APPLICATION_LABELS[mine.status] ?? mine.status}</Badge>
-            <span className="font-extrabold tabular-nums text-primary">
+            <span className="font-semibold tabular-nums text-primary">
               ${(mine.proposed_price_cents / 100).toFixed(2)}
             </span>
           </span>
@@ -413,8 +421,8 @@ async function CreatorPanel({
   return (
     <section className={sectionMt}>
       <h2 className="text-lg font-bold">Apply to this campaign</h2>
-      <div className="mt-3 gap-6 md:grid md:grid-cols-[1fr_280px]">
-        <form action={applyToCampaign} className="flex max-w-xl flex-col gap-4">
+      <div className={compact ? "mt-3 flex flex-col gap-4" : "mt-3 gap-6 md:grid md:grid-cols-[1fr_280px]"}>
+        <form action={applyToCampaign} className={`flex flex-col gap-4 ${compact ? "w-full" : "max-w-xl"}`}>
           <input type="hidden" name="campaign_id" value={campaignId} />
           {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
           <div className="flex flex-col gap-1.5">
@@ -445,7 +453,7 @@ async function CreatorPanel({
           </Button>
         </form>
 
-        <aside className="mt-6 h-fit rounded-xl border p-4 md:mt-0">
+        <aside className={`h-fit rounded-xl border p-4 ${compact ? "" : "mt-6 md:mt-0"}`}>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your profile</p>
           <dl className="mt-3 flex flex-col gap-2 text-sm">
             {totalFollowers > 0 && (

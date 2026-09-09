@@ -193,7 +193,7 @@ export default async function ConversationPage({
             <form action={respondInvite}>
               <input type="hidden" name="conversation_id" value={conv.id} />
               <input type="hidden" name="response" value="accepted" />
-              <Button type="submit" size="sm">Accept &amp; chat</Button>
+              <SubmitButton size="sm" pendingLabel="Accepting…">Accept &amp; chat</SubmitButton>
             </form>
             <form action={respondInvite}>
               <input type="hidden" name="conversation_id" value={conv.id} />
@@ -237,7 +237,7 @@ export default async function ConversationPage({
                         <input type="hidden" name="offer_id" value={o.id} />
                         <input type="hidden" name="conversation_id" value={conv.id} />
                         <input type="hidden" name="response" value="accepted" />
-                        <Button type="submit" size="sm">Accept and start the deal</Button>
+                        <SubmitButton size="sm" pendingLabel="Accepting…">Accept and start the deal</SubmitButton>
                       </form>
                       <form action={respondOffer}>
                         <input type="hidden" name="offer_id" value={o.id} />
@@ -383,7 +383,7 @@ export default async function ConversationPage({
                     placeholder="Key messages or angles"
                   />
                 </div>
-                <Button type="submit" size="sm" className="self-start">Send offer</Button>
+                <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">Send offer</SubmitButton>
               </form>
             )}
           </section>

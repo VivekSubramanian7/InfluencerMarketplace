@@ -8,6 +8,7 @@ import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
 import { trackServerEvent } from "@/lib/analytics";
+import { acceptRedirect } from "@/lib/campaigns/accept-redirect";
 
 function campaignsRedirectBase(returnTo: string, fallback: string) {
   return returnTo.startsWith("/campaigns") ? returnTo : fallback;
@@ -135,7 +136,7 @@ export async function decideApplication(formData: FormData) {
         text: `Open it on Clipline: ${site}/deals/${dealId}`,
       });
     }
-    redirect(`/deals/${dealId}`);
+    redirect(acceptRedirect(returnTo || null, dealId));
   }
 
   // RLS restricts the update to campaigns this brand owns; the update trigger

@@ -8,6 +8,7 @@ import { unblockCreator } from "./actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 const DEAL_LABELS: Record<string, string> = {
   requested: "Awaiting creator",
@@ -297,9 +298,9 @@ export default async function BrandOverviewPage({
                       <form action={performDealAction}>
                         <input type="hidden" name="deal_id" value={d.id} />
                         <input type="hidden" name="action" value={quickAction.action} />
-                        <Button type="submit" size="sm">
+                        <SubmitButton size="sm" pendingLabel="Working…">
                           {quickAction.label}
-                        </Button>
+                        </SubmitButton>
                       </form>
                     )}
                   </li>

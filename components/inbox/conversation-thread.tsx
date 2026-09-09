@@ -97,7 +97,7 @@ export async function ConversationThread({
           <form action={respondInvite}>
             <input type="hidden" name="conversation_id" value={conv.id} />
             <input type="hidden" name="response" value="accepted" />
-            <Button type="submit" size="sm">Accept invite</Button>
+            <SubmitButton size="sm" pendingLabel="Accepting…">Accept invite</SubmitButton>
           </form>
         </div>
       )}
@@ -109,7 +109,7 @@ export async function ConversationThread({
           <input type="hidden" name="offer_id" value={pendingOffer.id} />
           <input type="hidden" name="conversation_id" value={conv.id} />
           <input type="hidden" name="response" value="accepted" />
-          <Button type="submit" size="sm">Accept offer</Button>
+          <SubmitButton size="sm" pendingLabel="Accepting…">Accept offer</SubmitButton>
         </form>
       )}
       {cta.kind === "send_offer" && (
@@ -174,7 +174,7 @@ export async function ConversationThread({
               <Label htmlFor="offer-note">Scope note (optional)</Label>
               <Textarea id="offer-note" name="note" rows={2} maxLength={2000} />
             </div>
-            <Button type="submit" size="sm" className="self-start">Send offer</Button>
+            <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">Send offer</SubmitButton>
           </form>
         </section>
       )}

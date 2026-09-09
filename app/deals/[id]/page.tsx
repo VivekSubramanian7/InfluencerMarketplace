@@ -12,6 +12,7 @@ import { sendThreadMessage } from "@/app/inbox/actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { ReviewModal } from "@/components/deals/review-modal";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 
 export default async function DealPage({
@@ -144,7 +145,7 @@ export default async function DealPage({
       )}
 
       {(actions.length > 0 || (role !== "admin" && deal.status === "completed" && !myReview)) && (
-        <section className="deal-next-steps sticky top-[72px] z-10 mt-4 rounded-2xl border border-amber bg-amber/10 p-6">
+        <section className="deal-next-steps sticky top-[72px] z-10 mt-4 rounded-xl border border-amber bg-amber/10 p-6">
           <h2 className="flex items-center gap-2.5 text-base font-bold">
             <span aria-hidden className="size-2 rounded-full bg-amber" />
             Next steps
@@ -167,7 +168,7 @@ export default async function DealPage({
                         <form action={performDealAction} className="flex items-start gap-2">
                           <input type="hidden" name="deal_id" value={deal.id} />
                           <input type="hidden" name="action" value={a.action} />
-                          <Button type="submit">{a.label}</Button>
+                          <SubmitButton pendingLabel="Working…">{a.label}</SubmitButton>
                         </form>
                       </>
                     ) : (
@@ -200,13 +201,13 @@ export default async function DealPage({
                       className="w-full rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm"
                     />
                   )}
-                  <Button
-                    type="submit"
+                  <SubmitButton
+                    pendingLabel="Working…"
                     variant={a.confirm ? "outline" : "default"}
                     className={a.confirm ? "text-destructive border-destructive/40" : undefined}
                   >
                     {a.label}
-                  </Button>
+                  </SubmitButton>
                 </form>
                 )
               ))}

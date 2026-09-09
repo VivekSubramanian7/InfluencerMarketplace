@@ -21,6 +21,7 @@ const CREATOR_TABS = [
 const BRAND_TABS = [
   { href: "/brand", label: "Home", icon: HomeIcon },
   { href: "/discover", label: "Discover", icon: SearchIcon },
+  { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, key: "campaigns" as const },
   { href: "/inbox", label: "Inbox", icon: MessageIcon, key: "inbox" as const },
   { href: "/deals", label: "Deals", icon: HandshakeIcon, key: "deals" as const },
 ] as const;

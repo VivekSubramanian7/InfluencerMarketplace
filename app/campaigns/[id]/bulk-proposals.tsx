@@ -205,17 +205,25 @@ export function BulkProposals({
                     </form>
                   </details>
                   {convByCreator[a.creator_id] ? (
-                    <Link
-                      href={`/inbox/${convByCreator[a.creator_id]}`}
-                      className="inline-flex h-8 items-center rounded-full border px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
-                    >
-                      Open conversation →
-                    </Link>
+                    <>
+                      <Link
+                        href={`/inbox?c=${convByCreator[a.creator_id]}`}
+                        className="hidden lg:inline-flex h-8 items-center rounded-full border px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        Open conversation →
+                      </Link>
+                      <Link
+                        href={`/inbox/${convByCreator[a.creator_id]}`}
+                        className="inline-flex h-8 items-center rounded-full border px-3 text-sm font-medium text-muted-foreground hover:text-foreground lg:hidden"
+                      >
+                        Open conversation →
+                      </Link>
+                    </>
                   ) : (
                     <form action={inviteFromStorefront}>
                       <input type="hidden" name="creator_id" value={a.creator_id} />
                       <input type="hidden" name="handle" value={handleById[a.creator_id] ?? ""} />
-                      <input type="hidden" name="redirect_to" value={`/campaigns/${campaignId}`} />
+                      <input type="hidden" name="redirect_to" value={returnTo ?? `/campaigns/${campaignId}`} />
                       <Button type="submit" variant="outline" size="sm">
                         Invite to chat
                       </Button>
