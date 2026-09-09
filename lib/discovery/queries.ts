@@ -13,6 +13,11 @@ export interface CreatorCard {
   avgRating: number | null;
   ratingCount: number;
   verified: boolean;
+  // best connected account stats (highest follower count)
+  followers: number | null;
+  avgViews: number | null;
+  engagementRate: number | null;
+  platform: string | null;
 }
 
 export interface SearchScope {
@@ -111,7 +116,7 @@ export async function searchCreators(
     supabase.from("profiles").select("id, display_name").in("id", ids),
     supabase.from("offerings").select("creator_id, price_cents").eq("active", true).in("creator_id", ids),
     supabase.from("public_creator_reviews").select("creator_id, rating").in("creator_id", ids),
-    supabase.from("public_creator_stats").select("creator_id, verification_status").in("creator_id", ids),
+    supabase.from("public_creator_stats").select("creator_id, platform, follower_count, avg_views, engagement_rate, verification_status").in("creator_id", ids),
   ]);
   if (pErr) throw new Error("discovery profiles query failed: " + pErr.message);
   if (oErr) throw new Error("discovery pricing query failed: " + oErr.message);
@@ -124,6 +129,22 @@ export async function searchCreators(
       .filter((s) => s.verification_status === "verified")
       .map((s) => s.creator_id as string)
   );
+
+  // Best stats = account with highest follower count
+  const bestStats = new Map<string, { platform: string; followers: number; avgViews: number | null; engagementRate: number | null }>();
+  for (const s of statRows ?? []) {
+    const id = s.creator_id as string;
+    const fc = (s.follower_count as number | null) ?? 0;
+    const cur = bestStats.get(id);
+    if (!cur || fc > cur.followers) {
+      bestStats.set(id, {
+        platform: s.platform as string,
+        followers: fc,
+        avgViews: s.avg_views as number | null,
+        engagementRate: s.engagement_rate as number | null,
+      });
+    }
+  }
 
   const ratingStats = new Map<string, { sum: number; count: number }>();
   for (const r of reviews ?? []) {
@@ -156,6 +177,10 @@ export async function searchCreators(
         : null,
       ratingCount: ratingStats.get(r.user_id as string)?.count ?? 0,
       verified: verifiedIds.has(r.user_id as string),
+      followers: bestStats.get(r.user_id as string)?.followers ?? null,
+      avgViews: bestStats.get(r.user_id as string)?.avgViews ?? null,
+      engagementRate: bestStats.get(r.user_id as string)?.engagementRate ?? null,
+      platform: bestStats.get(r.user_id as string)?.platform ?? null,
     })),
     total: count ?? 0,
     page,

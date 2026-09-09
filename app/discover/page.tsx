@@ -17,6 +17,12 @@ import { PriceRange } from "@/components/price-range";
 import { SearchSuggest } from "@/components/discover/search-suggest";
 import { SearchTracker } from "./search-tracker";
 
+function fmtK(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
   integration: "Integration (60-90s)",
@@ -326,7 +332,7 @@ export default async function DiscoverPage({
             <div className="mt-4 overflow-x-auto rounded-[var(--radius-tile)] border border-[var(--border)]">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--divider)] text-left text-[13px] font-medium text-[var(--muted)]">
+                  <tr className="border-b border-[var(--divider)] text-left text-[13px] font-medium text-muted-foreground">
                     {isBrand && filters.tab === "new" && (
                       <th className="w-10 py-2.5 pl-3 pr-1">
                         <span className="sr-only">Select</span>
@@ -335,6 +341,9 @@ export default async function DiscoverPage({
                     <th className="py-2.5 pl-4 pr-2">Creator</th>
                     <th className="px-2 py-2.5">Niches</th>
                     <th className="px-2 py-2.5">Country</th>
+                    <th className="px-2 py-2.5 text-right">Followers</th>
+                    <th className="px-2 py-2.5 text-right">Avg views</th>
+                    <th className="px-2 py-2.5 text-right">Eng.</th>
                     <th className="px-2 py-2.5 text-right">Rating</th>
                     <th className="px-2 py-2.5 text-right">From</th>
                     <th className="px-2 py-2.5 text-right">Offerings</th>
@@ -379,7 +388,7 @@ export default async function DiscoverPage({
                                   </span>
                                 )}
                               </span>
-                              <span className="block truncate text-[13px] text-[var(--muted)]">@{c.handle}</span>
+                              <span className="block truncate text-[13px] text-muted-foreground">@{c.handle}</span>
                             </span>
                           </Link>
                         </td>
@@ -392,26 +401,35 @@ export default async function DiscoverPage({
                             ))}
                           </div>
                         </td>
-                        <td className="px-2 py-2 align-middle text-[var(--muted)]">
+                        <td className="px-2 py-2 align-middle text-muted-foreground">
                           {c.country ?? "—"}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-right tabular-nums">
+                          {c.followers != null ? fmtK(c.followers) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
+                          {c.avgViews != null ? fmtK(c.avgViews) : "—"}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
+                          {c.engagementRate != null ? `${c.engagementRate.toFixed(1)}%` : "—"}
                         </td>
                         <td className="px-2 py-2 align-middle text-right tabular-nums">
                           {c.avgRating !== null ? (
                             <span>
                               <span className="text-amber" aria-hidden>★</span>{" "}
                               {c.avgRating}
-                              <span className="ml-0.5 text-[var(--muted)]">({c.ratingCount})</span>
+                              <span className="ml-0.5 text-muted-foreground">({c.ratingCount})</span>
                             </span>
                           ) : (
-                            <span className="text-[var(--muted)]">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
                         <td className="px-2 py-2 align-middle text-right tabular-nums font-semibold">
                           {c.minPriceCents !== null
                             ? `$${(c.minPriceCents / 100).toFixed(0)}`
-                            : <span className="font-normal text-[var(--muted)]">—</span>}
+                            : <span className="font-normal text-muted-foreground">—</span>}
                         </td>
-                        <td className="px-2 py-2 align-middle text-right tabular-nums text-[var(--muted)]">
+                        <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
                           {c.offeringCount || "—"}
                         </td>
                         <td className="py-2 pr-4 align-middle">
@@ -425,7 +443,7 @@ export default async function DiscoverPage({
                           ) : (
                             <Link
                               href={`/c/${c.handle}`}
-                              className="grid size-7 place-items-center rounded text-[var(--muted)] transition-colors group-hover:bg-secondary group-hover:text-foreground"
+                              className="grid size-7 place-items-center rounded text-muted-foreground transition-colors group-hover:bg-secondary group-hover:text-foreground"
                               aria-label={`View ${c.displayName ?? c.handle}`}
                             >
                               →
