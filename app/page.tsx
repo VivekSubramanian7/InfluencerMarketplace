@@ -126,12 +126,9 @@ export default async function LandingPage() {
               <div className="mt-9 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="gap-2 px-7 text-base">
                   <Link href="/signup">
-                    Get started free
+                    Get Started for free
                     <ArrowRightIcon size={16} />
                   </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="px-7 text-base" disabled>
-                  See a live storefront
                 </Button>
               </div>
               <p className="mt-5 text-sm text-muted-foreground">
