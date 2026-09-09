@@ -14,10 +14,12 @@ export interface UiAction {
 const CANDIDATES: UiAction[] = [
   { action: "accept", label: "Accept deal", needsUrl: null, confirm: false },
   { action: "decline", label: "Decline", needsUrl: null, confirm: true },
+  { action: "mark_product_sent", label: "Mark product sent", needsUrl: null, confirm: false },
+  { action: "mark_product_received", label: "Mark product received", needsUrl: null, confirm: false },
   { action: "submit_preview", label: "Submit preview", needsUrl: "preview_url", confirm: false },
   { action: "approve_preview", label: "Approve preview", needsUrl: null, confirm: false },
   { action: "request_revision", label: "Request changes", needsUrl: null, confirm: false, needsNote: true },
-  { action: "mark_published", label: "Mark as published", needsUrl: "live_url", confirm: false },
+  { action: "mark_published", label: "Send live link", needsUrl: "live_url", confirm: false },
   { action: "approve", label: "Approve & complete", needsUrl: null, confirm: false, needsPreview: true },
   { action: "cancel", label: "Cancel deal", needsUrl: null, confirm: true },
   { action: "dispute", label: "Open dispute", needsUrl: null, confirm: true },
