@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { OFFER_CTA, OFFER_VERB } from "@/lib/copy/taxonomy";
 
 const OFFER_LABELS: Record<string, string> = {
   pending: "Awaiting response",
@@ -146,7 +147,7 @@ export default async function ConversationPage({
             )}
             {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (offerings ?? []).length > 0 && (
               <a href="#offer-section" className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90">
-                Make an offer
+                {OFFER_CTA}
               </a>
             )}
             <Badge variant="secondary">
@@ -321,7 +322,7 @@ export default async function ConversationPage({
 
         {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (
           <section id="offer-section" className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5 scroll-mt-20">
-            <h2 className="text-base font-bold">Send an offer</h2>
+            <h2 className="text-base font-bold">{OFFER_VERB}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Agree on the work in chat, then put a price on it. Accepting
               starts the deal at your agreed price.
@@ -383,7 +384,7 @@ export default async function ConversationPage({
                     placeholder="Key messages or angles"
                   />
                 </div>
-                <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">Send offer</SubmitButton>
+                <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">{OFFER_VERB}</SubmitButton>
               </form>
             )}
           </section>

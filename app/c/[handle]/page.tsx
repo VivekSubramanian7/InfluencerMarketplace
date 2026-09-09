@@ -7,7 +7,8 @@ import { syncDueForCreator } from "@/lib/social/sync";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { detectPlatform } from "@/lib/portfolio/platform";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { inviteFromStorefront } from "./actions";
+import { InviteToCampaign } from "@/components/discover/invite-to-campaign";
+import { liveCampaigns } from "@/lib/campaigns/live-campaigns";
 import { StorefrontTracker, SectionTracker } from "./storefront-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export default async function StorefrontPage({
   let isBrand = false;
   let role: string | null = null;
   let matchingCampaigns: { id: string; title: string; offering_type: string }[] = [];
+  let liveCampaignList: { id: string; title: string }[] = [];
 
   if (brandUserId) {
     const { data: profileData } = await supabase
@@ -80,16 +82,22 @@ export default async function StorefrontPage({
       existingConversation = convRes.data;
       isBlocked = !!blockRes.data;
 
-      const creatorTypes = [...new Set(offerings.map((o) => o.type))];
-      if (creatorTypes.length > 0) {
-        const { data: campaigns } = await supabase
+      const [{ data: allCampaigns }, creatorTypes] = await Promise.all([
+        supabase
           .from("campaigns")
-          .select("id, title, offering_type")
+          .select("id, title, status, offering_type")
           .eq("brand_id", brandUserId)
-          .eq("status", "open")
-          .in("offering_type", creatorTypes)
-          .limit(5);
-        matchingCampaigns = campaigns ?? [];
+          .order("created_at", { ascending: false }),
+        Promise.resolve([...new Set(offerings.map((o) => o.type))]),
+      ]);
+      liveCampaignList = liveCampaigns(allCampaigns ?? []).map((c) => ({
+        id: c.id,
+        title: c.title,
+      }));
+      if (creatorTypes.length > 0) {
+        matchingCampaigns = (allCampaigns ?? [])
+          .filter((c) => c.status === "open" && creatorTypes.includes(c.offering_type))
+          .slice(0, 5);
       }
     }
   }
@@ -179,17 +187,14 @@ export default async function StorefrontPage({
                   Open conversation →
                 </a>
               ) : (
-                <form action={inviteFromStorefront} className="inline">
-                  <input type="hidden" name="creator_id" value={profile.userId} />
-                  <input type="hidden" name="handle" value={profile.handle} />
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-bold shadow-card transition-transform hover:scale-[1.02]"
-                    style={{ color: gradient.deep }}
-                  >
-                    Invite to chat
-                  </button>
-                </form>
+                <InviteToCampaign
+                  campaigns={liveCampaignList}
+                  creatorId={profile.userId}
+                  redirectTo={`/c/${profile.handle}`}
+                  className="inline"
+                  buttonClassName="inline-flex items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-bold shadow-card transition-transform hover:scale-[1.02]"
+                  buttonStyle={{ color: gradient.deep }}
+                />
               )}
             </div>
           )}

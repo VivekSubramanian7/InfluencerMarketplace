@@ -4,7 +4,10 @@ import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters, SAVED_FILTER_KEYS } from "@/lib/discovery/filters";
 import { searchCreators, type SearchScope } from "@/lib/discovery/queries";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { deleteSearch, saveSearch, sendReachouts } from "./actions";
+import { deleteSearch, saveSearch } from "./actions";
+import { inviteToCampaign } from "@/app/campaigns/[id]/invite-actions";
+import { BulkInviteToCampaign, InviteToCampaign } from "@/components/discover/invite-to-campaign";
+import { liveCampaigns } from "@/lib/campaigns/live-campaigns";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
@@ -43,8 +46,9 @@ export default async function DiscoverPage({
   let scope: SearchScope = {};
   let savedSearches: { id: string; name: string; params: Record<string, string> }[] = [];
   let usedPrefDefaults = false;
+  let brandLiveCampaigns: { id: string; title: string }[] = [];
   if (isBrand) {
-    const [dealRows, blockRows, savedRows, profileRow] = await Promise.all([
+    const [dealRows, blockRows, savedRows, profileRow, campaignRows] = await Promise.all([
       supabase.from("deals").select("creator_id").eq("brand_id", user.id),
       supabase.from("brand_blocklist").select("creator_id").eq("brand_id", user.id),
       supabase
@@ -57,7 +61,16 @@ export default async function DiscoverPage({
         .select("pref_niches, pref_types")
         .eq("user_id", user.id)
         .maybeSingle(),
+      supabase
+        .from("campaigns")
+        .select("id, title, status")
+        .eq("brand_id", user.id)
+        .order("created_at", { ascending: false }),
     ]);
+    brandLiveCampaigns = liveCampaigns(campaignRows.data ?? []).map((c) => ({
+      id: c.id,
+      title: c.title,
+    }));
     const collaborators = [...new Set((dealRows.data ?? []).map((r) => r.creator_id as string))];
     const blocked = (blockRows.data ?? []).map((r) => r.creator_id as string);
     savedSearches = (savedRows.data ?? []).map((r) => ({
@@ -334,12 +347,10 @@ export default async function DiscoverPage({
             )}
           </div>
         ) : (
-          <form action={isBrand && filters.tab === "new" ? sendReachouts : undefined}>
+          <form id="bulk-invite" action={isBrand && filters.tab === "new" ? inviteToCampaign : undefined}>
             {isBrand && filters.tab === "new" && (
               <div className="sticky top-0 z-10 -mx-6 flex items-center justify-end bg-background/95 px-6 py-2 backdrop-blur-sm">
-                <Button type="submit" size="sm" className="shrink-0">
-                  Invite selected
-                </Button>
+                <BulkInviteToCampaign campaigns={brandLiveCampaigns} formId="bulk-invite" />
               </div>
             )}
             <ul className="card-grid mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -350,16 +361,12 @@ export default async function DiscoverPage({
                   <li key={c.userId} className="relative">
                     {isBrand && filters.tab === "new" && (
                       <div className="absolute left-3 top-3 z-10">
-                        <button
-                          type="submit"
-                          form={`invite-${c.userId}`}
-                          aria-label={`Invite ${c.displayName ?? c.handle} to chat`}
-                          className="grid size-8 place-items-center rounded-full bg-white/90 shadow-card text-muted-foreground transition-all hover:scale-110 hover:bg-primary hover:text-primary-foreground"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                          </svg>
-                        </button>
+                        <InviteToCampaign
+                          campaigns={brandLiveCampaigns}
+                          creatorId={c.userId}
+                          redirectTo="/discover"
+                          iconOnly
+                        />
                       </div>
                     )}
                     {isBrand && filters.tab === "new" && (
@@ -466,14 +473,6 @@ export default async function DiscoverPage({
             </ul>
           </form>
         )}
-
-        {creators.length > 0 && isBrand && filters.tab === "new" &&
-          creators.map((c) => (
-            <form key={c.userId} id={`invite-${c.userId}`} action={sendReachouts} hidden>
-              <input type="hidden" name="creator_id" value={c.userId} />
-            </form>
-          ))
-        }
 
         {totalPages > 1 && (
           <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-5">

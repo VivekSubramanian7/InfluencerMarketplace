@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { inboxCta } from "@/lib/inbox/cta";
+import { OFFER_VERB } from "@/lib/copy/taxonomy";
 
 export async function ConversationThread({
   conversationId,
@@ -189,7 +190,7 @@ export async function ConversationThread({
                       <Textarea id="offer-note" name="note" rows={2} maxLength={2000} />
                     </div>
                     <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">
-                      Send offer
+                      {OFFER_VERB}
                     </SubmitButton>
                   </form>
                 )}
