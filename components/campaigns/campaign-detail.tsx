@@ -5,6 +5,9 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { applyToCampaign, withdrawApplication } from "@/app/campaigns/[id]/actions";
 import { setCampaignStatus } from "@/app/campaigns/actions";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
+import { creatorHasRequiredChannel } from "@/lib/campaigns/channel-match";
+import { getOnboardingState } from "@/lib/onboarding/state";
+import { storefrontComplete, missingStorefrontItems } from "@/lib/onboarding/completeness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,7 +71,7 @@ export async function CampaignDetail({
 
   const { data: campaign } = await supabase
     .from("campaigns")
-    .select("id, brand_id, title, description, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at")
+    .select("id, brand_id, title, description, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at, platforms")
     .eq("id", campaignId)
     .maybeSingle();
   if (!campaign) notFound();
@@ -162,6 +165,7 @@ export async function CampaignDetail({
           budgetMinCents={campaign.budget_min_cents}
           budgetMaxCents={campaign.budget_max_cents}
           offeringType={campaign.offering_type}
+          requiredPlatforms={campaign.platforms ?? []}
           supabase={supabase}
           compact={compact}
           returnTo={formReturnTo}
@@ -304,6 +308,7 @@ async function CreatorPanel({
   budgetMinCents,
   budgetMaxCents,
   offeringType,
+  requiredPlatforms,
   supabase,
   compact = false,
   returnTo,
@@ -314,6 +319,7 @@ async function CreatorPanel({
   budgetMinCents: number;
   budgetMaxCents: number;
   offeringType: string;
+  requiredPlatforms: string[];
   supabase: Supabase;
   compact?: boolean;
   returnTo?: string;
@@ -327,13 +333,19 @@ async function CreatorPanel({
     .eq("creator_id", userId)
     .maybeSingle();
 
-  const [{ data: stats }, { data: reviews }, { count: completedDealCount }, { data: offerings }, { data: creatorProfile }] = await Promise.all([
+  const [{ data: stats }, { data: reviews }, { count: completedDealCount }, { data: offerings }, { data: creatorProfile }, onboarding, { data: connectedAccounts }] = await Promise.all([
     supabase.from("public_creator_stats").select("platform, follower_count").eq("creator_id", userId),
     supabase.from("public_creator_reviews").select("rating").eq("creator_id", userId),
     supabase.from("deals").select("id", { count: "exact", head: true }).eq("creator_id", userId).eq("status", "completed"),
     supabase.from("offerings").select("type").eq("creator_id", userId).eq("active", true),
     supabase.from("creator_profiles").select("handle").eq("user_id", userId).maybeSingle(),
+    getOnboardingState(supabase, userId),
+    supabase.from("connected_accounts").select("platform").eq("creator_id", userId),
   ]);
+  const isStorefrontComplete = storefrontComplete(onboarding);
+  const storefrontMissing = missingStorefrontItems(onboarding);
+  const creatorPlatforms = (connectedAccounts ?? []).map((a) => a.platform);
+  const hasRequiredChannel = creatorHasRequiredChannel(creatorPlatforms, requiredPlatforms);
   const totalFollowers = (stats ?? []).reduce((sum, s) => sum + (s.follower_count ?? 0), 0);
   const avgRating = (reviews ?? []).length > 0
     ? Math.round(((reviews ?? []).reduce((s, r) => s + (r.rating as number), 0) / (reviews ?? []).length) * 10) / 10
@@ -398,6 +410,27 @@ async function CreatorPanel({
   const canApply = creatorCanApply({ campaignType: offeringType, activeOfferingTypes: activeTypes });
   const typeLabel = TYPE_LABELS[offeringType] ?? offeringType.replace(/_/g, " ");
 
+  if (!isStorefrontComplete) {
+    return (
+      <section className={`${sectionMt} max-w-xl`}>
+        <h2 className="text-lg font-bold">Apply to this campaign</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Complete your storefront to apply — missing: {storefrontMissing.join(", ")}.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/onboarding">Complete your storefront</Link>
+          </Button>
+          {creatorProfile?.handle && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/c/${creatorProfile.handle}`}>View your storefront</Link>
+            </Button>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   if (!canApply) {
     return (
       <section className={`${sectionMt} max-w-xl`}>
@@ -414,6 +447,23 @@ async function CreatorPanel({
               <Link href={`/c/${creatorProfile.handle}`}>View your storefront</Link>
             </Button>
           )}
+        </div>
+      </section>
+    );
+  }
+
+  if (!hasRequiredChannel) {
+    const platformList = requiredPlatforms.join(", ");
+    return (
+      <section className={`${sectionMt} max-w-xl`}>
+        <h2 className="text-lg font-bold">Apply to this campaign</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This campaign requires a connected account on {platformList}. Connect one to apply.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/onboarding/socials">Connect a channel</Link>
+          </Button>
         </div>
       </section>
     );
