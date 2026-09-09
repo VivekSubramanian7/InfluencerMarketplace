@@ -157,7 +157,7 @@ export default async function DealPage({
       )}
 
       {(actions.length > 0 || (role !== "admin" && deal.status === "completed" && !myReview)) && (
-        <section className="deal-next-steps sticky top-[72px] z-10 mt-4 rounded-xl border border-amber bg-amber/10 p-6">
+        <section className="deal-next-steps mt-4 rounded-xl border border-amber bg-amber/10 p-6">
           <h2 className="flex items-center gap-2.5 text-base font-bold">
             <span aria-hidden className="size-2 rounded-full bg-amber" />
             Next steps

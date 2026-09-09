@@ -82,9 +82,18 @@ export async function ConversationThread({
         .order("price_cents")
     : { data: null };
 
-  const campaignContext = iAmBrand && conv.status === "accepted"
-    ? await campaignOfferContext(supabase, conv.id)
-    : null;
+  const [campaignContext, brandCampaigns] = iAmBrand && conv.status === "accepted"
+    ? await Promise.all([
+        campaignOfferContext(supabase, conv.id),
+        supabase
+          .from("campaigns")
+          .select("id, title, budget_max_cents")
+          .eq("brand_id", user.id)
+          .eq("status", "open")
+          .order("created_at", { ascending: false })
+          .then(({ data }) => data ?? []),
+      ])
+    : [null, []];
 
   const canSendOffer = iAmBrand && conv.status === "accepted" && (offerings ?? []).length > 0;
   const offerDisabled = !!pendingOffer;
@@ -171,13 +180,23 @@ export async function ConversationThread({
                 ) : (
                   <form action={sendOffer} className="flex flex-col gap-3">
                     <input type="hidden" name="conversation_id" value={conv.id} />
-                    {campaignContext && (
-                      <>
-                        <input type="hidden" name="campaign_id" value={campaignContext.campaignId} />
-                        <p className="text-xs text-muted-foreground">
-                          Capped at brand budget: ${(campaignContext.budgetMaxCents / 100).toFixed(0)}
-                        </p>
-                      </>
+                    {brandCampaigns.length > 0 && (
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="offer-campaign">Campaign (optional)</Label>
+                        <select
+                          id="offer-campaign"
+                          name="campaign_id"
+                          defaultValue={campaignContext?.campaignId ?? ""}
+                          className="h-10 rounded-lg border bg-background px-3 text-sm"
+                        >
+                          <option value="">No campaign</option>
+                          {brandCampaigns.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.title} (cap ${(c.budget_max_cents / 100).toFixed(0)})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     )}
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="offer-offering">Offering</Label>

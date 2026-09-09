@@ -227,7 +227,11 @@ export default async function BrandOverviewPage({
 
         <BulkProductSent
           deals={deals.filter((d) => d.payment_mode === "barter")}
-          creatorLabel={creatorLabel}
+          creatorLabels={Object.fromEntries(
+            deals
+              .filter((d) => d.payment_mode === "barter")
+              .map((d) => [d.creator_id, creatorLabel(d.creator_id)])
+          )}
         />
 
         <section className="mt-10">

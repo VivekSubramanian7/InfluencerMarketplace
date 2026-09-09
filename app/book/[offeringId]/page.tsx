@@ -33,6 +33,7 @@ export default async function BookOfferingPage({
     { data: activeDeal },
     pastDealCount,
     { data: brandProfile },
+    { data: brandCampaigns },
   ] = await Promise.all([
     supabase
       .from("creator_profiles")
@@ -63,6 +64,12 @@ export default async function BookOfferingPage({
       .select("outreach_template")
       .eq("user_id", user!.id)
       .maybeSingle(),
+    supabase
+      .from("campaigns")
+      .select("id, title")
+      .eq("brand_id", user!.id)
+      .eq("status", "open")
+      .order("created_at", { ascending: false }),
   ]);
   const previousDeals = pastDealCount.count ?? 0;
 
@@ -138,6 +145,21 @@ export default async function BookOfferingPage({
 
         <form action={createBooking} className="mt-6 flex flex-col gap-4">
           <input type="hidden" name="offering_id" value={offering.id} />
+          {(brandCampaigns ?? []).length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="campaign">Campaign (optional)</Label>
+              <select
+                id="campaign"
+                name="campaign_id"
+                className="h-10 rounded-lg border bg-background px-3 text-sm"
+              >
+                <option value="">No campaign</option>
+                {(brandCampaigns ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="goals">What does success look like?</Label>
             <CharCountTextarea

@@ -34,6 +34,8 @@ export async function createBooking(formData: FormData) {
     redirect(`/discover?error=` + encodeURIComponent("That offering is no longer available"));
   }
 
+  const campaignId = formData.get("campaign_id") ? String(formData.get("campaign_id")) : null;
+
   const { data: dealId, error: dErr } = await supabase.rpc("create_deal", {
     p_brand_id: user.id,
     p_creator_id: offering.creator_id,
@@ -41,7 +43,7 @@ export async function createBooking(formData: FormData) {
     p_price_cents: offering.price_cents,
     p_brief: { goals, product_description: product.value, talking_points: talking.value },
     p_source: "booking",
-    p_source_meta: {},
+    p_source_meta: campaignId ? { campaign_id: campaignId } : {},
     p_initial_status: "requested",
   });
   if (dErr || !dealId) {
@@ -62,6 +64,7 @@ export async function createBooking(formData: FormData) {
     source: "booking",
     offering_title: offering.title,
     price_cents: offering.price_cents,
+    campaign_id: campaignId,
   });
 
   redirect(`/deals/${dealId}`);

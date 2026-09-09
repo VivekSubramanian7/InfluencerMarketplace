@@ -14,11 +14,11 @@ type BarterDeal = {
 
 export function BulkProductSent({
   deals,
-  creatorLabel,
+  creatorLabels,
   returnTo = "/brand",
 }: {
   deals: BarterDeal[];
-  creatorLabel: (id: string) => string;
+  creatorLabels: Record<string, string>;
   returnTo?: string;
 }) {
   const eligible = deals.filter(
@@ -68,7 +68,7 @@ export function BulkProductSent({
               className="size-4 accent-primary"
             />
             <span className="min-w-0 flex-1 truncate">
-              {creatorLabel(d.creator_id)} · {d.offering_title}
+              {creatorLabels[d.creator_id] ?? "Creator"} · {d.offering_title}
             </span>
           </li>
         ))}
