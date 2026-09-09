@@ -7,6 +7,13 @@ import { parsePriceCents, parseText } from "@/lib/storefront/validation";
 import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
+import { creatorHasRequiredChannel } from "@/lib/campaigns/channel-match";
+import { getOnboardingState } from "@/lib/onboarding/state";
+import {
+  storefrontComplete,
+  missingStorefrontItems,
+  storefrontCompletenessError,
+} from "@/lib/onboarding/completeness";
 import { trackServerEvent } from "@/lib/analytics";
 import { acceptRedirect } from "@/lib/campaigns/accept-redirect";
 
@@ -37,9 +44,15 @@ export async function applyToCampaign(formData: FormData) {
       encodeURIComponent("Create your creator profile before applying to campaigns"));
   }
 
+  const onboarding = await getOnboardingState(supabase, user.id);
+  if (!storefrontComplete(onboarding)) {
+    redirect(`${base}${sep}error=` + encodeURIComponent(
+      storefrontCompletenessError(missingStorefrontItems(onboarding))));
+  }
+
   const { data: campaign } = await supabase
     .from("campaigns")
-    .select("brand_id, title, offering_type, budget_max_cents")
+    .select("brand_id, title, offering_type, budget_max_cents, platforms")
     .eq("id", campaignId)
     .maybeSingle();
   const { data: offerings } = await supabase
@@ -52,6 +65,19 @@ export async function applyToCampaign(formData: FormData) {
     const typeLabel = campaign?.offering_type?.replace(/_/g, " ") ?? "matching";
     redirect(`${base}${sep}error=` + encodeURIComponent(
       `This campaign needs a ${typeLabel} offering. Add one to your storefront, or ask the brand to book another format.`));
+  }
+
+  const requiredPlatforms = campaign.platforms ?? [];
+  if (requiredPlatforms.length > 0) {
+    const { data: accounts } = await supabase
+      .from("connected_accounts")
+      .select("platform")
+      .eq("creator_id", user.id);
+    const creatorPlatforms = (accounts ?? []).map((a) => a.platform);
+    if (!creatorHasRequiredChannel(creatorPlatforms, requiredPlatforms)) {
+      redirect(`${base}${sep}error=` + encodeURIComponent(
+        "Connect an account on one of this campaign's required platforms before applying"));
+    }
   }
 
   const { error } = await supabase.from("campaign_applications").insert({
