@@ -10,6 +10,12 @@ import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { capOfferToCampaign } from "@/lib/campaigns/budget";
 import { trackServerEvent } from "@/lib/analytics";
+import { getOnboardingState } from "@/lib/onboarding/state";
+import {
+  storefrontComplete,
+  missingStorefrontItems,
+  storefrontCompletenessError,
+} from "@/lib/onboarding/completeness";
 
 export async function respondInvite(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -17,6 +23,14 @@ export async function respondInvite(formData: FormData) {
   const id = String(formData.get("conversation_id") ?? "");
   const response = String(formData.get("response") ?? "");
   if (response !== "accepted" && response !== "declined") redirect("/inbox");
+
+  if (response === "accepted") {
+    const onboarding = await getOnboardingState(supabase, user.id);
+    if (!storefrontComplete(onboarding)) {
+      redirect("/inbox?error=" + encodeURIComponent(
+        storefrontCompletenessError(missingStorefrontItems(onboarding), "accepting")));
+    }
+  }
 
   const { data: updated, error } = await supabase
     .from("conversations")
@@ -162,6 +176,12 @@ export async function respondOffer(formData: FormData) {
     .from("conversations").select("brand_id").eq("id", conversationId).maybeSingle();
 
   if (response === "accepted") {
+    const onboarding = await getOnboardingState(supabase, user.id);
+    if (!storefrontComplete(onboarding)) {
+      redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(
+        storefrontCompletenessError(missingStorefrontItems(onboarding), "accepting")));
+    }
+
     const { data: dealId, error } = await supabase.rpc("accept_offer", {
       p_offer_id: offerId,
     });
