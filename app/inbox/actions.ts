@@ -265,3 +265,50 @@ export async function draftReply(formData: FormData) {
   revalidatePath(`/inbox/${conversationId}`);
   redirect(`/inbox/${conversationId}`);
 }
+
+export async function archiveConversation(formData: FormData) {
+  await requireUser();
+  const id = String(formData.get("conversation_id") ?? "");
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("set_conversation_archived", {
+    p_conversation_id: id,
+    p_archived: true,
+  });
+  if (error) {
+    redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+  }
+  revalidatePath("/inbox");
+  redirect("/inbox");
+}
+
+export async function unarchiveConversation(formData: FormData) {
+  await requireUser();
+  const id = String(formData.get("conversation_id") ?? "");
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("set_conversation_archived", {
+    p_conversation_id: id,
+    p_archived: false,
+  });
+  if (error) {
+    redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+  }
+  revalidatePath("/inbox");
+  redirect("/inbox?status=archived");
+}
+
+export async function bulkArchiveConversations(formData: FormData) {
+  await requireUser();
+  const ids = formData.getAll("conversation_id").map(String).filter(Boolean);
+  const supabase = await createServerSupabase();
+  for (const id of ids) {
+    const { error } = await supabase.rpc("set_conversation_archived", {
+      p_conversation_id: id,
+      p_archived: true,
+    });
+    if (error) {
+      redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+    }
+  }
+  revalidatePath("/inbox");
+  redirect("/inbox");
+}
