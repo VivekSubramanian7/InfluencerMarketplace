@@ -38,7 +38,10 @@ export async function applyToCampaign(formData: FormData) {
   }
 
   const { data: campaign } = await supabase
-    .from("campaigns").select("brand_id, title, offering_type").eq("id", campaignId).maybeSingle();
+    .from("campaigns")
+    .select("brand_id, title, offering_type, budget_max_cents")
+    .eq("id", campaignId)
+    .maybeSingle();
   const { data: offerings } = await supabase
     .from("offerings")
     .select("type")
@@ -64,6 +67,12 @@ export async function applyToCampaign(formData: FormData) {
     });
     redirect(`${base}${sep}error=` + encodeURIComponent(msg));
   }
+
+  trackServerEvent("campaign_applied", user.id, {
+    campaign_id: campaignId,
+    proposed_price_cents: price,
+    over_budget: campaign ? price > campaign.budget_max_cents : false,
+  });
 
   if (campaign) {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

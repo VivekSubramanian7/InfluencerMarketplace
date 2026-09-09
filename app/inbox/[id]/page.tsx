@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { OFFER_CTA, OFFER_VERB } from "@/lib/copy/taxonomy";
+import { campaignOfferContext } from "@/lib/inbox/campaign-context";
 
 const OFFER_LABELS: Record<string, string> = {
   pending: "Awaiting response",
@@ -114,6 +115,10 @@ export default async function ConversationPage({
   }
 
   const hasPendingOffer = (offers ?? []).some((o) => o.status === "pending");
+
+  const campaignContext = iAmBrand && conv.status === "accepted"
+    ? await campaignOfferContext(supabase, conv.id)
+    : null;
 
   const { data: draft } = iAmBrand
     ? await supabase
@@ -334,6 +339,14 @@ export default async function ConversationPage({
             ) : (
               <form action={sendOffer} className="mt-3 flex flex-col gap-3">
                 <input type="hidden" name="conversation_id" value={conv.id} />
+                {campaignContext && (
+                  <>
+                    <input type="hidden" name="campaign_id" value={campaignContext.campaignId} />
+                    <p className="text-xs text-muted-foreground">
+                      Capped at brand budget: ${(campaignContext.budgetMaxCents / 100).toFixed(0)}
+                    </p>
+                  </>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="offer-offering">Offering</Label>
                   <select

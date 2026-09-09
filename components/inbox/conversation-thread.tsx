@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { inboxCta } from "@/lib/inbox/cta";
 import { OFFER_VERB } from "@/lib/copy/taxonomy";
+import { campaignOfferContext } from "@/lib/inbox/campaign-context";
 
 export async function ConversationThread({
   conversationId,
@@ -80,6 +81,10 @@ export async function ConversationThread({
         .eq("active", true)
         .order("price_cents")
     : { data: null };
+
+  const campaignContext = iAmBrand && conv.status === "accepted"
+    ? await campaignOfferContext(supabase, conv.id)
+    : null;
 
   const canSendOffer = iAmBrand && conv.status === "accepted" && (offerings ?? []).length > 0;
   const offerDisabled = !!pendingOffer;
@@ -166,6 +171,14 @@ export async function ConversationThread({
                 ) : (
                   <form action={sendOffer} className="flex flex-col gap-3">
                     <input type="hidden" name="conversation_id" value={conv.id} />
+                    {campaignContext && (
+                      <>
+                        <input type="hidden" name="campaign_id" value={campaignContext.campaignId} />
+                        <p className="text-xs text-muted-foreground">
+                          Capped at brand budget: ${(campaignContext.budgetMaxCents / 100).toFixed(0)}
+                        </p>
+                      </>
+                    )}
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="offer-offering">Offering</Label>
                       <select

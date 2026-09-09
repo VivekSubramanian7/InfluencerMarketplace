@@ -30,6 +30,7 @@ export type AnalyticsEvent =
   | "invite_accepted"
   | "invite_declined"
   | "reachouts_sent"
+  | "campaign_applied"
   | "dashboard_section_viewed";
 
 let _client: PostHog | null = null;

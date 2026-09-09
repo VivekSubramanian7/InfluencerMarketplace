@@ -8,6 +8,7 @@ import { parseOptionalText, parsePriceCents, parseText } from "@/lib/storefront/
 import { generatePlainText } from "@/lib/ai/llm";
 import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
+import { capOfferToCampaign } from "@/lib/campaigns/budget";
 import { trackServerEvent } from "@/lib/analytics";
 
 export async function respondInvite(formData: FormData) {
@@ -100,13 +101,26 @@ export async function sendOffer(formData: FormData) {
     redirect(`/inbox/${conversationId}?error=` +
       encodeURIComponent("Pick an offering, set a price ($1-$1M), and describe the goals (max 2000 chars each)"));
   }
+
+  const campaignId = formData.get("campaign_id") ? String(formData.get("campaign_id")) : null;
+  let priceToInsert = price;
+  if (campaignId) {
+    const { data: c } = await supabase
+      .from("campaigns")
+      .select("budget_max_cents")
+      .eq("id", campaignId)
+      .maybeSingle();
+    priceToInsert = capOfferToCampaign(price, c?.budget_max_cents ?? null).cents;
+  }
+
   const { error } = await supabase.from("offers").insert({
     conversation_id: conversationId,
     offering_id: offeringId,
-    price_cents: price,
+    price_cents: priceToInsert,
     goals,
     product_description: product.value,
     talking_points: talking.value,
+    campaign_id: campaignId,
   });
   if (error) {
     const msg = friendlyDbError(error, {
@@ -117,7 +131,9 @@ export async function sendOffer(formData: FormData) {
 
   trackServerEvent("offer_sent", user.id, {
     conversation_id: conversationId,
-    price_cents: price,
+    price_cents: priceToInsert,
+    campaign_id: campaignId,
+    capped: priceToInsert !== price,
   });
 
   const { data: conv } = await supabase
@@ -126,7 +142,7 @@ export async function sendOffer(formData: FormData) {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     await emailUser({
       userId: conv.creator_id,
-      subject: `You have an offer: $${(price! / 100).toFixed(2)}`,
+      subject: `You have an offer: $${(priceToInsert / 100).toFixed(2)}`,
       text: `Open it on Clipline: ${site}/inbox/${conversationId}`,
     });
   }

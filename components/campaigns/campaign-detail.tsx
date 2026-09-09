@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { EditCampaignForm } from "@/app/campaigns/[id]/edit-campaign-form";
 import { BulkProposals } from "@/app/campaigns/[id]/bulk-proposals";
+import { ApplyPriceField } from "@/components/campaigns/apply-price-field";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -435,19 +436,10 @@ async function CreatorPanel({
               placeholder={pitchPlaceholder(offeringType)}
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="proposed_price">Your price (USD)</Label>
-            <Input
-              id="proposed_price"
-              name="proposed_price"
-              inputMode="decimal"
-              required
-              defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Suggested from the brand&rsquo;s budget — adjust to your rate.
-            </p>
-          </div>
+          <ApplyPriceField
+            budgetMaxCents={budgetMaxCents}
+            defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
+          />
           <Button type="submit" className="mt-2 self-start">
             Submit application
           </Button>
