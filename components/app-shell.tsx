@@ -21,7 +21,7 @@ export function AppShell({
             {children}
           </div>
           {pane ? (
-            <aside className="hidden w-[min(42%,28rem)] shrink-0 overflow-y-auto border-l border-[var(--border)] lg:block">
+            <aside className="hidden w-[min(42%,28rem)] shrink-0 overflow-hidden border-l border-[var(--border)] lg:flex lg:flex-col">
               {pane}
             </aside>
           ) : null}

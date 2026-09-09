@@ -53,15 +53,26 @@ export default async function CampaignsPage({
   const tokens = parseFilterTokens(filterSp, ["status", "offering_type"]);
   const supabase = await createServerSupabase();
 
+  let paneCampaignId: string | null = null;
+  if (selectedId) {
+    const { data: exists } = await supabase
+      .from("campaigns")
+      .select("id")
+      .eq("id", selectedId)
+      .or(`status.eq.open,brand_id.eq.${user.id}`)
+      .maybeSingle();
+    paneCampaignId = exists?.id ?? null;
+  }
+
   return (
     <AuthenticatedShell
       userId={user.id}
       role={role}
-      pane={selectedId ? (
+      pane={paneCampaignId ? (
         <CampaignDetail
-          campaignId={selectedId}
+          campaignId={paneCampaignId}
           compact
-          returnTo={`/campaigns?c=${selectedId}`}
+          returnTo="/campaigns"
           error={error}
           saved={saved}
         />

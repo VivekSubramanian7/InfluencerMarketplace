@@ -8,7 +8,14 @@ import { parseOptionalText, parsePriceCents, parseText } from "@/lib/storefront/
 import { generatePlainText } from "@/lib/ai/llm";
 import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
+import { capOfferToCampaign } from "@/lib/campaigns/budget";
 import { trackServerEvent } from "@/lib/analytics";
+import { getOnboardingState } from "@/lib/onboarding/state";
+import {
+  storefrontComplete,
+  missingStorefrontItems,
+  storefrontCompletenessError,
+} from "@/lib/onboarding/completeness";
 
 export async function respondInvite(formData: FormData) {
   const { user } = await requireRole("creator");
@@ -16,6 +23,14 @@ export async function respondInvite(formData: FormData) {
   const id = String(formData.get("conversation_id") ?? "");
   const response = String(formData.get("response") ?? "");
   if (response !== "accepted" && response !== "declined") redirect("/inbox");
+
+  if (response === "accepted") {
+    const onboarding = await getOnboardingState(supabase, user.id);
+    if (!storefrontComplete(onboarding)) {
+      redirect("/inbox?error=" + encodeURIComponent(
+        storefrontCompletenessError(missingStorefrontItems(onboarding), "accepting")));
+    }
+  }
 
   const { data: updated, error } = await supabase
     .from("conversations")
@@ -100,13 +115,26 @@ export async function sendOffer(formData: FormData) {
     redirect(`/inbox/${conversationId}?error=` +
       encodeURIComponent("Pick an offering, set a price ($1-$1M), and describe the goals (max 2000 chars each)"));
   }
+
+  const campaignId = formData.get("campaign_id") ? String(formData.get("campaign_id")) : null;
+  let priceToInsert = price;
+  if (campaignId) {
+    const { data: c } = await supabase
+      .from("campaigns")
+      .select("budget_max_cents")
+      .eq("id", campaignId)
+      .maybeSingle();
+    priceToInsert = capOfferToCampaign(price, c?.budget_max_cents ?? null).cents;
+  }
+
   const { error } = await supabase.from("offers").insert({
     conversation_id: conversationId,
     offering_id: offeringId,
-    price_cents: price,
+    price_cents: priceToInsert,
     goals,
     product_description: product.value,
     talking_points: talking.value,
+    campaign_id: campaignId,
   });
   if (error) {
     const msg = friendlyDbError(error, {
@@ -117,7 +145,9 @@ export async function sendOffer(formData: FormData) {
 
   trackServerEvent("offer_sent", user.id, {
     conversation_id: conversationId,
-    price_cents: price,
+    price_cents: priceToInsert,
+    campaign_id: campaignId,
+    capped: priceToInsert !== price,
   });
 
   const { data: conv } = await supabase
@@ -126,7 +156,7 @@ export async function sendOffer(formData: FormData) {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     await emailUser({
       userId: conv.creator_id,
-      subject: `You have an offer: $${(price! / 100).toFixed(2)}`,
+      subject: `You have an offer: $${(priceToInsert / 100).toFixed(2)}`,
       text: `Open it on Clipline: ${site}/inbox/${conversationId}`,
     });
   }
@@ -146,6 +176,12 @@ export async function respondOffer(formData: FormData) {
     .from("conversations").select("brand_id").eq("id", conversationId).maybeSingle();
 
   if (response === "accepted") {
+    const onboarding = await getOnboardingState(supabase, user.id);
+    if (!storefrontComplete(onboarding)) {
+      redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(
+        storefrontCompletenessError(missingStorefrontItems(onboarding), "accepting")));
+    }
+
     const { data: dealId, error } = await supabase.rpc("accept_offer", {
       p_offer_id: offerId,
     });
@@ -264,4 +300,51 @@ export async function draftReply(formData: FormData) {
 
   revalidatePath(`/inbox/${conversationId}`);
   redirect(`/inbox/${conversationId}`);
+}
+
+export async function archiveConversation(formData: FormData) {
+  await requireUser();
+  const id = String(formData.get("conversation_id") ?? "");
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("set_conversation_archived", {
+    p_conversation_id: id,
+    p_archived: true,
+  });
+  if (error) {
+    redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+  }
+  revalidatePath("/inbox");
+  redirect("/inbox");
+}
+
+export async function unarchiveConversation(formData: FormData) {
+  await requireUser();
+  const id = String(formData.get("conversation_id") ?? "");
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("set_conversation_archived", {
+    p_conversation_id: id,
+    p_archived: false,
+  });
+  if (error) {
+    redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+  }
+  revalidatePath("/inbox");
+  redirect("/inbox?status=archived");
+}
+
+export async function bulkArchiveConversations(formData: FormData) {
+  await requireUser();
+  const ids = formData.getAll("conversation_id").map(String).filter(Boolean);
+  const supabase = await createServerSupabase();
+  for (const id of ids) {
+    const { error } = await supabase.rpc("set_conversation_archived", {
+      p_conversation_id: id,
+      p_archived: true,
+    });
+    if (error) {
+      redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+    }
+  }
+  revalidatePath("/inbox");
+  redirect("/inbox");
 }

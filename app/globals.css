@@ -241,17 +241,7 @@ input:focus, textarea:focus, select:focus {
   animation: gentle-pulse 3s ease-in-out infinite;
 }
 
-/* Deal next-steps sticky */
-.deal-next-steps {
-  position: sticky;
-  bottom: 1rem;
-  z-index: 10;
-}
-@media (max-width: 767px) {
-  .deal-next-steps {
-    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-  }
-}
+/* Deal next-steps — positioning via Tailwind sticky on the element */
 
 /* Storefront sticky CTA — add breathing room so content isn't hidden */
 @media (max-width: 767px) {

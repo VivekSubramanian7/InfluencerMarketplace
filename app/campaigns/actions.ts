@@ -47,6 +47,7 @@ export async function createCampaign(formData: FormData) {
       budget_min_cents: budgetMin,
       budget_max_cents: budgetMax,
       apply_by: applyBy.value,
+      visibility: "public",
     })
     .select("id")
     .single();

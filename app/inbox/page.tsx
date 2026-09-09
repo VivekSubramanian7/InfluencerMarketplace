@@ -2,28 +2,30 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require";
 import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { respondInvite } from "./actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
-import { Button } from "@/components/ui/button";
 import { ConversationList } from "@/components/inbox/conversation-list";
-
 import { ConversationThread } from "@/components/inbox/conversation-thread";
+import { isArchivedForUser } from "@/lib/inbox/archive";
+import { inboxCta } from "@/lib/inbox/cta";
+import { sortConversationsByActivity } from "@/lib/inbox/ordering";
 
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; sent?: string; status?: string; c?: string }>;
+  searchParams: Promise<{ error?: string; sent?: string; status?: string; c?: string; focus?: string }>;
 }) {
   const { user, role } = await requireUser("/inbox");
   await touchCursor("inbox");
-  const { error, sent, status, c: selectedId } = await searchParams;
+  const { error, sent, status, c: selectedId, focus } = await searchParams;
+  const filter = status ?? "all";
   const supabase = await createServerSupabase();
 
   const { data: conversations, error: qErr } = await supabase
     .from("conversations")
-    .select("id, brand_id, creator_id, status, invite_message, created_at")
-    .or(`brand_id.eq.${user.id},creator_id.eq.${user.id}`)
-    .order("created_at", { ascending: false });
+    .select(
+      "id, brand_id, creator_id, status, invite_message, created_at, archived_by_brand_at, archived_by_creator_at"
+    )
+    .or(`brand_id.eq.${user.id},creator_id.eq.${user.id}`);
   if (qErr) throw new Error("conversations query failed: " + qErr.message);
 
   const mine = conversations ?? [];
@@ -49,7 +51,7 @@ export default async function InboxPage({
   if (convIds.length > 0) {
     const { data: offers } = await supabase
       .from("offers")
-      .select("conversation_id, price_cents, status")
+      .select("conversation_id, price_cents, status, id")
       .in("conversation_id", convIds)
       .eq("status", "pending");
     for (const o of offers ?? []) {
@@ -78,12 +80,51 @@ export default async function InboxPage({
     return (c.brand_id === id ? companyById.get(id) : null) || nameById.get(id) || "Someone";
   };
 
-  const pendingForMe = mine.filter((c) => c.status === "invited" && c.creator_id === user.id);
-  const archived = status === "archived";
-  const allRest = mine.filter((c) => !pendingForMe.includes(c));
-  const rest = archived
-    ? []
-    : allRest;
+  const allRows = mine.map((c) => {
+    const last = lastMessageById.get(c.id);
+    const archived = isArchivedForUser(c, user.id);
+    const archivedAt = archived
+      ? (c.brand_id === user.id ? c.archived_by_brand_at : c.archived_by_creator_at)
+      : null;
+    const pendingOffer = pendingOfferByConv.has(c.id);
+    const cta = inboxCta({
+      role: c.brand_id === user.id ? "brand" : "creator",
+      convStatus: c.status as "invited" | "accepted" | "declined",
+      hasPendingOffer: pendingOffer,
+    });
+    const waiting =
+      c.status === "invited" && c.creator_id === user.id ||
+      (!!last && last.sender_id !== user.id);
+    return {
+      id: c.id,
+      status: c.status,
+      label: label(c),
+      lastMessage: last
+        ? {
+            body: last.body,
+            senderIsMe: last.sender_id === user.id,
+            created_at: last.created_at,
+          }
+        : null,
+      waiting,
+      cta,
+      archivedAt,
+      inviteMessage: c.invite_message,
+      lastActivityAt: last?.created_at ?? null,
+      createdAt: c.created_at,
+    };
+  });
+
+  let visible = allRows;
+  if (filter === "archived") {
+    visible = allRows.filter((r) => r.archivedAt);
+  } else {
+    visible = allRows.filter((r) => !r.archivedAt);
+    if (filter === "active") visible = visible.filter((r) => r.status === "accepted");
+    if (filter === "invites") visible = visible.filter((r) => r.status === "invited");
+  }
+
+  const sorted = sortConversationsByActivity(visible);
 
   const ownedSelected =
     selectedId && mine.some((conv) => conv.id === selectedId) ? selectedId : null;
@@ -92,20 +133,32 @@ export default async function InboxPage({
     <AuthenticatedShell
       userId={user.id}
       role={role}
-      pane={ownedSelected ? <ConversationThread conversationId={ownedSelected} compact returnTo={`/inbox?c=${ownedSelected}`} /> : undefined}
+      pane={
+        ownedSelected ? (
+          <ConversationThread
+            conversationId={ownedSelected}
+            compact
+            returnTo={`/inbox?c=${ownedSelected}`}
+            offerOpen={focus === "offer"}
+          />
+        ) : undefined
+      }
     >
         <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
 
-        <nav className="mt-3 flex gap-1" aria-label="Filter conversations">
+        <nav className="mt-3 flex flex-wrap gap-1" aria-label="Filter conversations">
           {[
+            { value: "all", label: "All" },
             { value: "active", label: "Active" },
+            { value: "invites", label: "Invites" },
             { value: "archived", label: "Archived" },
           ].map((f) => {
-            const active = (status ?? "active") === f.value;
+            const active = filter === f.value;
+            const href = f.value === "all" ? "/inbox" : `/inbox?status=${f.value}`;
             return (
               <Link
                 key={f.value}
-                href={f.value === "active" ? "/inbox" : `/inbox?status=${f.value}`}
+                href={href}
                 className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                   active
                     ? "bg-foreground text-background"
@@ -129,66 +182,12 @@ export default async function InboxPage({
           </p>
         )}
 
-        {pendingForMe.length > 0 && (
-          <section className="mt-6">
-            <h2 className="flex items-center gap-2.5 text-lg font-bold">
-              <span aria-hidden className="size-2 rounded-full bg-amber" />
-              Brand invitations
-              <span className="text-sm font-medium text-muted-foreground tabular-nums">
-                ({pendingForMe.length})
-              </span>
-            </h2>
-            <ul className="mt-3 flex flex-col gap-3">
-              {pendingForMe.map((c) => (
-                <li key={c.id} className="rounded-[var(--radius-tile)] border border-[var(--border)] bg-[var(--card)] p-5 ring-1 ring-amber/20">
-                  <p className="font-bold">{label(c)}</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-                    {c.invite_message}
-                  </p>
-                  {pendingOfferByConv.has(c.id) && (
-                    <p className="mt-2 text-sm font-medium text-primary">
-                      Includes an offer · ${(pendingOfferByConv.get(c.id)! / 100).toFixed(0)}
-                    </p>
-                  )}
-                  <div className="mt-4 flex gap-2">
-                    <form action={respondInvite}>
-                      <input type="hidden" name="conversation_id" value={c.id} />
-                      <input type="hidden" name="response" value="accepted" />
-                      <Button type="submit" size="sm">Accept &amp; chat</Button>
-                    </form>
-                    <form action={respondInvite}>
-                      <input type="hidden" name="conversation_id" value={c.id} />
-                      <input type="hidden" name="response" value="declined" />
-                      <Button type="submit" variant="outline" size="sm">Decline</Button>
-                    </form>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         <ConversationList
-          conversations={rest.map((c) => {
-            const last = lastMessageById.get(c.id);
-            return {
-              id: c.id,
-              status: c.status,
-              label: label(c),
-              lastMessage: last
-                ? {
-                    body: last.body,
-                    senderIsMe: last.sender_id === user.id,
-                    created_at: last.created_at,
-                  }
-                : null,
-              waiting: !!last && last.sender_id !== user.id,
-            };
-          })}
-          status={status ?? null}
-          totalCount={allRest.length}
+          conversations={sorted}
+          status={filter}
+          totalCount={allRows.filter((r) => !r.archivedAt).length}
           role={role}
-          hasFilters={status !== null && status !== "active"}
+          hasFilters={status != null && status !== "all"}
         />
     </AuthenticatedShell>
   );

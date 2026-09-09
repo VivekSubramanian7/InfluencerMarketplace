@@ -5,6 +5,9 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { applyToCampaign, withdrawApplication } from "@/app/campaigns/[id]/actions";
 import { setCampaignStatus } from "@/app/campaigns/actions";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
+import { creatorHasRequiredChannel } from "@/lib/campaigns/channel-match";
+import { getOnboardingState } from "@/lib/onboarding/state";
+import { storefrontComplete, missingStorefrontItems } from "@/lib/onboarding/completeness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { EditCampaignForm } from "@/app/campaigns/[id]/edit-campaign-form";
 import { BulkProposals } from "@/app/campaigns/[id]/bulk-proposals";
+import { ApplyPriceField } from "@/components/campaigns/apply-price-field";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -67,7 +71,7 @@ export async function CampaignDetail({
 
   const { data: campaign } = await supabase
     .from("campaigns")
-    .select("id, brand_id, title, description, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at")
+    .select("id, brand_id, title, description, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at, platforms")
     .eq("id", campaignId)
     .maybeSingle();
   if (!campaign) notFound();
@@ -75,6 +79,7 @@ export async function CampaignDetail({
   const isOwner = campaign.brand_id === user.id;
   const windowClosed =
     campaign.apply_by !== null && campaign.apply_by < new Date().toISOString().slice(0, 10);
+  const formReturnTo = compact ? `/campaigns?c=${campaignId}` : returnTo;
 
   const { data: brandProfile } = await supabase
     .from("brand_profiles").select("company, website").eq("user_id", campaign.brand_id).maybeSingle();
@@ -89,11 +94,18 @@ export async function CampaignDetail({
         </Link>
       )}
       <div className={`${compact ? "" : "mt-3 "}flex flex-wrap items-baseline justify-between gap-3`}>
-        <h1 className={`font-semibold tracking-tight ${compact ? "text-lg" : "text-2xl"}`}>
-          {campaign.title}
-        </h1>
-        <span className={`font-extrabold tabular-nums text-primary ${compact ? "text-lg" : "text-2xl"}`}>
-          {budgetRange(campaign.budget_min_cents, campaign.budget_max_cents)}
+        {compact ? (
+          <h2 className="text-lg font-semibold text-ink">{campaign.title}</h2>
+        ) : (
+          <h1 className="text-2xl font-semibold tracking-tight">{campaign.title}</h1>
+        )}
+        <span className="flex items-baseline gap-3">
+          <span className={`font-semibold tabular-nums text-primary ${compact ? "text-lg" : "text-2xl"}`}>
+            {budgetRange(campaign.budget_min_cents, campaign.budget_max_cents)}
+          </span>
+          {compact && returnTo && (
+            <Link href={returnTo} className="text-sm text-muted-foreground">Close</Link>
+          )}
         </span>
       </div>
       <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
@@ -143,7 +155,7 @@ export async function CampaignDetail({
           applyBy={campaign.apply_by}
           supabase={supabase}
           compact={compact}
-          returnTo={returnTo}
+          returnTo={formReturnTo}
         />
       ) : role === "creator" ? (
         <CreatorPanel
@@ -153,9 +165,10 @@ export async function CampaignDetail({
           budgetMinCents={campaign.budget_min_cents}
           budgetMaxCents={campaign.budget_max_cents}
           offeringType={campaign.offering_type}
+          requiredPlatforms={campaign.platforms ?? []}
           supabase={supabase}
           compact={compact}
-          returnTo={returnTo}
+          returnTo={formReturnTo}
         />
       ) : null}
     </div>
@@ -295,6 +308,7 @@ async function CreatorPanel({
   budgetMinCents,
   budgetMaxCents,
   offeringType,
+  requiredPlatforms,
   supabase,
   compact = false,
   returnTo,
@@ -305,6 +319,7 @@ async function CreatorPanel({
   budgetMinCents: number;
   budgetMaxCents: number;
   offeringType: string;
+  requiredPlatforms: string[];
   supabase: Supabase;
   compact?: boolean;
   returnTo?: string;
@@ -318,13 +333,19 @@ async function CreatorPanel({
     .eq("creator_id", userId)
     .maybeSingle();
 
-  const [{ data: stats }, { data: reviews }, { count: completedDealCount }, { data: offerings }, { data: creatorProfile }] = await Promise.all([
+  const [{ data: stats }, { data: reviews }, { count: completedDealCount }, { data: offerings }, { data: creatorProfile }, onboarding, { data: connectedAccounts }] = await Promise.all([
     supabase.from("public_creator_stats").select("platform, follower_count").eq("creator_id", userId),
     supabase.from("public_creator_reviews").select("rating").eq("creator_id", userId),
     supabase.from("deals").select("id", { count: "exact", head: true }).eq("creator_id", userId).eq("status", "completed"),
     supabase.from("offerings").select("type").eq("creator_id", userId).eq("active", true),
     supabase.from("creator_profiles").select("handle").eq("user_id", userId).maybeSingle(),
+    getOnboardingState(supabase, userId),
+    supabase.from("connected_accounts").select("platform").eq("creator_id", userId),
   ]);
+  const isStorefrontComplete = storefrontComplete(onboarding);
+  const storefrontMissing = missingStorefrontItems(onboarding);
+  const creatorPlatforms = (connectedAccounts ?? []).map((a) => a.platform);
+  const hasRequiredChannel = creatorHasRequiredChannel(creatorPlatforms, requiredPlatforms);
   const totalFollowers = (stats ?? []).reduce((sum, s) => sum + (s.follower_count ?? 0), 0);
   const avgRating = (reviews ?? []).length > 0
     ? Math.round(((reviews ?? []).reduce((s, r) => s + (r.rating as number), 0) / (reviews ?? []).length) * 10) / 10
@@ -337,7 +358,7 @@ async function CreatorPanel({
           <h2 className="text-lg font-bold">Your application</h2>
           <span className="flex items-center gap-3">
             <Badge variant="secondary">{APPLICATION_LABELS[mine.status] ?? mine.status}</Badge>
-            <span className="font-extrabold tabular-nums text-primary">
+            <span className="font-semibold tabular-nums text-primary">
               ${(mine.proposed_price_cents / 100).toFixed(2)}
             </span>
           </span>
@@ -389,6 +410,27 @@ async function CreatorPanel({
   const canApply = creatorCanApply({ campaignType: offeringType, activeOfferingTypes: activeTypes });
   const typeLabel = TYPE_LABELS[offeringType] ?? offeringType.replace(/_/g, " ");
 
+  if (!isStorefrontComplete) {
+    return (
+      <section className={`${sectionMt} max-w-xl`}>
+        <h2 className="text-lg font-bold">Apply to this campaign</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Complete your storefront to apply — missing: {storefrontMissing.join(", ")}.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/onboarding">Complete your storefront</Link>
+          </Button>
+          {creatorProfile?.handle && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/c/${creatorProfile.handle}`}>View your storefront</Link>
+            </Button>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   if (!canApply) {
     return (
       <section className={`${sectionMt} max-w-xl`}>
@@ -410,11 +452,28 @@ async function CreatorPanel({
     );
   }
 
+  if (!hasRequiredChannel) {
+    const platformList = requiredPlatforms.join(", ");
+    return (
+      <section className={`${sectionMt} max-w-xl`}>
+        <h2 className="text-lg font-bold">Apply to this campaign</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This campaign requires a connected account on {platformList}. Connect one to apply.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/onboarding/socials">Connect a channel</Link>
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={sectionMt}>
       <h2 className="text-lg font-bold">Apply to this campaign</h2>
-      <div className="mt-3 gap-6 md:grid md:grid-cols-[1fr_280px]">
-        <form action={applyToCampaign} className="flex max-w-xl flex-col gap-4">
+      <div className={compact ? "mt-3 flex flex-col gap-4" : "mt-3 gap-6 md:grid md:grid-cols-[1fr_280px]"}>
+        <form action={applyToCampaign} className={`flex flex-col gap-4 ${compact ? "w-full" : "max-w-xl"}`}>
           <input type="hidden" name="campaign_id" value={campaignId} />
           {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
           <div className="flex flex-col gap-1.5">
@@ -427,25 +486,16 @@ async function CreatorPanel({
               placeholder={pitchPlaceholder(offeringType)}
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="proposed_price">Your price (USD)</Label>
-            <Input
-              id="proposed_price"
-              name="proposed_price"
-              inputMode="decimal"
-              required
-              defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Suggested from the brand&rsquo;s budget — adjust to your rate.
-            </p>
-          </div>
+          <ApplyPriceField
+            budgetMaxCents={budgetMaxCents}
+            defaultValue={(Math.round((budgetMinCents + budgetMaxCents) / 2) / 100).toFixed(0)}
+          />
           <Button type="submit" className="mt-2 self-start">
             Submit application
           </Button>
         </form>
 
-        <aside className="mt-6 h-fit rounded-xl border p-4 md:mt-0">
+        <aside className={`h-fit rounded-xl border p-4 ${compact ? "" : "mt-6 md:mt-0"}`}>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your profile</p>
           <dl className="mt-3 flex flex-col gap-2 text-sm">
             {totalFollowers > 0 && (

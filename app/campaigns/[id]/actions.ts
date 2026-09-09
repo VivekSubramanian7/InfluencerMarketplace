@@ -7,7 +7,15 @@ import { parsePriceCents, parseText } from "@/lib/storefront/validation";
 import { emailUser } from "@/lib/email";
 import { friendlyDbError } from "@/lib/errors";
 import { creatorCanApply } from "@/lib/campaigns/offering-match";
+import { creatorHasRequiredChannel } from "@/lib/campaigns/channel-match";
+import { getOnboardingState } from "@/lib/onboarding/state";
+import {
+  storefrontComplete,
+  missingStorefrontItems,
+  storefrontCompletenessError,
+} from "@/lib/onboarding/completeness";
 import { trackServerEvent } from "@/lib/analytics";
+import { acceptRedirect } from "@/lib/campaigns/accept-redirect";
 
 function campaignsRedirectBase(returnTo: string, fallback: string) {
   return returnTo.startsWith("/campaigns") ? returnTo : fallback;
@@ -36,8 +44,17 @@ export async function applyToCampaign(formData: FormData) {
       encodeURIComponent("Create your creator profile before applying to campaigns"));
   }
 
+  const onboarding = await getOnboardingState(supabase, user.id);
+  if (!storefrontComplete(onboarding)) {
+    redirect(`${base}${sep}error=` + encodeURIComponent(
+      storefrontCompletenessError(missingStorefrontItems(onboarding))));
+  }
+
   const { data: campaign } = await supabase
-    .from("campaigns").select("brand_id, title, offering_type").eq("id", campaignId).maybeSingle();
+    .from("campaigns")
+    .select("brand_id, title, offering_type, budget_max_cents, platforms")
+    .eq("id", campaignId)
+    .maybeSingle();
   const { data: offerings } = await supabase
     .from("offerings")
     .select("type")
@@ -48,6 +65,19 @@ export async function applyToCampaign(formData: FormData) {
     const typeLabel = campaign?.offering_type?.replace(/_/g, " ") ?? "matching";
     redirect(`${base}${sep}error=` + encodeURIComponent(
       `This campaign needs a ${typeLabel} offering. Add one to your storefront, or ask the brand to book another format.`));
+  }
+
+  const requiredPlatforms = campaign.platforms ?? [];
+  if (requiredPlatforms.length > 0) {
+    const { data: accounts } = await supabase
+      .from("connected_accounts")
+      .select("platform")
+      .eq("creator_id", user.id);
+    const creatorPlatforms = (accounts ?? []).map((a) => a.platform);
+    if (!creatorHasRequiredChannel(creatorPlatforms, requiredPlatforms)) {
+      redirect(`${base}${sep}error=` + encodeURIComponent(
+        "Connect an account on one of this campaign's required platforms before applying"));
+    }
   }
 
   const { error } = await supabase.from("campaign_applications").insert({
@@ -63,6 +93,12 @@ export async function applyToCampaign(formData: FormData) {
     });
     redirect(`${base}${sep}error=` + encodeURIComponent(msg));
   }
+
+  trackServerEvent("campaign_applied", user.id, {
+    campaign_id: campaignId,
+    proposed_price_cents: price,
+    over_budget: campaign ? price > campaign.budget_max_cents : false,
+  });
 
   if (campaign) {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -135,7 +171,7 @@ export async function decideApplication(formData: FormData) {
         text: `Open it on Clipline: ${site}/deals/${dealId}`,
       });
     }
-    redirect(`/deals/${dealId}`);
+    redirect(acceptRedirect(returnTo || null, dealId));
   }
 
   // RLS restricts the update to campaigns this brand owns; the update trigger

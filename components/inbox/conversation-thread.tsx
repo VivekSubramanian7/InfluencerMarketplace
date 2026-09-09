@@ -4,22 +4,26 @@ import { requireUser } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { draftReply, respondInvite, respondOffer, sendOffer } from "@/app/inbox/actions";
 import { MessageComposer } from "@/components/inbox/message-composer";
+import { SendOfferPanel } from "@/components/inbox/send-offer-panel";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { inboxCta } from "@/lib/inbox/cta";
+import { OFFER_VERB } from "@/lib/copy/taxonomy";
+import { campaignOfferContext } from "@/lib/inbox/campaign-context";
 
 export async function ConversationThread({
   conversationId,
   compact = false,
   returnTo,
+  offerOpen = false,
 }: {
   conversationId: string;
   compact?: boolean;
   returnTo?: string;
+  offerOpen?: boolean;
 }) {
   const { user, role } = await requireUser(`/inbox/${conversationId}`);
   const supabase = await createServerSupabase();
@@ -78,49 +82,65 @@ export async function ConversationThread({
         .order("price_cents")
     : { data: null };
 
-  return (
-    <div className={compact ? "p-4" : ""}>
-      {!compact && (
-        <Link href="/inbox" className="text-sm text-muted-foreground hover:text-foreground md:hidden">
-          ← Inbox
-        </Link>
-      )}
-      <h2 className={`font-semibold text-[var(--ink)] ${compact ? "text-lg" : "mt-3 text-2xl"}`}>
-        {otherLabel}
-      </h2>
-      <Badge variant="secondary" className="mt-2">
-        {conv.status === "invited" ? "Invite pending" : conv.status === "declined" ? "Declined" : "Active"}
-      </Badge>
+  const [campaignContext, brandCampaigns] = iAmBrand && conv.status === "accepted"
+    ? await Promise.all([
+        campaignOfferContext(supabase, conv.id),
+        supabase
+          .from("campaigns")
+          .select("id, title, budget_max_cents")
+          .eq("brand_id", user.id)
+          .eq("status", "open")
+          .order("created_at", { ascending: false })
+          .then(({ data }) => data ?? []),
+      ])
+    : [null, []];
 
-      {cta.kind === "accept_invite" && (
-        <div className="mt-4 flex gap-2">
-          <form action={respondInvite}>
+  const canSendOffer = iAmBrand && conv.status === "accepted" && (offerings ?? []).length > 0;
+  const offerDisabled = !!pendingOffer;
+
+  return (
+    <div className={`flex h-full flex-col ${compact ? "" : ""}`}>
+      <div className={`shrink-0 ${compact ? "p-4 pb-2" : ""}`}>
+        {!compact && (
+          <Link href="/inbox" className="text-sm text-muted-foreground hover:text-foreground md:hidden">
+            ← Inbox
+          </Link>
+        )}
+        <h2 className={`font-semibold text-[var(--ink)] ${compact ? "text-lg" : "mt-3 text-2xl"}`}>
+          {otherLabel}
+        </h2>
+        <Badge variant="secondary" className="mt-2">
+          {conv.status === "invited" ? "Invite pending" : conv.status === "declined" ? "Declined" : "Active"}
+        </Badge>
+
+        {cta.kind === "accept_invite" && (
+          <div className="mt-4 flex gap-2">
+            <form action={respondInvite}>
+              <input type="hidden" name="conversation_id" value={conv.id} />
+              <input type="hidden" name="response" value="accepted" />
+              <SubmitButton size="sm" pendingLabel="Accepting…">Accept invite</SubmitButton>
+            </form>
+          </div>
+        )}
+        {cta.kind === "wait_invite" && (
+          <p className="mt-4 text-sm text-muted-foreground">Waiting for {otherLabel} to respond.</p>
+        )}
+        {cta.kind === "accept_offer" && pendingOffer && (
+          <form action={respondOffer} className="mt-4">
+            <input type="hidden" name="offer_id" value={pendingOffer.id} />
             <input type="hidden" name="conversation_id" value={conv.id} />
             <input type="hidden" name="response" value="accepted" />
-            <Button type="submit" size="sm">Accept invite</Button>
+            <SubmitButton size="sm" pendingLabel="Accepting…">Accept offer</SubmitButton>
           </form>
-        </div>
-      )}
-      {cta.kind === "wait_invite" && (
-        <p className="mt-4 text-sm text-muted-foreground">Waiting for {otherLabel} to respond.</p>
-      )}
-      {cta.kind === "accept_offer" && pendingOffer && (
-        <form action={respondOffer} className="mt-4">
-          <input type="hidden" name="offer_id" value={pendingOffer.id} />
-          <input type="hidden" name="conversation_id" value={conv.id} />
-          <input type="hidden" name="response" value="accepted" />
-          <Button type="submit" size="sm">Accept offer</Button>
-        </form>
-      )}
-      {cta.kind === "send_offer" && (
-        <a href="#offer-section" className="mt-4 inline-block text-sm font-medium underline">
-          Send offer
-        </a>
-      )}
+        )}
+        {conv.status === "invited" && conv.invite_message && (
+          <p className="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">{conv.invite_message}</p>
+        )}
+      </div>
 
-      {conv.status === "accepted" && (
-        <section className="mt-4">
-          <ul className="flex flex-col gap-2">
+      <div className={`flex-1 overflow-y-auto ${compact ? "px-4" : ""}`}>
+        {conv.status === "accepted" && (
+          <ul className="flex flex-col gap-2 py-2">
             {(messages ?? []).map((m) => (
               <li
                 key={m.id}
@@ -133,50 +153,83 @@ export async function ConversationThread({
                 <p className="whitespace-pre-line break-words">{m.body}</p>
               </li>
             ))}
+            {(messages ?? []).length === 0 && (
+              <li className="text-sm text-muted-foreground">No messages yet. Say hello!</li>
+            )}
           </ul>
-          <div className="mt-3">
-            <MessageComposer
-              conversationId={conv.id}
-              defaultValue={draft?.body ?? ""}
-              showDraftButton={iAmBrand}
-              draftAction={draftReply}
-              returnTo={returnTo}
-            />
-          </div>
-        </section>
-      )}
+        )}
+      </div>
 
-      {iAmBrand && conv.status === "accepted" && !pendingOffer && (offerings ?? []).length > 0 && (
-        <section id="offer-section" className="mt-6 border-t border-[var(--border)] pt-4">
-          <h3 className="text-base font-semibold">Send an offer</h3>
-          <form action={sendOffer} className="mt-3 flex flex-col gap-3">
-            <input type="hidden" name="conversation_id" value={conv.id} />
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="offer-offering">Offering</Label>
-              <select
-                id="offer-offering"
-                name="offering_id"
-                required
-                className="h-10 rounded-lg border bg-background px-3 text-sm"
-              >
-                {(offerings ?? []).map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.title} (${(o.price_cents / 100).toFixed(0)})
-                  </option>
-                ))}
-              </select>
+      {conv.status === "accepted" && (
+        <div className={`shrink-0 border-t border-[var(--border)] ${compact ? "p-4" : "pt-4"}`}>
+          <MessageComposer
+            conversationId={conv.id}
+            defaultValue={draft?.body ?? ""}
+            showDraftButton={iAmBrand}
+            draftAction={draftReply}
+            returnTo={returnTo}
+          />
+
+          {canSendOffer && (
+            <div className="mt-3">
+              <SendOfferPanel open={offerOpen}>
+                {offerDisabled ? (
+                  <p className="text-sm text-muted-foreground">
+                    A pending offer is already open in this conversation.
+                  </p>
+                ) : (
+                  <form action={sendOffer} className="flex flex-col gap-3">
+                    <input type="hidden" name="conversation_id" value={conv.id} />
+                    {brandCampaigns.length > 0 && (
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="offer-campaign">Campaign (optional)</Label>
+                        <select
+                          id="offer-campaign"
+                          name="campaign_id"
+                          defaultValue={campaignContext?.campaignId ?? ""}
+                          className="h-10 rounded-lg border bg-background px-3 text-sm"
+                        >
+                          <option value="">No campaign</option>
+                          {brandCampaigns.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.title} (cap ${(c.budget_max_cents / 100).toFixed(0)})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="offer-offering">Offering</Label>
+                      <select
+                        id="offer-offering"
+                        name="offering_id"
+                        required
+                        className="h-10 rounded-lg border bg-background px-3 text-sm"
+                      >
+                        {(offerings ?? []).map((o) => (
+                          <option key={o.id} value={o.id}>
+                            {o.title} (${(o.price_cents / 100).toFixed(0)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="offer-price">Agreed price (USD)</Label>
+                      <Input id="offer-price" name="price" inputMode="decimal" required />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="offer-note">Scope note (optional)</Label>
+                      <Textarea id="offer-note" name="note" rows={2} maxLength={2000} />
+                    </div>
+                    <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">
+                      {OFFER_VERB}
+                    </SubmitButton>
+                  </form>
+                )}
+              </SendOfferPanel>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="offer-price">Agreed price (USD)</Label>
-              <Input id="offer-price" name="price" inputMode="decimal" required />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="offer-note">Scope note (optional)</Label>
-              <Textarea id="offer-note" name="note" rows={2} maxLength={2000} />
-            </div>
-            <Button type="submit" size="sm" className="self-start">Send offer</Button>
-          </form>
-        </section>
+          )}
+        </div>
       )}
     </div>
   );

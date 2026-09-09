@@ -5,13 +5,17 @@ import { touchCursor } from "@/lib/feature-cursors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { actionsFor } from "@/lib/deals/ui-actions";
 import type { DealStatus, PaymentMode } from "@/lib/deals/machine";
-import { STATUS_LABELS, DEAL_STEPS, STATUS_TO_STEP } from "@/lib/deals/constants";
+import {
+  STATUS_LABELS, DEAL_STEPS, BARTER_DEAL_STEPS,
+  STATUS_TO_STEP, STATUS_TO_STEP_PAID,
+} from "@/lib/deals/constants";
 import { markPaid, performDealAction } from "./actions";
 import { submitReview } from "./review-actions";
 import { sendThreadMessage } from "@/app/inbox/actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { ReviewModal } from "@/components/deals/review-modal";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 
 export default async function DealPage({
@@ -55,8 +59,12 @@ export default async function DealPage({
     actionsFor(deal.status as DealStatus, myRole, deal.payment_mode as PaymentMode,
                deal.revision_count, deal.revision_limit);
 
-  const statusIsAttention = deal.status === "disputed" || deal.status === "published";
-  const currentStep = STATUS_TO_STEP[deal.status as DealStatus] ?? 0;
+  const isBarter = deal.payment_mode === "barter";
+  const statusIsAttention = deal.status === "disputed" || deal.status === "published"
+    || (isBarter && deal.status === "product_sent");
+  const stepMap = isBarter ? STATUS_TO_STEP : STATUS_TO_STEP_PAID;
+  const progressSteps = isBarter ? BARTER_DEAL_STEPS : DEAL_STEPS;
+  const currentStep = stepMap[deal.status as DealStatus] ?? 0;
 
   const previewApproved = deal.status === "submitted" && (() => {
     const last = [...(events ?? [])].reverse()
@@ -85,7 +93,7 @@ export default async function DealPage({
 
       {currentStep >= 0 && (
         <div className="mt-5 flex items-center gap-1" aria-label="Deal progress">
-          {DEAL_STEPS.map((label, i) => (
+          {progressSteps.map((label, i) => (
             <div key={label} className="flex flex-1 flex-col items-center gap-1">
               <div className="flex w-full items-center">
                 <div
@@ -93,7 +101,7 @@ export default async function DealPage({
                     i <= currentStep ? "bg-primary" : "bg-border"
                   }`}
                 />
-                {i < DEAL_STEPS.length - 1 && (
+                {i < progressSteps.length - 1 && (
                   <div
                     className={`h-0.5 flex-1 transition-colors ${
                       i < currentStep ? "bg-primary" : "bg-border"
@@ -124,6 +132,11 @@ export default async function DealPage({
         <span className="font-semibold">{STATUS_LABELS[deal.status as DealStatus] ?? deal.status}</span>
       </div>
 
+      {isBarter && deal.status === "product_received" && deal.preview_due_at && (
+        <p className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--secondary)] px-4 py-3 text-sm">
+          Preview due by {new Date(deal.preview_due_at).toLocaleDateString()}.
+        </p>
+      )}
       {deal.payment_mode === "off_platform" && (
         <p className="mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 text-sm">
           Payment for this deal is handled outside the platform.
@@ -144,7 +157,7 @@ export default async function DealPage({
       )}
 
       {(actions.length > 0 || (role !== "admin" && deal.status === "completed" && !myReview)) && (
-        <section className="deal-next-steps sticky top-[72px] z-10 mt-4 rounded-2xl border border-amber bg-amber/10 p-6">
+        <section className="deal-next-steps mt-4 rounded-xl border border-amber bg-amber/10 p-6">
           <h2 className="flex items-center gap-2.5 text-base font-bold">
             <span aria-hidden className="size-2 rounded-full bg-amber" />
             Next steps
@@ -167,7 +180,7 @@ export default async function DealPage({
                         <form action={performDealAction} className="flex items-start gap-2">
                           <input type="hidden" name="deal_id" value={deal.id} />
                           <input type="hidden" name="action" value={a.action} />
-                          <Button type="submit">{a.label}</Button>
+                          <SubmitButton pendingLabel="Working…">{a.label}</SubmitButton>
                         </form>
                       </>
                     ) : (
@@ -200,13 +213,13 @@ export default async function DealPage({
                       className="w-full rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm"
                     />
                   )}
-                  <Button
-                    type="submit"
+                  <SubmitButton
+                    pendingLabel="Working…"
                     variant={a.confirm ? "outline" : "default"}
                     className={a.confirm ? "text-destructive border-destructive/40" : undefined}
                   >
                     {a.label}
-                  </Button>
+                  </SubmitButton>
                 </form>
                 )
               ))}

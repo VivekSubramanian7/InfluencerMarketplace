@@ -6,6 +6,7 @@ import { resolveReport, setCreatorSuspension } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { averageResponseTimeMs } from "@/lib/campaigns/response-time";
 
 export default async function AdminPage({
   searchParams,
@@ -16,16 +17,28 @@ export default async function AdminPage({
   const { error, saved } = await searchParams;
   const supabase = await createServerSupabase();
 
-  const [{ data: disputed }, { data: reports }, { data: creators }] = await Promise.all([
-    supabase.from("deals")
-      .select("id, offering_title, price_cents, requested_at")
-      .eq("status", "disputed").order("requested_at"),
-    supabase.from("reports")
-      .select("id, reason, deal_id, created_at")
-      .is("resolved_at", null).order("created_at"),
-    supabase.from("creator_profiles")
-      .select("user_id, handle, status").order("handle"),
-  ]);
+  const [{ data: disputed }, { data: reports }, { data: creators }, { data: responseRows }] =
+    await Promise.all([
+      supabase.from("deals")
+        .select("id, offering_title, price_cents, requested_at")
+        .eq("status", "disputed").order("requested_at"),
+      supabase.from("reports")
+        .select("id, reason, deal_id, created_at")
+        .is("resolved_at", null).order("created_at"),
+      supabase.from("creator_profiles")
+        .select("user_id, handle, status").order("handle"),
+      supabase.from("campaign_response_time")
+        .select("response_time_ms"),
+    ]);
+
+  const avgResponseMs = averageResponseTimeMs(
+    (responseRows ?? []).map((r) => Number(r.response_time_ms))
+  );
+  const avgResponseLabel = avgResponseMs === null
+    ? "No responses yet"
+    : avgResponseMs < 3600000
+      ? `${Math.round(avgResponseMs / 60000)} min`
+      : `${(avgResponseMs / 3600000).toFixed(1)} hr`;
 
   return (
     <AuthenticatedShell userId={user.id} role={role}>
@@ -40,6 +53,17 @@ export default async function AdminPage({
             Saved.
           </p>
         )}
+
+        <section className="mt-8">
+          <h2 className="text-lg font-bold">Campaign invite response time</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Average creator response from invite to accept/decline:{" "}
+            <span className="font-semibold text-foreground tabular-nums">{avgResponseLabel}</span>
+            {(responseRows ?? []).length > 0 && (
+              <span className="text-muted-foreground"> ({(responseRows ?? []).length} samples)</span>
+            )}
+          </p>
+        </section>
 
         <section className="mt-8">
           <h2 className="text-lg font-bold">Disputed deals ({(disputed ?? []).length})</h2>

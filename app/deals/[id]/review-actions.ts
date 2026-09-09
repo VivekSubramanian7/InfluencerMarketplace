@@ -7,6 +7,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { parseIntInRange, parseOptionalText } from "@/lib/storefront/validation";
 import { friendlyDbError } from "@/lib/errors";
 import { trackServerEvent } from "@/lib/analytics";
+import { reviewRevalidatePath } from "./review-target";
 
 export async function submitReview(formData: FormData) {
   const { user } = await requireUser();
@@ -38,13 +39,28 @@ export async function submitReview(formData: FormData) {
     has_body: !!body.value,
   });
 
-  // refresh the reviewed creator's public storefront
   const { data: deal } = await supabase
-    .from("deals").select("creator_id").eq("id", dealId).maybeSingle();
+    .from("deals")
+    .select("brand_id, creator_id")
+    .eq("id", dealId)
+    .maybeSingle();
   if (deal) {
-    const { data: cp } = await supabase
-      .from("creator_profiles").select("handle").eq("user_id", deal.creator_id).maybeSingle();
-    if (cp?.handle) revalidatePath(`/c/${cp.handle}`);
+    const isBrandAuthor = user.id === deal.brand_id;
+    if (isBrandAuthor) {
+      const { data: cp } = await supabase
+        .from("creator_profiles")
+        .select("handle")
+        .eq("user_id", deal.creator_id)
+        .maybeSingle();
+      if (cp?.handle) revalidatePath(reviewRevalidatePath("creator", cp.handle));
+    } else {
+      const { data: bp } = await supabase
+        .from("brand_profiles")
+        .select("slug")
+        .eq("user_id", deal.brand_id)
+        .maybeSingle();
+      if (bp?.slug) revalidatePath(reviewRevalidatePath("brand", bp.slug));
+    }
   }
 
   revalidatePath(`/deals/${dealId}`);

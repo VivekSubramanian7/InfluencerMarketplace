@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { OFFER_CTA, OFFER_VERB } from "@/lib/copy/taxonomy";
+import { campaignOfferContext } from "@/lib/inbox/campaign-context";
 
 const OFFER_LABELS: Record<string, string> = {
   pending: "Awaiting response",
@@ -114,6 +116,10 @@ export default async function ConversationPage({
 
   const hasPendingOffer = (offers ?? []).some((o) => o.status === "pending");
 
+  const campaignContext = iAmBrand && conv.status === "accepted"
+    ? await campaignOfferContext(supabase, conv.id)
+    : null;
+
   const { data: draft } = iAmBrand
     ? await supabase
         .from("agent_drafts")
@@ -146,7 +152,7 @@ export default async function ConversationPage({
             )}
             {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (offerings ?? []).length > 0 && (
               <a href="#offer-section" className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90">
-                Make an offer
+                {OFFER_CTA}
               </a>
             )}
             <Badge variant="secondary">
@@ -193,7 +199,7 @@ export default async function ConversationPage({
             <form action={respondInvite}>
               <input type="hidden" name="conversation_id" value={conv.id} />
               <input type="hidden" name="response" value="accepted" />
-              <Button type="submit" size="sm">Accept &amp; chat</Button>
+              <SubmitButton size="sm" pendingLabel="Accepting…">Accept &amp; chat</SubmitButton>
             </form>
             <form action={respondInvite}>
               <input type="hidden" name="conversation_id" value={conv.id} />
@@ -237,7 +243,7 @@ export default async function ConversationPage({
                         <input type="hidden" name="offer_id" value={o.id} />
                         <input type="hidden" name="conversation_id" value={conv.id} />
                         <input type="hidden" name="response" value="accepted" />
-                        <Button type="submit" size="sm">Accept and start the deal</Button>
+                        <SubmitButton size="sm" pendingLabel="Accepting…">Accept and start the deal</SubmitButton>
                       </form>
                       <form action={respondOffer}>
                         <input type="hidden" name="offer_id" value={o.id} />
@@ -321,7 +327,7 @@ export default async function ConversationPage({
 
         {iAmBrand && conv.status === "accepted" && !hasPendingOffer && (
           <section id="offer-section" className="mt-6 rounded-[var(--radius-tile)] border border-[var(--border)] p-5 scroll-mt-20">
-            <h2 className="text-base font-bold">Send an offer</h2>
+            <h2 className="text-base font-bold">{OFFER_VERB}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Agree on the work in chat, then put a price on it. Accepting
               starts the deal at your agreed price.
@@ -333,6 +339,14 @@ export default async function ConversationPage({
             ) : (
               <form action={sendOffer} className="mt-3 flex flex-col gap-3">
                 <input type="hidden" name="conversation_id" value={conv.id} />
+                {campaignContext && (
+                  <>
+                    <input type="hidden" name="campaign_id" value={campaignContext.campaignId} />
+                    <p className="text-xs text-muted-foreground">
+                      Capped at brand budget: ${(campaignContext.budgetMaxCents / 100).toFixed(0)}
+                    </p>
+                  </>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="offer-offering">Offering</Label>
                   <select
@@ -383,7 +397,7 @@ export default async function ConversationPage({
                     placeholder="Key messages or angles"
                   />
                 </div>
-                <Button type="submit" size="sm" className="self-start">Send offer</Button>
+                <SubmitButton size="sm" pendingLabel="Sending…" className="self-start">{OFFER_VERB}</SubmitButton>
               </form>
             )}
           </section>

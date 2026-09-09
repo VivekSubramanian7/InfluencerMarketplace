@@ -1,14 +1,15 @@
 export type DealStatus =
-  | "requested" | "accepted" | "submitted"
-  | "revision_requested" | "published" | "completed" | "cancelled" | "disputed";
+  | "requested" | "accepted" | "product_sent" | "product_received"
+  | "submitted" | "revision_requested" | "published" | "completed" | "cancelled" | "disputed";
 
 export type DealAction =
-  | "accept" | "decline" | "expire_accept" | "submit_preview"
-  | "approve_preview" | "request_revision" | "mark_published" | "approve"
+  | "accept" | "decline" | "expire_accept"
+  | "mark_product_sent" | "mark_product_received"
+  | "submit_preview" | "approve_preview" | "request_revision" | "mark_published" | "approve"
   | "auto_approve" | "cancel" | "dispute" | "resolve_release" | "resolve_refund";
 
 export type Actor = "brand" | "creator" | "system" | "admin";
-export type PaymentMode = "escrow" | "off_platform";
+export type PaymentMode = "escrow" | "off_platform" | "barter";
 
 export interface Transition {
   from: DealStatus;
@@ -19,7 +20,8 @@ export interface Transition {
 }
 
 const DISPUTABLE: DealStatus[] = [
-  "accepted", "submitted", "revision_requested", "published",
+  "accepted", "product_sent", "product_received",
+  "submitted", "revision_requested", "published",
 ];
 
 export const TRANSITIONS: Transition[] = [
@@ -30,12 +32,18 @@ export const TRANSITIONS: Transition[] = [
   // 72h accept deadline (worker)
   { from: "requested", action: "expire_accept", to: "cancelled", actor: "system", mode: null },
 
-  // production flow — creator submits directly from accepted
-  { from: "accepted", action: "submit_preview", to: "submitted", actor: "creator", mode: null },
+  // barter product shipment (barter deals only)
+  { from: "accepted", action: "mark_product_sent", to: "product_sent", actor: "brand", mode: "barter" },
+  { from: "product_sent", action: "mark_product_received", to: "product_received", actor: "creator", mode: "barter" },
+  { from: "product_received", action: "submit_preview", to: "submitted", actor: "creator", mode: "barter" },
+
+  // production flow — paid deals submit directly from accepted
+  { from: "accepted", action: "submit_preview", to: "submitted", actor: "creator", mode: "escrow" },
+  { from: "accepted", action: "submit_preview", to: "submitted", actor: "creator", mode: "off_platform" },
   { from: "revision_requested", action: "submit_preview", to: "submitted", actor: "creator", mode: null },
   { from: "submitted", action: "request_revision", to: "revision_requested", actor: "brand", mode: null },
   { from: "submitted", action: "approve_preview", to: "submitted", actor: "brand", mode: null },
-  { from: "submitted", action: "mark_published", to: "completed", actor: "creator", mode: null },
+  { from: "submitted", action: "mark_published", to: "published", actor: "creator", mode: null },
 
   // completion
   { from: "published", action: "approve", to: "completed", actor: "brand", mode: null },

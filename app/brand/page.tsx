@@ -8,13 +8,13 @@ import { unblockCreator } from "./actions";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { BulkProductSent } from "@/components/deals/bulk-product-sent";
+import { STATUS_LABELS } from "@/lib/deals/constants";
 
 const DEAL_LABELS: Record<string, string> = {
+  ...STATUS_LABELS,
   requested: "Awaiting creator",
-  accepted: "In production",
-  submitted: "Preview submitted", revision_requested: "Changes requested",
-  published: "Published, awaiting approval", completed: "Completed",
-  cancelled: "Cancelled", disputed: "Disputed",
 };
 const INVITE_LABELS: Record<string, string> = {
   invited: "Invite pending", accepted: "In conversation", declined: "Declined",
@@ -225,6 +225,15 @@ export default async function BrandOverviewPage({
           {stat("Blocked", blocked.length)}
         </div>
 
+        <BulkProductSent
+          deals={deals.filter((d) => d.payment_mode === "barter")}
+          creatorLabels={Object.fromEntries(
+            deals
+              .filter((d) => d.payment_mode === "barter")
+              .map((d) => [d.creator_id, creatorLabel(d.creator_id)])
+          )}
+        />
+
         <section className="mt-10">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-bold">Contacted creators</h2>
@@ -273,7 +282,8 @@ export default async function BrandOverviewPage({
                   (d as { payment_mode?: PaymentMode }).payment_mode ?? "off_platform"
                 );
                 const quickAction = dealActions.find(
-                  (a) => !a.confirm && !a.needsUrl && ["approve"].includes(a.action)
+                  (a) => !a.confirm && !a.needsUrl
+                    && ["approve", "mark_product_sent"].includes(a.action),
                 );
 
                 return (
@@ -297,9 +307,9 @@ export default async function BrandOverviewPage({
                       <form action={performDealAction}>
                         <input type="hidden" name="deal_id" value={d.id} />
                         <input type="hidden" name="action" value={quickAction.action} />
-                        <Button type="submit" size="sm">
+                        <SubmitButton size="sm" pendingLabel="Working…">
                           {quickAction.label}
-                        </Button>
+                        </SubmitButton>
                       </form>
                     )}
                   </li>

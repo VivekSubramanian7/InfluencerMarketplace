@@ -11,8 +11,9 @@ import { trackServerEvent } from "@/lib/analytics";
 import { ACTION_TITLES } from "@/lib/deals/constants";
 
 const USER_ACTIONS = new Set([
-  "accept", "decline", "submit_preview", "approve_preview",
-  "request_revision", "mark_published", "approve", "cancel", "dispute",
+  "accept", "decline", "mark_product_sent", "mark_product_received",
+  "submit_preview", "approve_preview", "request_revision", "mark_published",
+  "approve", "cancel", "dispute",
 ]);
 
 export async function performDealAction(formData: FormData) {

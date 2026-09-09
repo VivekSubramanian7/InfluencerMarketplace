@@ -4,7 +4,10 @@ import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters, SAVED_FILTER_KEYS } from "@/lib/discovery/filters";
 import { searchCreators, type SearchScope } from "@/lib/discovery/queries";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { deleteSearch, saveSearch, sendReachouts } from "./actions";
+import { deleteSearch, saveSearch } from "./actions";
+import { inviteToCampaign } from "@/app/campaigns/[id]/invite-actions";
+import { BulkInviteToCampaign, InviteToCampaign } from "@/components/discover/invite-to-campaign";
+import { liveCampaigns } from "@/lib/campaigns/live-campaigns";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
@@ -42,9 +45,9 @@ export default async function DiscoverPage({
   // brand context: past collaborators, blocklist, saved searches, preferences
   let scope: SearchScope = {};
   let savedSearches: { id: string; name: string; params: Record<string, string> }[] = [];
-  let usedPrefDefaults = false;
+  let brandLiveCampaigns: { id: string; title: string }[] = [];
   if (isBrand) {
-    const [dealRows, blockRows, savedRows, profileRow] = await Promise.all([
+    const [dealRows, blockRows, savedRows, campaignRows] = await Promise.all([
       supabase.from("deals").select("creator_id").eq("brand_id", user.id),
       supabase.from("brand_blocklist").select("creator_id").eq("brand_id", user.id),
       supabase
@@ -53,11 +56,15 @@ export default async function DiscoverPage({
         .eq("brand_id", user.id)
         .order("created_at"),
       supabase
-        .from("brand_profiles")
-        .select("pref_niches, pref_types")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+        .from("campaigns")
+        .select("id, title, status")
+        .eq("brand_id", user.id)
+        .order("created_at", { ascending: false }),
     ]);
+    brandLiveCampaigns = liveCampaigns(campaignRows.data ?? []).map((c) => ({
+      id: c.id,
+      title: c.title,
+    }));
     const collaborators = [...new Set((dealRows.data ?? []).map((r) => r.creator_id as string))];
     const blocked = (blockRows.data ?? []).map((r) => r.creator_id as string);
     savedSearches = (savedRows.data ?? []).map((r) => ({
@@ -65,21 +72,6 @@ export default async function DiscoverPage({
       name: r.name as string,
       params: (r.params ?? {}) as Record<string, string>,
     }));
-
-    // fresh visit with no filters: seed from onboarding preferences
-    const hasAnyParam = ["q", "niche", "country", "type", "min_price", "max_price", "tab", "page"]
-      .some((k) => params[k] !== undefined);
-    if (!hasAnyParam && profileRow.data) {
-      const prefs = profileRow.data;
-      if (prefs.pref_niches?.[0]) {
-        filters.niche = prefs.pref_niches[0];
-        usedPrefDefaults = true;
-      }
-      if (prefs.pref_types?.[0]) {
-        filters.type = prefs.pref_types[0];
-        usedPrefDefaults = true;
-      }
-    }
 
     scope =
       filters.tab === "worked"
@@ -216,15 +208,6 @@ export default async function DiscoverPage({
               />
             </div>
           </div>
-          {usedPrefDefaults && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Filtered from your brand preferences.{" "}
-              <Link href="/discover?tab=new&page=1" className="underline underline-offset-2">
-                Show everyone
-              </Link>
-              .
-            </p>
-          )}
         </form>
 
         {/* ── Quick filters / saved searches (shown when no search active) ── */}
@@ -311,8 +294,8 @@ export default async function DiscoverPage({
         )}
 
         {creators.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed p-12 text-center">
-            <p className="text-lg font-semibold">
+          <div className="mt-4 rounded-[var(--radius-tile)] border border-dashed p-12 text-center">
+            <p className="text-base font-semibold">
               {isBrand && filters.tab === "worked"
                 ? "No past collaborators yet."
                 : "No creators match those filters yet."}
@@ -334,146 +317,129 @@ export default async function DiscoverPage({
             )}
           </div>
         ) : (
-          <form action={isBrand && filters.tab === "new" ? sendReachouts : undefined}>
+          <form id="bulk-invite" action={isBrand && filters.tab === "new" ? inviteToCampaign : undefined}>
             {isBrand && filters.tab === "new" && (
               <div className="sticky top-0 z-10 -mx-6 flex items-center justify-end bg-background/95 px-6 py-2 backdrop-blur-sm">
-                <Button type="submit" size="sm" className="shrink-0">
-                  Invite selected
-                </Button>
+                <BulkInviteToCampaign campaigns={brandLiveCampaigns} formId="bulk-invite" />
               </div>
             )}
-            <ul className="card-grid mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {creators.map((c) => {
-                const initial = (c.displayName ?? c.handle).charAt(0).toUpperCase();
-                const gradient = creatorGradient(c.handle);
-                return (
-                  <li key={c.userId} className="relative">
+            <div className="mt-4 overflow-x-auto rounded-[var(--radius-tile)] border border-[var(--border)]">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--divider)] text-left text-[13px] font-medium text-[var(--muted)]">
                     {isBrand && filters.tab === "new" && (
-                      <div className="absolute left-3 top-3 z-10">
-                        <button
-                          type="submit"
-                          form={`invite-${c.userId}`}
-                          aria-label={`Invite ${c.displayName ?? c.handle} to chat`}
-                          className="grid size-8 place-items-center rounded-full bg-white/90 shadow-card text-muted-foreground transition-all hover:scale-110 hover:bg-primary hover:text-primary-foreground"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                          </svg>
-                        </button>
-                      </div>
+                      <th className="w-10 py-2.5 pl-3 pr-1">
+                        <span className="sr-only">Select</span>
+                      </th>
                     )}
-                    {isBrand && filters.tab === "new" && (
-                      <label className="absolute right-3 top-3 z-10 grid size-8 cursor-pointer place-items-center rounded-full bg-white/90 shadow-card transition-transform hover:scale-110">
-                        <input
-                          type="checkbox"
-                          name="creator_id"
-                          value={c.userId}
-                          aria-label={`Select ${c.displayName ?? c.handle} for reachout`}
-                          className="size-4 accent-primary"
-                        />
-                      </label>
-                    )}
-                    <Link
-                      href={`/c/${c.handle}`}
-                      className="group flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover"
-                    >
-                      <div
-                        aria-hidden
-                        className="h-24 transition-[height] duration-200 group-hover:h-[6.5rem]"
-                        style={{ background: gradient.css }}
-                      />
-                      <div className="-mt-7 flex items-end gap-3 px-5">
-                        <span
-                          aria-hidden
-                          className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white text-2xl font-black shadow-card ring-2 ring-white transition-transform duration-200 group-hover:scale-105"
-                          style={{ color: gradient.deep }}
-                        >
-                          {initial}
-                        </span>
-                        <div className="min-w-0 pb-0.5">
-                          <p className="flex items-center gap-1.5 font-bold">
-                            <span className="truncate">
-                              {c.displayName ?? `@${c.handle}`}
+                    <th className="py-2.5 pl-4 pr-2">Creator</th>
+                    <th className="px-2 py-2.5">Niches</th>
+                    <th className="px-2 py-2.5">Country</th>
+                    <th className="px-2 py-2.5 text-right">Rating</th>
+                    <th className="px-2 py-2.5 text-right">From</th>
+                    <th className="px-2 py-2.5 text-right">Offerings</th>
+                    <th className="w-10 py-2.5 pr-4"><span className="sr-only">Action</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {creators.map((c) => {
+                    const initial = (c.displayName ?? c.handle).charAt(0).toUpperCase();
+                    const gradient = creatorGradient(c.handle);
+                    return (
+                      <tr key={c.userId} className="group border-b border-[var(--divider)] last:border-0 transition-colors hover:bg-[var(--row-hover)]">
+                        {isBrand && filters.tab === "new" && (
+                          <td className="py-2 pl-3 pr-1 align-middle">
+                            <input
+                              type="checkbox"
+                              name="creator_id"
+                              value={c.userId}
+                              aria-label={`Select ${c.displayName ?? c.handle}`}
+                              className="size-4 accent-primary"
+                            />
+                          </td>
+                        )}
+                        <td className="py-2 pl-4 pr-2 align-middle">
+                          <Link href={`/c/${c.handle}`} className="flex items-center gap-3 hover:underline underline-offset-2">
+                            <span
+                              aria-hidden
+                              className="grid size-8 shrink-0 place-items-center rounded-lg text-sm font-bold"
+                              style={{ background: gradient.css, color: gradient.deep }}
+                            >
+                              {initial}
                             </span>
-                            {c.avgRating !== null && (
-                              <span className="shrink-0 text-sm font-semibold">
-                                <span className="text-amber">★</span> {c.avgRating}
-                                <span className="ml-0.5 font-normal text-muted-foreground tabular-nums">
-                                  ({c.ratingCount})
-                                </span>
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium">
+                                {c.displayName ?? `@${c.handle}`}
+                                {c.verified && (
+                                  <span
+                                    title="Verified"
+                                    className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-amber/15 px-1.5 py-0.5 text-[11px] font-semibold text-amber-foreground align-middle"
+                                  >
+                                    <span aria-hidden>✓</span> Verified
+                                  </span>
+                                )}
                               </span>
-                            )}
-                          </p>
-                          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <span className="truncate">
-                              @{c.handle}
-                              {c.country ? ` · ${c.country}` : ""}
+                              <span className="block truncate text-[13px] text-[var(--muted)]">@{c.handle}</span>
                             </span>
-                            {c.verified && (
-                              <span
-                                title="Verified creator"
-                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber/15 px-1.5 py-0.5 text-[11px] font-semibold text-amber-foreground"
-                              >
-                                <span aria-hidden>✓</span> Verified
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-1 flex-col px-5 pb-5">
-                      {c.bio && (
-                        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                          {c.bio}
-                        </p>
-                      )}
-                      {c.niches.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {c.niches.slice(0, 3).map((n) => (
-                            <Badge key={n} variant="secondary" className="font-normal">
-                              {n}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      <div className="mt-auto pt-4 flex items-center justify-between">
-                        <div className="min-w-0">
-                          {c.minPriceCents !== null ? (
-                            <p className="text-sm">
-                              From{" "}
-                              <span className="text-lg font-extrabold tabular-nums text-primary">
-                                ${(c.minPriceCents / 100).toFixed(0)}
-                              </span>{" "}
-                              <span className="text-muted-foreground">
-                                · {c.offeringCount} offering{c.offeringCount === 1 ? "" : "s"}
-                              </span>
-                            </p>
+                          </Link>
+                        </td>
+                        <td className="px-2 py-2 align-middle">
+                          <div className="flex flex-wrap gap-1">
+                            {c.niches.slice(0, 2).map((n) => (
+                              <Badge key={n} variant="secondary" className="font-normal text-xs">
+                                {n}
+                              </Badge>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 align-middle text-[var(--muted)]">
+                          {c.country ?? "—"}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-right tabular-nums">
+                          {c.avgRating !== null ? (
+                            <span>
+                              <span className="text-amber" aria-hidden>★</span>{" "}
+                              {c.avgRating}
+                              <span className="ml-0.5 text-[var(--muted)]">({c.ratingCount})</span>
+                            </span>
                           ) : (
-                            <p className="text-sm text-muted-foreground">No offerings listed</p>
+                            <span className="text-[var(--muted)]">—</span>
                           )}
-                        </div>
-                        <span
-                          aria-hidden
-                          className="grid size-8 place-items-center rounded-full bg-secondary text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground"
-                        >
-                          →
-                        </span>
-                      </div>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                        </td>
+                        <td className="px-2 py-2 align-middle text-right tabular-nums font-semibold">
+                          {c.minPriceCents !== null
+                            ? `$${(c.minPriceCents / 100).toFixed(0)}`
+                            : <span className="font-normal text-[var(--muted)]">—</span>}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-right tabular-nums text-[var(--muted)]">
+                          {c.offeringCount || "—"}
+                        </td>
+                        <td className="py-2 pr-4 align-middle">
+                          {isBrand && filters.tab === "new" ? (
+                            <InviteToCampaign
+                              campaigns={brandLiveCampaigns}
+                              creatorId={c.userId}
+                              redirectTo="/discover"
+                              iconOnly
+                            />
+                          ) : (
+                            <Link
+                              href={`/c/${c.handle}`}
+                              className="grid size-7 place-items-center rounded text-[var(--muted)] transition-colors group-hover:bg-secondary group-hover:text-foreground"
+                              aria-label={`View ${c.displayName ?? c.handle}`}
+                            >
+                              →
+                            </Link>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </form>
         )}
-
-        {creators.length > 0 && isBrand && filters.tab === "new" &&
-          creators.map((c) => (
-            <form key={c.userId} id={`invite-${c.userId}`} action={sendReachouts} hidden>
-              <input type="hidden" name="creator_id" value={c.userId} />
-            </form>
-          ))
-        }
 
         {totalPages > 1 && (
           <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-5">

@@ -2,34 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { bulkArchiveConversations } from "@/app/inbox/actions";
+import { ConversationRow, type ConversationListItem } from "@/components/inbox/conversation-row";
+import { toggleSelection } from "@/components/inbox/selection";
 import { Input } from "@/components/ui/input";
+import { SubmitButton } from "@/components/ui/submit-button";
 
-const STATUS_LABELS: Record<string, string> = {
-  invited: "Invite pending",
-  accepted: "Active",
-  declined: "Declined",
-};
-
-function timeAgo(iso: string): string {
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
-}
-
-export interface ConversationRow {
-  id: string;
-  status: string;
-  label: string;
-  lastMessage: { body: string; senderIsMe: boolean; created_at: string } | null;
-  waiting: boolean;
-}
+export type { ConversationListItem };
 
 export function ConversationList({
   conversations,
@@ -38,23 +17,40 @@ export function ConversationList({
   role,
   hasFilters = false,
 }: {
-  conversations: ConversationRow[];
+  conversations: ConversationListItem[];
   status: string | null;
   totalCount: number;
   role: string;
   hasFilters?: boolean;
 }) {
   const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const filtered = search
     ? conversations.filter((c) => c.label.toLowerCase().includes(search.toLowerCase()))
     : conversations;
 
+  const filterLabel = status && status !== "all" ? ` of ${totalCount}` : "";
+
   return (
     <section className="mt-8">
+      {selectedIds.size > 0 && status !== "archived" && (
+        <form
+          action={bulkArchiveConversations}
+          className="sticky top-0 z-10 mb-3 flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2"
+        >
+          {[...selectedIds].map((id) => (
+            <input key={id} type="hidden" name="conversation_id" value={id} />
+          ))}
+          <span className="text-sm font-medium tabular-nums">{selectedIds.size} selected</span>
+          <SubmitButton size="sm" pendingLabel="Archiving…">Archive selected</SubmitButton>
+        </form>
+      )}
+
       <h2 className="text-lg font-bold">
         Conversations
         <span className="ml-2 text-sm font-medium text-muted-foreground tabular-nums">
-          ({filtered.length}{status && status !== "active" ? ` of ${totalCount}` : ""})
+          ({filtered.length}{filterLabel})
         </span>
       </h2>
       <Input
@@ -92,80 +88,14 @@ export function ConversationList({
           )}
         </div>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2">
+        <ul className="mt-3 flex flex-col divide-y divide-[var(--divider)]">
           {filtered.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/inbox?c=${c.id}`}
-                className="hidden items-center gap-4 rounded-lg border border-transparent px-2 py-3 transition-colors hover:bg-[var(--row-hover)] md:flex"
-              >
-                <span
-                  aria-hidden
-                  className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--ground)] text-xs font-semibold text-[var(--ink)]"
-                >
-                  {c.label.charAt(0).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    {c.waiting && (
-                      <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
-                    )}
-                    <span className={`truncate ${c.waiting ? "font-bold" : "font-medium"}`}>
-                      {c.label}
-                    </span>
-                  </span>
-                  {c.lastMessage && (
-                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                      {c.lastMessage.senderIsMe ? "You: " : ""}
-                      {c.lastMessage.body.slice(0, 80)}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Badge variant="secondary">{STATUS_LABELS[c.status] ?? c.status}</Badge>
-                  {c.lastMessage && (
-                    <span className="text-xs text-muted-foreground">
-                      {timeAgo(c.lastMessage.created_at)}
-                    </span>
-                  )}
-                </div>
-              </Link>
-              <Link
-                href={`/inbox/${c.id}`}
-                className="flex items-center gap-4 rounded-lg border border-transparent px-2 py-3 transition-colors hover:bg-[var(--row-hover)] md:hidden"
-              >
-                <span
-                  aria-hidden
-                  className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--ground)] text-xs font-semibold text-[var(--ink)]"
-                >
-                  {c.label.charAt(0).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    {c.waiting && (
-                      <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
-                    )}
-                    <span className={`truncate ${c.waiting ? "font-semibold" : "font-medium"}`}>
-                      {c.label}
-                    </span>
-                  </span>
-                  {c.lastMessage && (
-                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                      {c.lastMessage.senderIsMe ? "You: " : ""}
-                      {c.lastMessage.body.slice(0, 80)}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Badge variant="secondary">{STATUS_LABELS[c.status] ?? c.status}</Badge>
-                  {c.lastMessage && (
-                    <span className="text-xs text-muted-foreground">
-                      {timeAgo(c.lastMessage.created_at)}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </li>
+            <ConversationRow
+              key={c.id}
+              item={c}
+              selected={selectedIds.has(c.id)}
+              onToggle={(id) => setSelectedIds((prev) => toggleSelection(prev, id))}
+            />
           ))}
         </ul>
       )}
