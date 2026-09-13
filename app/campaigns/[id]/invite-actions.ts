@@ -74,10 +74,11 @@ export async function inviteToCampaign(formData: FormData) {
     .maybeSingle();
   const campaignTitle = campaignRow?.title ?? "Untitled campaign";
 
-  const { data: creatorRows } = await supabase
+  const { data: creatorRows, error: creatorErr } = await supabase
     .from("creator_profiles")
     .select("user_id, handle")
     .in("user_id", creatorIds);
+  console.log("[invite] creatorIds:", creatorIds, "rows:", creatorRows, "err:", creatorErr);
   const creatorList = (creatorRows ?? []).map((c) => `@${c.handle}`).join(", ");
 
   sendTelegramMessage(
