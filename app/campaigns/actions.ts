@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { parsePriceCents, parseText } from "@/lib/storefront/validation";
+import { parsePriceCents, parseText, parseOptionalText, parseIntInRange } from "@/lib/storefront/validation";
 import { friendlyDbError } from "@/lib/errors";
 
 const OFFERING_TYPES = ["dedicated_video", "integration", "short_form_post", "ugc_video"] as const;
@@ -24,17 +24,32 @@ export async function createCampaign(formData: FormData) {
   const title = parseText(String(formData.get("title") ?? ""), 80);
   const description = parseText(String(formData.get("description") ?? ""), 2000);
   const type = String(formData.get("type") ?? "");
-  const budgetMin = parsePriceCents(String(formData.get("budget_min") ?? ""));
-  const budgetMax = parsePriceCents(String(formData.get("budget_max") ?? ""));
+  const isBarter = formData.get("is_barter") === "on";
+  const budgetMin = isBarter ? 0 : parsePriceCents(String(formData.get("budget_min") ?? ""));
+  const budgetMax = isBarter ? 0 : parsePriceCents(String(formData.get("budget_max") ?? ""));
   const applyBy = parseApplyBy(String(formData.get("apply_by") ?? ""));
+
+  // New fields
+  const productId = String(formData.get("product_id") ?? "").trim() || null;
+  const buyerPersona = parseOptionalText(String(formData.get("buyer_persona") ?? ""), 1000);
+  const targetLocation = parseOptionalText(String(formData.get("target_location") ?? ""), 200);
+  const targetLanguage = parseOptionalText(String(formData.get("target_language") ?? ""), 100);
+  const contentForm = parseOptionalText(String(formData.get("content_form") ?? ""), 100);
+  const script = parseOptionalText(String(formData.get("script") ?? ""), 5000);
+  const durationRaw = String(formData.get("duration_seconds") ?? "").trim();
+  const durationSeconds = durationRaw ? parseIntInRange(durationRaw, 1, 86400) : null;
+  const expectedLiveDate = parseApplyBy(String(formData.get("expected_live_date") ?? ""));
 
   if (
     !title || !description ||
     !OFFERING_TYPES.includes(type as (typeof OFFERING_TYPES)[number]) ||
-    !budgetMin || !budgetMax || budgetMax < budgetMin || !applyBy.ok
+    (!isBarter && (!budgetMin || !budgetMax || budgetMax < budgetMin)) ||
+    !applyBy.ok || !buyerPersona.ok || !targetLocation.ok || !targetLanguage.ok ||
+    !contentForm.ok || !script.ok || !expectedLiveDate.ok ||
+    (durationRaw && durationSeconds === null)
   ) {
     redirect("/campaigns?error=" + encodeURIComponent(
-      "Check the form: title (≤80), description (≤2000), budget $1–$1,000,000 with max ≥ min, and a valid apply-by date"));
+      "Check the form fields and try again"));
   }
 
   const { data: campaign, error } = await supabase
@@ -44,10 +59,19 @@ export async function createCampaign(formData: FormData) {
       title,
       description,
       offering_type: type,
-      budget_min_cents: budgetMin,
-      budget_max_cents: budgetMax,
+      budget_min_cents: isBarter ? 0 : budgetMin,
+      budget_max_cents: isBarter ? 0 : budgetMax,
       apply_by: applyBy.value,
       visibility: "public",
+      product_id: productId,
+      buyer_persona: buyerPersona.ok ? buyerPersona.value : null,
+      target_location: targetLocation.ok ? targetLocation.value : null,
+      target_language: targetLanguage.ok ? targetLanguage.value : null,
+      content_form: contentForm.ok ? contentForm.value : null,
+      script: script.ok ? script.value : null,
+      duration_seconds: durationSeconds,
+      is_barter: isBarter,
+      expected_live_date: expectedLiveDate.ok ? expectedLiveDate.value : null,
     })
     .select("id")
     .single();
@@ -95,13 +119,31 @@ export async function editCampaign(formData: FormData) {
 
   const title = parseText(String(formData.get("title") ?? ""), 80);
   const description = parseText(String(formData.get("description") ?? ""), 2000);
-  const budgetMin = parsePriceCents(String(formData.get("budget_min") ?? ""));
-  const budgetMax = parsePriceCents(String(formData.get("budget_max") ?? ""));
+  const isBarter = formData.get("is_barter") === "on";
+  const budgetMin = isBarter ? 0 : parsePriceCents(String(formData.get("budget_min") ?? ""));
+  const budgetMax = isBarter ? 0 : parsePriceCents(String(formData.get("budget_max") ?? ""));
   const applyBy = parseApplyBy(String(formData.get("apply_by") ?? ""));
 
-  if (!title || !description || !budgetMin || !budgetMax || budgetMax < budgetMin || !applyBy.ok) {
+  // New fields
+  const productId = String(formData.get("product_id") ?? "").trim() || null;
+  const buyerPersona = parseOptionalText(String(formData.get("buyer_persona") ?? ""), 1000);
+  const targetLocation = parseOptionalText(String(formData.get("target_location") ?? ""), 200);
+  const targetLanguage = parseOptionalText(String(formData.get("target_language") ?? ""), 100);
+  const contentForm = parseOptionalText(String(formData.get("content_form") ?? ""), 100);
+  const script = parseOptionalText(String(formData.get("script") ?? ""), 5000);
+  const durationRaw = String(formData.get("duration_seconds") ?? "").trim();
+  const durationSeconds = durationRaw ? parseIntInRange(durationRaw, 1, 86400) : null;
+  const expectedLiveDate = parseApplyBy(String(formData.get("expected_live_date") ?? ""));
+
+  if (
+    !title || !description ||
+    (!isBarter && (!budgetMin || !budgetMax || budgetMax < budgetMin)) ||
+    !applyBy.ok || !buyerPersona.ok || !targetLocation.ok || !targetLanguage.ok ||
+    !contentForm.ok || !script.ok || !expectedLiveDate.ok ||
+    (durationRaw && durationSeconds === null)
+  ) {
     redirect(`${base}${sep}error=` + encodeURIComponent(
-      "Check the form: title (≤80), description (≤2000), budget $1–$1,000,000 with max ≥ min, and a valid date"));
+      "Check the form fields and try again"));
   }
 
   const { error } = await supabase
@@ -109,9 +151,18 @@ export async function editCampaign(formData: FormData) {
     .update({
       title,
       description,
-      budget_min_cents: budgetMin,
-      budget_max_cents: budgetMax,
+      budget_min_cents: isBarter ? 0 : budgetMin,
+      budget_max_cents: isBarter ? 0 : budgetMax,
       apply_by: applyBy.value,
+      product_id: productId,
+      buyer_persona: buyerPersona.ok ? buyerPersona.value : null,
+      target_location: targetLocation.ok ? targetLocation.value : null,
+      target_language: targetLanguage.ok ? targetLanguage.value : null,
+      content_form: contentForm.ok ? contentForm.value : null,
+      script: script.ok ? script.value : null,
+      duration_seconds: durationSeconds,
+      is_barter: isBarter,
+      expected_live_date: expectedLiveDate.ok ? expectedLiveDate.value : null,
     })
     .eq("id", id)
     .eq("brand_id", user.id);

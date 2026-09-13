@@ -192,7 +192,7 @@ async function BrandCampaigns({
   selectedId: string | null;
   filterSp: URLSearchParams;
 }) {
-  const [{ data: campaigns, error }, { count: liveCreators }] = await Promise.all([
+  const [{ data: campaigns, error }, { count: liveCreators }, { data: brandProducts }] = await Promise.all([
     supabase
       .from("campaigns")
       .select("id, title, description, offering_type, budget_min_cents, budget_max_cents, apply_by, status, created_at")
@@ -202,6 +202,11 @@ async function BrandCampaigns({
       .from("creator_profiles")
       .select("id", { count: "exact", head: true })
       .eq("status", "live"),
+    supabase
+      .from("brand_products")
+      .select("id, name")
+      .eq("brand_id", userId)
+      .order("name", { ascending: true }),
   ]);
   if (error) throw new Error("campaigns query failed: " + error.message);
 
@@ -243,6 +248,7 @@ async function BrandCampaigns({
           budget_max_cents: c.budget_max_cents,
         }))}
         liveCreatorCount={liveCreators ?? 0}
+        products={(brandProducts ?? []).map((p) => ({ id: p.id, name: p.name }))}
       />
       {filtered.length === 0 && tokens.length > 0 ? (
         <div className="mt-6 text-center">
