@@ -88,10 +88,10 @@ export function BulkProposals({
                 </Button>
               </form>
               <details className="group">
-                <summary className="cursor-pointer">
-                  <Button type="button" variant="outline" size="sm" asChild>
-                    <span>Decline {selected.size}</span>
-                  </Button>
+                <summary className="cursor-pointer list-none">
+                  <button type="button" className="inline-flex h-8 items-center rounded-lg border border-input bg-background px-3 text-sm font-medium hover:bg-secondary">
+                    Decline {selected.size}
+                  </button>
                 </summary>
                 <form action={bulkDecideApplications} className="mt-2 flex flex-col gap-2">
                   <input type="hidden" name="campaign_id" value={campaignId} />
@@ -183,10 +183,10 @@ export function BulkProposals({
                     <Button type="submit" size="sm">Accept</Button>
                   </form>
                   <details className="group">
-                    <summary className="cursor-pointer">
-                      <Button type="button" variant="outline" size="sm" asChild>
-                        <span>Decline</span>
-                      </Button>
+                    <summary className="cursor-pointer list-none">
+                      <button type="button" className="inline-flex h-8 items-center rounded-lg border border-input bg-background px-3 text-sm font-medium hover:bg-secondary">
+                        Decline
+                      </button>
                     </summary>
                     <form action={decideApplication} className="mt-2 flex flex-col gap-2">
                       <input type="hidden" name="campaign_id" value={campaignId} />

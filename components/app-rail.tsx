@@ -51,11 +51,18 @@ export function AppRail({
   const pathname = usePathname();
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const core: NavItem[] = [
-    { href: "/inbox", label: "Inbox", icon: MessageIcon, badge: unreadInbox ? 1 : 0 },
-    { href: "/deals", label: "Deals", icon: HandshakeIcon, badge: unreadDeals ? 1 : 0 },
-    { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, badge: unreadCampaigns ? 1 : 0 },
-  ];
+  const core: NavItem[] =
+    role === "brand"
+      ? [
+          { href: "/discover", label: "Discover", icon: SearchIcon },
+          { href: "/deals", label: "Deals", icon: HandshakeIcon, badge: unreadDeals ? 1 : 0 },
+          { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, badge: unreadCampaigns ? 1 : 0 },
+        ]
+      : [
+          { href: "/inbox", label: "Inbox", icon: MessageIcon, badge: unreadInbox ? 1 : 0 },
+          { href: "/deals", label: "Deals", icon: HandshakeIcon, badge: unreadDeals ? 1 : 0 },
+          { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, badge: unreadCampaigns ? 1 : 0 },
+        ];
 
   const business: NavItem[] =
     role === "creator"
@@ -68,7 +75,6 @@ export function AppRail({
       : role === "admin"
         ? [{ href: "/admin", label: "Admin", icon: DashboardIcon }]
         : [
-            { href: "/discover", label: "Discover", icon: SearchIcon },
             { href: "/brand", label: "Brand home", icon: HomeIcon },
           ];
 
