@@ -91,7 +91,7 @@ export function InviteToCampaign({
       {open && (
         <ul
           role="menu"
-          className="absolute z-20 mt-1 min-w-[12rem] rounded-lg border border-[var(--border)] bg-background py-1 shadow-lg"
+          className="absolute z-20 mt-1 min-w-[12rem] rounded-lg border border-[var(--border)] bg-background py-1 shadow-lg text-foreground"
         >
           {campaigns.map((c) => (
             <li key={c.id} role="none">
@@ -102,7 +102,6 @@ export function InviteToCampaign({
                 <button
                   type="submit"
                   className="w-full px-3 py-2 text-left text-sm hover:bg-secondary"
-                  onClick={() => setOpen(false)}
                 >
                   {c.title}
                 </button>

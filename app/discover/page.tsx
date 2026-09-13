@@ -6,7 +6,8 @@ import { searchCreators, type SearchScope } from "@/lib/discovery/queries";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { deleteSearch, saveSearch } from "./actions";
 import { inviteToCampaign } from "@/app/campaigns/[id]/invite-actions";
-import { BulkInviteToCampaign, InviteToCampaign } from "@/components/discover/invite-to-campaign";
+import { InviteToCampaign } from "@/components/discover/invite-to-campaign";
+import { BulkInviteWrapper } from "@/components/discover/bulk-invite-wrapper";
 import { liveCampaigns } from "@/lib/campaigns/live-campaigns";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { creatorGradient } from "@/lib/identity/gradient";
@@ -326,7 +327,7 @@ export default async function DiscoverPage({
           <form id="bulk-invite" action={isBrand && filters.tab === "new" ? inviteToCampaign : undefined}>
             {isBrand && filters.tab === "new" && (
               <div className="sticky top-0 z-10 -mx-6 flex items-center justify-end bg-background/95 px-6 py-2 backdrop-blur-sm">
-                <BulkInviteToCampaign campaigns={brandLiveCampaigns} formId="bulk-invite" />
+                <BulkInviteWrapper campaigns={brandLiveCampaigns} formId="bulk-invite" />
               </div>
             )}
             <div className="mt-4 overflow-x-auto rounded-[var(--radius-tile)] border border-[var(--border)]">

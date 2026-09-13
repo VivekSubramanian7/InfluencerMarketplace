@@ -15,7 +15,7 @@ export default async function OnboardingProfilePage({
   const [{ data: p }, { data: socials }] = await Promise.all([
     supabase
       .from("creator_profiles")
-      .select("handle, bio, niches, country, languages, status")
+      .select("handle, bio, niches, country, languages, status, shipping_address, city, age, gender, interested_in_paid")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase

@@ -11,7 +11,15 @@ export interface IngestProposal {
   description: string;
   tone: string;
   niches: string[];
-  products: { name: string; url?: string; description?: string }[];
+  products: {
+    name: string;
+    url?: string;
+    description?: string;
+    target_age_min?: number;
+    target_age_max?: number;
+    target_gender?: string;
+    target_location?: string;
+  }[];
 }
 
 const PROPOSAL_SCHEMA = {
@@ -34,6 +42,10 @@ const PROPOSAL_SCHEMA = {
           name: { type: "string", maxLength: 120 },
           url: { type: "string", maxLength: 500 },
           description: { type: "string", maxLength: 500 },
+          target_age_min: { type: "number" },
+          target_age_max: { type: "number" },
+          target_gender: { type: "string", enum: ["male", "female", "all"] },
+          target_location: { type: "string", maxLength: 200 },
         },
       },
     },
@@ -76,6 +88,9 @@ export async function ingestWebsite(url: string): Promise<IngestProposal> {
       "up to 8 lowercase content-niche tags an influencer search would use " +
       "(e.g. beauty, fitness, tech, food, gaming, fashion, travel, parenting), " +
       "and up to 12 concrete products or SKUs with absolute URLs when visible. " +
+      "For each product also infer targeting where evident: target_age_min and " +
+      "target_age_max as integers (13-100), target_gender as one of male/female/all, " +
+      "and target_location as a plain string (city, country, or region). " +
       "If the text is not a brand/company site, return empty strings and arrays.",
     prompt: `Website: ${url}\n\n<website_text>\n${text}\n</website_text>`,
     schema: PROPOSAL_SCHEMA,
@@ -96,6 +111,20 @@ export async function ingestWebsite(url: string): Promise<IngestProposal> {
         name: p.name.trim().slice(0, 120),
         url: p.url && /^https?:\/\//i.test(p.url) ? p.url.slice(0, 500) : undefined,
         description: p.description?.trim().slice(0, 500) || undefined,
+        target_age_min:
+          typeof p.target_age_min === "number" && p.target_age_min >= 13 && p.target_age_min <= 100
+            ? p.target_age_min
+            : undefined,
+        target_age_max:
+          typeof p.target_age_max === "number" && p.target_age_max >= 13 && p.target_age_max <= 100
+            ? p.target_age_max
+            : undefined,
+        target_gender: ["male", "female", "all"].includes(p.target_gender ?? "")
+          ? p.target_gender
+          : undefined,
+        target_location: typeof p.target_location === "string" && p.target_location.trim()
+          ? p.target_location.trim().slice(0, 200)
+          : undefined,
       }))
       .slice(0, 12),
   };

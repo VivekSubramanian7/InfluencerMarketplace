@@ -23,14 +23,20 @@ type CampaignTemplate = {
   budget_max_cents: number;
 };
 
+type BrandProduct = { id: string; name: string };
+
 export function TemplatePicker({
   campaigns,
   liveCreatorCount,
+  products,
+  autoOpen,
 }: {
   campaigns: CampaignTemplate[];
   liveCreatorCount: number;
+  products: BrandProduct[];
+  autoOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen ?? false);
   const [mode, setMode] = useState<"choose" | "blank" | "template">("choose");
   const [selected, setSelected] = useState<CampaignTemplate | null>(null);
 
@@ -157,6 +163,71 @@ export function TemplatePicker({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="apply_by">Applications close (optional)</Label>
               <Input id="apply_by" name="apply_by" type="date" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product_id">Product</Label>
+              <select
+                id="product_id"
+                name="product_id"
+                className="h-10 rounded-lg border bg-background px-3 text-sm"
+                defaultValue=""
+              >
+                <option value="">None</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="buyer_persona">Buyer persona</Label>
+              <Textarea
+                id="buyer_persona"
+                name="buyer_persona"
+                rows={2}
+                placeholder="Who is the target buyer? Age, interests, location…"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="target_location">Target location</Label>
+                <Input id="target_location" name="target_location" placeholder="e.g. US, Europe" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="target_language">Language</Label>
+                <Input id="target_language" name="target_language" placeholder="e.g. English" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="content_form">Content form</Label>
+              <select
+                id="content_form"
+                name="content_form"
+                className="h-10 rounded-lg border bg-background px-3 text-sm"
+                defaultValue=""
+              >
+                <option value="">Any</option>
+                <option value="reel">Reel</option>
+                <option value="story">Story</option>
+                <option value="post">Post</option>
+                <option value="video">Video</option>
+                <option value="live">Live</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="script">Script / brief</Label>
+              <Textarea id="script" name="script" rows={4} placeholder="What should the creator say or show?" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="duration_seconds">Duration (seconds)</Label>
+              <Input id="duration_seconds" name="duration_seconds" type="number" min={1} placeholder="e.g. 60" />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="is_barter" className="size-4 accent-primary" />
+              This is a barter deal (product exchange, no payment)
+            </label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="expected_live_date">Expected live date</Label>
+              <Input id="expected_live_date" name="expected_live_date" type="date" />
             </div>
             <div className="flex gap-2">
               <Button type="submit">Start campaign</Button>

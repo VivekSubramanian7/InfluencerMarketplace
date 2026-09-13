@@ -137,6 +137,13 @@ export default async function DealPage({
           Preview due by {new Date(deal.preview_due_at).toLocaleDateString()}.
         </p>
       )}
+      {isBarter && deal.shipping_address_snapshot && myRole === "brand" &&
+        ["accepted", "product_sent"].includes(deal.status) && (
+        <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--secondary)] px-4 py-3 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ship product to</p>
+          <p className="mt-1 whitespace-pre-line">{deal.shipping_address_snapshot}</p>
+        </div>
+      )}
       {deal.payment_mode === "off_platform" && (
         <p className="mt-4 rounded-lg border border-amber bg-amber/15 px-4 py-3 text-sm">
           Payment for this deal is handled outside the platform.
@@ -200,6 +207,14 @@ export default async function DealPage({
                       required
                       placeholder={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
                       aria-label={a.needsUrl === "preview_url" ? "Link to your preview" : "Link to the live post"}
+                      className="w-full"
+                    />
+                  )}
+                  {a.action === "mark_product_sent" && (
+                    <Input
+                      name="coupon_code"
+                      placeholder="Coupon code (optional — or ship the product)"
+                      aria-label="Coupon code"
                       className="w-full"
                     />
                   )}
@@ -267,6 +282,12 @@ export default async function DealPage({
             Revisions used: {deal.revision_count} of {deal.revision_limit}
           </p>
         </section>
+      )}
+      {deal.coupon_code && (
+        <div className="mt-4 rounded-lg border border-[var(--border)] px-4 py-3 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Coupon code</p>
+          <p className="mt-1 font-mono font-semibold">{deal.coupon_code}</p>
+        </div>
       )}
 
       {brief && (

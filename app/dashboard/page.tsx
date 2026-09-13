@@ -50,7 +50,7 @@ export default async function DashboardPage({
     { count: portfolioCount },
     { count: socialCount },
   ] = await Promise.all([
-    supabase.from("creator_profiles").select("handle, bio, niches, country, languages, status").eq("user_id", user.id).maybeSingle(),
+    supabase.from("creator_profiles").select("handle, bio, niches, country, languages, status, shipping_address, city, age, gender, interested_in_paid").eq("user_id", user.id).maybeSingle(),
     supabase.from("offerings").select("id", { count: "exact", head: true }).eq("creator_id", user.id),
     supabase.from("portfolio_items").select("id", { count: "exact", head: true }).eq("creator_id", user.id),
     supabase.from("connected_accounts").select("id", { count: "exact", head: true }).eq("creator_id", user.id),

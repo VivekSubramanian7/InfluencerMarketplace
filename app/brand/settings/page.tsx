@@ -199,6 +199,33 @@ export default async function BrandSettingsPage({
                 <Label htmlFor="product-description">Short description (optional)</Label>
                 <Input id="product-description" name="description" maxLength={500} />
               </div>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="product-age-min">Min age (optional)</Label>
+                  <Input id="product-age-min" name="target_age_min" type="number" min={13} max={100} className="w-24" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="product-age-max">Max age (optional)</Label>
+                  <Input id="product-age-max" name="target_age_max" type="number" min={13} max={100} className="w-24" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="product-gender">Gender (optional)</Label>
+                  <select
+                    id="product-gender"
+                    name="target_gender"
+                    className="h-10 rounded-lg border bg-background px-3 text-sm"
+                  >
+                    <option value="">Any</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="all">All</option>
+                  </select>
+                </div>
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Label htmlFor="product-location">Target location (optional)</Label>
+                  <Input id="product-location" name="target_location" maxLength={200} placeholder="e.g. United States" />
+                </div>
+              </div>
               <Button type="submit" size="sm" className="self-start">Add product</Button>
             </form>
           </details>
