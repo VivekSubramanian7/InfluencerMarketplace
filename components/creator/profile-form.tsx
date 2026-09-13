@@ -13,6 +13,11 @@ interface ProfileFormProps {
     country: string | null;
     languages: string[] | null;
     status: string;
+    shipping_address: string | null;
+    city: string | null;
+    age: number | null;
+    gender: string | null;
+    interested_in_paid: boolean;
   } | null;
   action: (formData: FormData) => void;
   statusAction?: (formData: FormData) => void;
@@ -101,6 +106,50 @@ export function ProfileForm({ profile, action, statusAction, mode, suggestedHand
           <Label htmlFor="languages">Languages (comma-separated, up to 5)</Label>
           <Input id="languages" name="languages" defaultValue={(p?.languages ?? []).join(", ")} />
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="shipping_address">Shipping address</Label>
+          <Textarea
+            id="shipping_address"
+            name="shipping_address"
+            rows={2}
+            defaultValue={p?.shipping_address ?? ""}
+            placeholder="Required for barter campaigns"
+          />
+          <p className="text-xs text-muted-foreground">Required if you accept barter deals.</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="city">City</Label>
+          <Input id="city" name="city" defaultValue={p?.city ?? ""} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="age">Age</Label>
+            <Input id="age" name="age" type="number" min={13} max={120} defaultValue={p?.age ?? ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="gender">Gender</Label>
+            <select
+              id="gender"
+              name="gender"
+              defaultValue={p?.gender ?? ""}
+              className="h-10 rounded-lg border bg-background px-3 text-sm"
+            >
+              <option value="">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="non-binary">Non-binary</option>
+            </select>
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="interested_in_paid"
+            defaultChecked={p?.interested_in_paid ?? false}
+            className="size-4 accent-primary"
+          />
+          Interested in paid campaigns
+        </label>
         {mode === "wizard" ? (
           <SubmitButton className="mt-2 self-start" pendingLabel="Saving…">
             Save and continue

@@ -3,7 +3,7 @@
 // two never drift. Callers own auth, revalidation, and redirects.
 
 import { createServerSupabase } from "@/lib/supabase/server";
-import { parseHandle, parseTags, parseOptionalText } from "@/lib/storefront/validation";
+import { parseHandle, parseTags, parseOptionalText, parseIntInRange } from "@/lib/storefront/validation";
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 
@@ -26,6 +26,17 @@ export async function upsertCreatorProfileFromForm(
   const niches = parseTags(String(formData.get("niches") ?? ""));
   const languages = parseTags(String(formData.get("languages") ?? ""), 5);
 
+  const addressResult = parseOptionalText(String(formData.get("shipping_address") ?? ""), 500);
+  if (!addressResult.ok) return { ok: false, error: "Shipping address is too long (max 500 characters)" };
+  const cityResult = parseOptionalText(String(formData.get("city") ?? ""), 100);
+  if (!cityResult.ok) return { ok: false, error: "City is too long (max 100 characters)" };
+  const genderResult = parseOptionalText(String(formData.get("gender") ?? ""), 30);
+  if (!genderResult.ok) return { ok: false, error: "Gender is too long (max 30 characters)" };
+  const ageRaw = String(formData.get("age") ?? "").trim();
+  const age = ageRaw ? parseIntInRange(ageRaw, 13, 120) : null;
+  if (ageRaw && age === null) return { ok: false, error: "Age must be between 13 and 120" };
+  const interestedInPaid = formData.get("interested_in_paid") === "on";
+
   const { data: existing } = await supabase
     .from("creator_profiles")
     .select("handle")
@@ -34,6 +45,8 @@ export async function upsertCreatorProfileFromForm(
 
   const { error } = await supabase.from("creator_profiles").upsert({
     user_id: userId, handle, bio: bioResult.value, country: countryResult.value, niches, languages,
+    shipping_address: addressResult.value, city: cityResult.value, gender: genderResult.value,
+    age, interested_in_paid: interestedInPaid,
   });
   if (error) {
     return { ok: false, error: error.code === "23505" ? "That handle is taken" : error.message };
