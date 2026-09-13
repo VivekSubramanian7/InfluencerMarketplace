@@ -7,13 +7,14 @@ import { friendlyDbError } from "@/lib/errors";
 import { inviteRedirect } from "@/lib/campaigns/invite-redirect";
 import { trackServerEvent } from "@/lib/analytics";
 import { emailUser } from "@/lib/email";
+import { sendTelegramMessage } from "@/lib/notifications/telegram";
 
 export async function inviteToCampaign(formData: FormData) {
   const { user } = await requireRole("brand");
   const supabase = await createServerSupabase();
 
   const campaignId = String(formData.get("campaign_id") ?? "");
-  const creatorIds = [...new Set(formData.getAll("creator_id").map(String))].filter(Boolean).slice(0, 20);
+  const creatorIds = [...new Set(formData.getAll("creator_id").map(String))].filter(Boolean).slice(0, 5);
   const redirectTo = String(formData.get("redirect_to") ?? "");
 
   const errorBase = redirectTo || "/discover";
@@ -65,6 +66,17 @@ export async function inviteToCampaign(formData: FormData) {
     attempted_count: creatorIds.length,
     source: "campaign_invite",
   });
+
+  const { data: campaignRow } = await supabase
+    .from("campaigns")
+    .select("title")
+    .eq("id", campaignId)
+    .maybeSingle();
+  const campaignTitle = campaignRow?.title ?? "Untitled campaign";
+
+  sendTelegramMessage(
+    `<b>${brandLabel}</b> invited ${sent} creator${sent === 1 ? "" : "s"} to campaign "<b>${campaignTitle}</b>"`
+  );
 
   redirect(inviteRedirect(creatorIds.length === 1 ? lastConvId : null, sent));
 }
