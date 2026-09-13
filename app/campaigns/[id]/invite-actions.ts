@@ -74,8 +74,16 @@ export async function inviteToCampaign(formData: FormData) {
     .maybeSingle();
   const campaignTitle = campaignRow?.title ?? "Untitled campaign";
 
+  const { data: creatorRows } = await supabase
+    .from("creator_profiles")
+    .select("user_id, display_name, handle")
+    .in("user_id", creatorIds);
+  const creatorList = (creatorRows ?? [])
+    .map((c) => c.display_name || `@${c.handle}`)
+    .join(", ");
+
   sendTelegramMessage(
-    `<b>${brandLabel}</b> invited ${sent} creator${sent === 1 ? "" : "s"} to campaign "<b>${campaignTitle}</b>"`
+    `<b>${brandLabel}</b> invited ${sent} creator${sent === 1 ? "" : "s"} to "<b>${campaignTitle}</b>"\n${creatorList}`
   );
 
   redirect(inviteRedirect(creatorIds.length === 1 ? lastConvId : null, sent));
