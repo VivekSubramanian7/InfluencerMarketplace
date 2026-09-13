@@ -61,6 +61,10 @@ export async function saveBrandProfile(formData: FormData) {
   const website = websiteRaw ? parseMediaUrl(websiteRaw) : null;
   if (websiteRaw && !website) fail("Website must be a valid http(s) URL");
 
+  const gscRaw = String(formData.get("gsc_property") ?? "").trim();
+  const gscProperty = gscRaw ? parseMediaUrl(gscRaw) : null;
+  if (gscRaw && !gscProperty) fail("Search Console URL must be a valid http(s) URL");
+
   const prefNiches = parseTags(String(formData.get("pref_niches") ?? ""), 8);
   const prefTypes = formData
     .getAll("pref_types")
@@ -89,6 +93,7 @@ export async function saveBrandProfile(formData: FormData) {
       pref_niches: prefNiches,
       pref_types: prefTypes,
       pref_types_other: prefTypesOther.ok ? prefTypesOther.value : null,
+      gsc_property: gscProperty,
       ...paths,
     },
     { onConflict: "user_id" }
@@ -120,7 +125,7 @@ export async function saveBrandProfile(formData: FormData) {
   await supabase.from("brand_ingestions").delete().eq("brand_id", user.id);
 
   revalidatePath("/brand");
-  redirect(from === "onboarding" ? "/discover" : "/brand/settings?saved=1");
+  redirect(from === "onboarding" ? "/campaigns?first=1" : "/brand/settings?saved=1");
 }
 
 export async function readWebsite(formData: FormData) {

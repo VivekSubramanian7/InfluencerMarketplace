@@ -104,6 +104,18 @@ export function OnboardingWizard({
             />
           </div>
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="gsc_property">Google Search Console property (optional)</Label>
+            <Input
+              id="gsc_property"
+              name="gsc_property"
+              type="url"
+              placeholder="https://search.google.com/search-console?resource_id=..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste your Search Console property URL. Helps us understand your search traffic.
+            </p>
+          </div>
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="description">What your brand is about</Label>
             <Textarea
               id="description"
@@ -221,7 +233,7 @@ export function OnboardingWizard({
             </Button>
           ) : (
             <SubmitButton pendingLabel="Saving…">
-              Save and start discovering
+              Save and create your first campaign
             </SubmitButton>
           )}
         </div>

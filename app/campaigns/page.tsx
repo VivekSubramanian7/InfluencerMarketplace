@@ -40,12 +40,14 @@ export default async function CampaignsPage({
     status?: string;
     offering_type?: string;
     c?: string;
+    first?: string;
   }>;
 }) {
   const { user, role } = await requireUser("/campaigns");
   await touchCursor("campaigns");
   const sp = await searchParams;
   const { error, saved } = sp;
+  const autoOpen = sp.first === "1";
   const selectedId = sp.c ?? null;
   const filterSp = new URLSearchParams();
   if (sp.status) filterSp.set("status", sp.status);
@@ -119,7 +121,7 @@ export default async function CampaignsPage({
           </>
         )}
         {role === "brand" ? (
-          <BrandCampaigns userId={user.id} supabase={supabase} tokens={tokens} selectedId={selectedId} filterSp={filterSp} />
+          <BrandCampaigns userId={user.id} supabase={supabase} tokens={tokens} selectedId={selectedId} filterSp={filterSp} autoOpen={autoOpen} />
         ) : (
           <CreatorCampaigns userId={user.id} supabase={supabase} selectedId={selectedId} />
         )}
@@ -185,12 +187,14 @@ async function BrandCampaigns({
   tokens,
   selectedId,
   filterSp,
+  autoOpen,
 }: {
   userId: string;
   supabase: Supabase;
   tokens: FilterToken[];
   selectedId: string | null;
   filterSp: URLSearchParams;
+  autoOpen?: boolean;
 }) {
   const [{ data: campaigns, error }, { count: liveCreators }, { data: brandProducts }] = await Promise.all([
     supabase
@@ -249,6 +253,7 @@ async function BrandCampaigns({
         }))}
         liveCreatorCount={liveCreators ?? 0}
         products={(brandProducts ?? []).map((p) => ({ id: p.id, name: p.name }))}
+        autoOpen={autoOpen}
       />
       {filtered.length === 0 && tokens.length > 0 ? (
         <div className="mt-6 text-center">

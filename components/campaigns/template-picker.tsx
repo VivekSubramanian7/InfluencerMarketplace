@@ -29,12 +29,14 @@ export function TemplatePicker({
   campaigns,
   liveCreatorCount,
   products,
+  autoOpen,
 }: {
   campaigns: CampaignTemplate[];
   liveCreatorCount: number;
   products: BrandProduct[];
+  autoOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen ?? false);
   const [mode, setMode] = useState<"choose" | "blank" | "template">("choose");
   const [selected, setSelected] = useState<CampaignTemplate | null>(null);
 
