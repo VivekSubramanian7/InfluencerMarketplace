@@ -59,19 +59,14 @@ export function AppRail({
           { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, badge: unreadCampaigns ? 1 : 0 },
         ]
       : [
-          { href: "/inbox", label: "Inbox", icon: MessageIcon, badge: unreadInbox ? 1 : 0 },
+          { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
           { href: "/deals", label: "Deals", icon: HandshakeIcon, badge: unreadDeals ? 1 : 0 },
           { href: "/campaigns", label: "Campaigns", icon: CampaignsIcon, badge: unreadCampaigns ? 1 : 0 },
         ];
 
   const business: NavItem[] =
     role === "creator"
-      ? [
-          { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-          ...(displayName
-            ? []
-            : []),
-        ]
+      ? []
       : role === "admin"
         ? [{ href: "/admin", label: "Admin", icon: DashboardIcon }]
         : [
