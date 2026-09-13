@@ -43,6 +43,10 @@ export async function performDealAction(formData: FormData) {
     }
     payload.revision_note = note;
   }
+  if (action === "mark_product_sent") {
+    const couponCode = String(formData.get("coupon_code") ?? "").trim();
+    if (couponCode) payload.coupon_code = couponCode;
+  }
 
   const t0 = Date.now();
   const { data: deal, error } = await supabase.rpc("transition_deal", {
@@ -58,10 +62,18 @@ export async function performDealAction(formData: FormData) {
 
   if (deal) {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    let emailBody = `Open it on Clipline: ${site}/deals/${dealId}`;
+    if (action === "accept" && deal.payment_mode === "barter") {
+      emailBody = `A creator accepted your barter deal "${deal.offering_title}".\n\n` +
+        (deal.shipping_address_snapshot
+          ? `Ship your product to:\n${deal.shipping_address_snapshot}\n\nOr send them a coupon code.\n\n`
+          : `Send them a coupon code or arrange product delivery.\n\n`) +
+        emailBody;
+    }
     await emailUser({
       userId: role === "brand" ? deal.creator_id : deal.brand_id,
       subject: `${ACTION_TITLES[action] ?? "Deal updated"} · ${deal.offering_title}`,
-      text: `Open it on Clipline: ${site}/deals/${dealId}`,
+      text: emailBody,
     });
     trackServerEvent("deal_state_changed", role === "brand" ? deal.brand_id : deal.creator_id, {
       deal_id: dealId,
