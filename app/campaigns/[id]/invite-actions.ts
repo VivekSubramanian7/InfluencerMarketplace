@@ -76,11 +76,9 @@ export async function inviteToCampaign(formData: FormData) {
 
   const { data: creatorRows } = await supabase
     .from("creator_profiles")
-    .select("user_id, display_name, handle")
+    .select("user_id, handle")
     .in("user_id", creatorIds);
-  const creatorList = (creatorRows ?? [])
-    .map((c) => c.display_name || `@${c.handle}`)
-    .join(", ");
+  const creatorList = (creatorRows ?? []).map((c) => `@${c.handle}`).join(", ");
 
   sendTelegramMessage(
     `<b>${brandLabel}</b> invited ${sent} creator${sent === 1 ? "" : "s"} to "<b>${campaignTitle}</b>"\n${creatorList}`
