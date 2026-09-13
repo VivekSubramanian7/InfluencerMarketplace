@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { BookCallBlocker } from "@/components/discover/book-call-blocker";
 import { BulkInviteToCampaign } from "@/components/discover/invite-to-campaign";
 
@@ -15,7 +15,7 @@ export function BulkInviteWrapper({
 }) {
   const [blockerOpen, setBlockerOpen] = useState(false);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: Event) => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
     const checked = form.querySelectorAll('input[name="creator_id"]:checked');
@@ -25,11 +25,16 @@ export function BulkInviteWrapper({
     }
   }, [formId]);
 
+  useEffect(() => {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    if (!form) return;
+    form.addEventListener("submit", handleSubmit);
+    return () => form.removeEventListener("submit", handleSubmit);
+  }, [formId, handleSubmit]);
+
   return (
     <>
-      <div onSubmitCapture={handleSubmit}>
-        <BulkInviteToCampaign campaigns={campaigns} formId={formId} />
-      </div>
+      <BulkInviteToCampaign campaigns={campaigns} formId={formId} />
       <BookCallBlocker open={blockerOpen} onClose={() => setBlockerOpen(false)} />
     </>
   );
