@@ -20,7 +20,8 @@ describe("sendTelegramMessage", () => {
   it("calls Telegram API with correct payload", async () => {
     // Re-import to pick up env
     const { sendTelegramMessage } = await import("./telegram");
-    await sendTelegramMessage("Hello agency");
+    sendTelegramMessage("Hello agency");
+    await Promise.resolve();
     expect(fetchSpy).toHaveBeenCalledOnce();
     const [url, opts] = fetchSpy.mock.calls[0];
     expect(url).toBe("https://api.telegram.org/bottest-token/sendMessage");
@@ -36,7 +37,8 @@ describe("sendTelegramMessage", () => {
     // Force re-import
     vi.resetModules();
     const { sendTelegramMessage } = await import("./telegram");
-    await sendTelegramMessage("Should not send");
+    sendTelegramMessage("Should not send");
+    await Promise.resolve();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
