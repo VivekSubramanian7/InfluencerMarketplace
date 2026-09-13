@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { parseOptionalText, parseMediaUrl, parseTags, parseText } from "@/lib/storefront/validation";
+import { parseOptionalText, parseMediaUrl, parseTags, parseText, parseIntInRange } from "@/lib/storefront/validation";
 import { OFFERING_TYPES, type OfferingType } from "@/lib/discovery/filters";
 import { ingestWebsite } from "@/lib/brand/ingest";
 import { friendlyDbError } from "@/lib/errors";
@@ -103,7 +103,15 @@ export async function saveBrandProfile(formData: FormData) {
   // products proposed by website ingestion, confirmed by this save
   const productsJson = String(formData.get("products_json") ?? "");
   if (productsJson) {
-    let proposed: { name?: string; url?: string; description?: string }[] = [];
+    let proposed: {
+      name?: string;
+      url?: string;
+      description?: string;
+      target_age_min?: unknown;
+      target_age_max?: unknown;
+      target_gender?: unknown;
+      target_location?: unknown;
+    }[] = [];
     try {
       proposed = JSON.parse(productsJson);
     } catch {
@@ -117,6 +125,22 @@ export async function saveBrandProfile(formData: FormData) {
         name: p.name!.trim().slice(0, 120),
         url: p.url && /^https?:\/\//i.test(p.url) ? p.url.slice(0, 500) : null,
         description: p.description ? p.description.slice(0, 500) : null,
+        target_age_min:
+          typeof p.target_age_min === "number" && p.target_age_min >= 13 && p.target_age_min <= 100
+            ? p.target_age_min
+            : null,
+        target_age_max:
+          typeof p.target_age_max === "number" && p.target_age_max >= 13 && p.target_age_max <= 100
+            ? p.target_age_max
+            : null,
+        target_gender:
+          ["male", "female", "all"].includes(p.target_gender as string)
+            ? (p.target_gender as string)
+            : null,
+        target_location:
+          typeof p.target_location === "string" && p.target_location.trim()
+            ? p.target_location.trim().slice(0, 200)
+            : null,
       }));
     if (rows.length > 0) await supabase.from("brand_products").insert(rows);
   }
@@ -162,6 +186,14 @@ export async function addProduct(formData: FormData) {
   const description = parseOptionalText(String(formData.get("description") ?? ""), 500);
   const urlRaw = String(formData.get("url") ?? "").trim();
   const url = urlRaw ? parseMediaUrl(urlRaw) : null;
+
+  const ageMinRaw = String(formData.get("target_age_min") ?? "").trim();
+  const ageMin = ageMinRaw ? parseIntInRange(ageMinRaw, 13, 100) : null;
+  const ageMaxRaw = String(formData.get("target_age_max") ?? "").trim();
+  const ageMax = ageMaxRaw ? parseIntInRange(ageMaxRaw, 13, 100) : null;
+  const targetGender = String(formData.get("target_gender") ?? "").trim() || null;
+  const targetLocationResult = parseOptionalText(String(formData.get("target_location") ?? ""), 200);
+
   if (!name || !description.ok || (urlRaw && !url)) {
     redirect("/brand/settings?error=" +
       encodeURIComponent("Product needs a name (≤120 chars); URL must be http(s)"));
@@ -171,6 +203,10 @@ export async function addProduct(formData: FormData) {
     name,
     url,
     description: description.ok ? description.value : null,
+    target_age_min: ageMin,
+    target_age_max: ageMax,
+    target_gender: targetGender && ["male", "female", "all"].includes(targetGender) ? targetGender : null,
+    target_location: targetLocationResult.ok ? targetLocationResult.value : null,
   });
   if (error) {
     redirect("/brand/settings?error=" + encodeURIComponent(friendlyDbError(error)));
