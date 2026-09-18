@@ -156,3 +156,36 @@ $$;
 create trigger campaigns_validate_update
   before update on public.campaigns
   for each row execute function public.validate_campaign_update();
+
+-- =============================================================================
+-- Section 7: Product delete guard
+-- =============================================================================
+
+-- Finding 11: app checks open campaigns before delete, DB just SET NULLs the FK.
+-- Add a BEFORE DELETE trigger that rejects when open campaigns reference this product.
+create function public.validate_brand_product_delete()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_count int;
+begin
+  if auth.uid() is null then
+    return old; -- service role bypass
+  end if;
+
+  select count(*) into v_count
+  from public.campaigns c
+  where c.product_id = old.id and c.status = 'open';
+
+  if v_count > 0 then
+    raise exception 'This product is used by % open campaign(s) — close or edit the campaign first', v_count;
+  end if;
+
+  return old;
+end;
+$$;
+
+create trigger brand_products_delete_gate
+  before delete on public.brand_products
+  for each row execute function public.validate_brand_product_delete();
