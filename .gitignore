@@ -62,3 +62,5 @@ supabase/seed.sql
 
 # Playwright auth state
 e2e/.auth/
+test-results/
+playwright-report/
