@@ -134,6 +134,7 @@ export async function editCampaign(formData: FormData) {
   const durationRaw = String(formData.get("duration_seconds") ?? "").trim();
   const durationSeconds = durationRaw ? parseIntInRange(durationRaw, 1, 86400) : null;
   const expectedLiveDate = parseApplyBy(String(formData.get("expected_live_date") ?? ""));
+  const offeringType = String(formData.get("type") ?? "");
 
   if (
     !title || !description ||
@@ -146,13 +147,47 @@ export async function editCampaign(formData: FormData) {
       "Check the form fields and try again"));
   }
 
+  // Fetch current campaign to detect budget/offering_type changes
+  const { data: currentCampaign } = await supabase
+    .from("campaigns")
+    .select("budget_min_cents, budget_max_cents, offering_type")
+    .eq("id", id)
+    .eq("brand_id", user.id)
+    .single();
+
+  const newBudgetMin = isBarter ? 0 : budgetMin;
+  const newBudgetMax = isBarter ? 0 : budgetMax;
+
+  // Check if budget or offering_type is being changed
+  const budgetChanged = currentCampaign &&
+    (currentCampaign.budget_min_cents !== newBudgetMin ||
+     currentCampaign.budget_max_cents !== newBudgetMax);
+
+  const offeringTypeChanged = currentCampaign &&
+    offeringType &&
+    currentCampaign.offering_type !== offeringType;
+
+  // If budget or offering_type is changing, check for pending applications
+  if (budgetChanged || offeringTypeChanged) {
+    const { count } = await supabase
+      .from("campaign_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", id)
+      .eq("status", "pending");
+
+    if (count && count > 0) {
+      redirect(`${base}${sep}error=` + encodeURIComponent(
+        "Cannot change budget or offering type while applications are pending — decline them first"));
+    }
+  }
+
   const { error } = await supabase
     .from("campaigns")
     .update({
       title,
       description,
-      budget_min_cents: isBarter ? 0 : budgetMin,
-      budget_max_cents: isBarter ? 0 : budgetMax,
+      budget_min_cents: newBudgetMin,
+      budget_max_cents: newBudgetMax,
       apply_by: applyBy.value,
       product_id: productId,
       buyer_persona: buyerPersona.ok ? buyerPersona.value : null,
