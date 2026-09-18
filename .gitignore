@@ -59,3 +59,6 @@ screenshots/
 .playwright-mcp/
 .serena/
 supabase/seed.sql
+
+# Playwright auth state
+e2e/.auth/
