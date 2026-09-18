@@ -9,11 +9,13 @@ type Campaign = { id: string; title: string };
 export function BulkInviteWrapper({
   campaigns,
   formId,
+  initialBlockerOpen = false,
 }: {
   campaigns: Campaign[];
   formId: string;
+  initialBlockerOpen?: boolean;
 }) {
-  const [blockerOpen, setBlockerOpen] = useState(false);
+  const [blockerOpen, setBlockerOpen] = useState(initialBlockerOpen);
 
   const handleSubmit = useCallback((e: Event) => {
     const form = document.getElementById(formId) as HTMLFormElement | null;

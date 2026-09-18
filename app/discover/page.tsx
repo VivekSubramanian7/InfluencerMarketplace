@@ -115,6 +115,7 @@ export default async function DiscoverPage({
   };
 
   const error = typeof params.error === "string" ? params.error : null;
+  const capInvites = params.cap === "invites";
   const chip =
     "h-10 rounded-full border bg-background px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const tabClass = (active: boolean) =>
@@ -327,7 +328,7 @@ export default async function DiscoverPage({
           <form id="bulk-invite" action={isBrand && filters.tab === "new" ? inviteToCampaign : undefined}>
             {isBrand && filters.tab === "new" && (
               <div className="sticky top-0 z-10 -mx-6 flex items-center justify-end bg-background/95 px-6 py-2 backdrop-blur-sm">
-                <BulkInviteWrapper campaigns={brandLiveCampaigns} formId="bulk-invite" />
+                <BulkInviteWrapper campaigns={brandLiveCampaigns} formId="bulk-invite" initialBlockerOpen={capInvites} />
               </div>
             )}
             <div className="mt-4 overflow-x-auto rounded-[var(--radius-tile)] border border-[var(--border)]">
