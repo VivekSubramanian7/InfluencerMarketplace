@@ -189,3 +189,79 @@ $$;
 create trigger brand_products_delete_gate
   before delete on public.brand_products
   for each row execute function public.validate_brand_product_delete();
+
+-- =============================================================================
+-- Section 8: Storefront completeness gate in accept_offer
+-- =============================================================================
+
+-- Finding 12: app checks storefront completeness before accept_offer(),
+-- but the RPC itself does not. Direct call bypasses the gate.
+create or replace function public.accept_offer(p_offer_id uuid)
+returns uuid
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_offer public.offers;
+  v_conv public.conversations;
+  v_offering public.offerings;
+  v_deal_id uuid;
+  v_brief jsonb;
+  v_has_account boolean;
+  v_has_portfolio boolean;
+begin
+  select * into v_offer from public.offers o where o.id = p_offer_id for update;
+  if not found then raise exception 'Offer not found'; end if;
+  select * into v_conv from public.conversations c where c.id = v_offer.conversation_id;
+  if v_uid is distinct from v_conv.creator_id then
+    raise exception 'Only the creator can accept an offer';
+  end if;
+  if v_offer.status <> 'pending' then
+    raise exception 'This offer has already been answered';
+  end if;
+  select * into v_offering from public.offerings o where o.id = v_offer.offering_id;
+  if not found or not v_offering.active then
+    raise exception 'That offering is no longer available';
+  end if;
+
+  -- Storefront completeness gate (mirrors app-layer check)
+  select exists(
+    select 1 from public.connected_accounts a where a.creator_id = v_uid
+  ) into v_has_account;
+  select exists(
+    select 1 from public.portfolio_items p where p.creator_id = v_uid
+  ) into v_has_portfolio;
+  if not v_has_account or not v_has_portfolio then
+    raise exception 'Complete your storefront (add a channel and a sample) before accepting offers';
+  end if;
+
+  v_brief := jsonb_build_object(
+    'goals', coalesce(v_offer.goals, v_offer.note, 'Agreed in conversation — see the thread.'),
+    'product_description', coalesce(v_offer.product_description, ''),
+    'talking_points', coalesce(v_offer.talking_points, '')
+  );
+
+  v_deal_id := public.create_deal(
+    v_conv.brand_id, v_conv.creator_id, v_offering.id,
+    v_offer.price_cents, v_brief, 'offer',
+    jsonb_build_object(
+      'offer_id', v_offer.id,
+      'conversation_id', v_conv.id,
+      'listed_price_cents', v_offering.price_cents,
+      'agreed_price_cents', v_offer.price_cents),
+    'accepted',
+    'off_platform'::public.payment_mode
+  );
+
+  perform set_config('clipline.internal', '1', true);
+  update public.offers
+  set status = 'accepted', decided_at = now(), deal_id = v_deal_id
+  where id = p_offer_id;
+  perform set_config('clipline.internal', '', true);
+
+  return v_deal_id;
+end;
+$$;
+
+revoke all on function public.accept_offer(uuid) from public;
+grant execute on function public.accept_offer(uuid) to authenticated;
