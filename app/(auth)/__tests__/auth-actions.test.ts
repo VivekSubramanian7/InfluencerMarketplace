@@ -166,24 +166,28 @@ describe("signup", () => {
     expect(mockSb.supabase.rpc).toHaveBeenCalledWith("claim_creator_invite", { p_token: uuid });
   });
 
-  it("polls up to 3 times for creator profile before claiming invite", async () => {
+  it("polls creator_profiles up to 3 times when profile is absent before claiming invite", async () => {
     const uuid = "a0000000-0000-0000-0000-000000000001";
-    // Return null first two times, then a profile — mock via sequence
-    let callCount = 0;
-    mockSb.supabase.from("creator_profiles");
-    // Override maybeSingle to track calls
-    const origMaybeSingle = mockSb.supabase.from("creator_profiles").select("user_id").eq("user_id", "u1").maybeSingle;
-    // We need to set up a custom mock for the polling behavior
-    // Since our mock helper doesn't support call-count-based responses,
-    // we verify the rpc is still called (polling loop completes)
-    mockSb.mockResult("creator_profiles", "maybeSingle", { data: { user_id: "u1" } });
-    await catchRedirect(() =>
-      signup(fd({
-        email: "a@b.c", password: "pw123456", role: "creator",
-        invite: uuid,
-      }))
-    );
+    // Profile never appears — all 3 polls return null
+    mockSb.mockResult("creator_profiles", "maybeSingle", { data: null });
+    vi.useFakeTimers();
+    try {
+      const signupPromise = catchRedirect(() =>
+        signup(fd({ email: "a@b.c", password: "pw123456", role: "creator", invite: uuid }))
+      );
+      // Advance past all three setTimeout delays (500 + 1000 + 1500 = 3000ms total)
+      await vi.runAllTimersAsync();
+      await signupPromise;
+    } finally {
+      vi.useRealTimers();
+    }
+    // rpc IS called unconditionally after the polling loop
     expect(mockSb.supabase.rpc).toHaveBeenCalledWith("claim_creator_invite", { p_token: uuid });
+    // All 3 poll attempts were made against creator_profiles
+    const profileCalls = mockSb.supabase.from.mock.calls.filter(
+      ([table]: [string]) => table === "creator_profiles"
+    );
+    expect(profileCalls.length).toBe(3);
   });
 
   it("does not call invite claim for brand role even with valid UUID", async () => {
