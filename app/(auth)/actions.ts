@@ -34,7 +34,12 @@ export async function signup(formData: FormData) {
   // creator arrived through a brand's invite link → open their conversation
   const invite = String(formData.get("invite") ?? "");
   if (role === "creator" && UUID_RE.test(invite)) {
-    await supabase.rpc("claim_creator_invite", { p_token: invite });
+    // Profile trigger is async after auth.signUp — retry claim up to 3 times
+    for (let i = 0; i < 3; i++) {
+      const { error } = await supabase.rpc("claim_creator_invite", { p_token: invite });
+      if (!error) break;
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)));
+    }
   }
 
   // Track signup completion
