@@ -90,3 +90,30 @@ alter table public.brand_products
     or target_age_max is null
     or target_age_min <= target_age_max
   );
+
+-- =============================================================================
+-- Section 5: Aggregate count limits (triggers)
+-- =============================================================================
+
+-- Finding 3: brand_products — app caps at 12 per ingestion, DB has no per-brand limit.
+-- Cap at 50 (generous ceiling — the app ingests 12 at a time but brands can add manually too).
+create function public.validate_brand_product_count()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_count int;
+begin
+  select count(*) into v_count
+  from public.brand_products
+  where brand_id = new.brand_id;
+  if v_count >= 50 then
+    raise exception 'Product limit reached (max 50 per brand)';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger brand_products_count_gate
+  before insert on public.brand_products
+  for each row execute function public.validate_brand_product_count();
