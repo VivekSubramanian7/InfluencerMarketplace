@@ -10,13 +10,13 @@ importers:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: ^4.0.46
-        version: 4.0.46(zod@4.5.4)
+        version: 4.0.46(zod@4.6.5)
       '@ai-sdk/google':
         specifier: ^4.0.60
-        version: 4.0.60(zod@4.5.4)
+        version: 4.0.60(zod@4.6.5)
       '@ai-sdk/openai':
         specifier: ^4.0.54
-        version: 4.0.54(zod@4.5.4)
+        version: 4.0.54(zod@4.6.5)
       '@supabase/ssr':
         specifier: ^0.12.4
         version: 0.12.5(@supabase/supabase-js@2.112.4)
@@ -28,13 +28,16 @@ importers:
         version: 2.0.1(next@16.3.1(@babel/core@7.29.7)(@playwright/test@1.63.0)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       ai:
         specifier: ^7.0.74
-        version: 7.0.88(zod@4.5.4)
+        version: 7.0.88(zod@4.6.5)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      countries-list:
+        specifier: ^3.4.1
+        version: 3.4.1
       lucide-react:
         specifier: ^1.31.0
         version: 1.39.0(react@19.2.8)
@@ -71,6 +74,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@playwright/test':
         specifier: ^1.63.0
@@ -2416,6 +2422,9 @@ packages:
       typescript:
         optional: true
 
+  countries-list@3.4.1:
+    resolution: {integrity: sha512-sKLGAZD5EAdzQwQ19vOp/9u33MTjmZ0CkdXPYtp/An6cyIlJ/E8TwGf2FcPe1AnzHO+h7nbTfoHyXIi58Hpa+Q==}
+
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -4599,44 +4608,44 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.5.4:
-    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
 snapshots:
 
-  '@ai-sdk/anthropic@4.0.46(zod@4.5.4)':
+  '@ai-sdk/anthropic@4.0.46(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.9
-      '@ai-sdk/provider-utils': 5.0.34(zod@4.5.4)
-      zod: 4.5.4
+      '@ai-sdk/provider-utils': 5.0.34(zod@4.6.5)
+      zod: 4.6.5
 
-  '@ai-sdk/gateway@4.0.70(zod@4.5.4)':
+  '@ai-sdk/gateway@4.0.70(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.9
-      '@ai-sdk/provider-utils': 5.0.34(zod@4.5.4)
+      '@ai-sdk/provider-utils': 5.0.34(zod@4.6.5)
       '@vercel/oidc': 3.2.0
-      zod: 4.5.4
+      zod: 4.6.5
 
-  '@ai-sdk/google@4.0.60(zod@4.5.4)':
+  '@ai-sdk/google@4.0.60(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.9
-      '@ai-sdk/provider-utils': 5.0.34(zod@4.5.4)
-      zod: 4.5.4
+      '@ai-sdk/provider-utils': 5.0.34(zod@4.6.5)
+      zod: 4.6.5
 
-  '@ai-sdk/openai@4.0.54(zod@4.5.4)':
+  '@ai-sdk/openai@4.0.54(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.9
-      '@ai-sdk/provider-utils': 5.0.34(zod@4.5.4)
-      zod: 4.5.4
+      '@ai-sdk/provider-utils': 5.0.34(zod@4.6.5)
+      zod: 4.6.5
 
-  '@ai-sdk/provider-utils@5.0.34(zod@4.5.4)':
+  '@ai-sdk/provider-utils@5.0.34(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.9
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.1
       undici: 7.29.0
-      zod: 4.5.4
+      zod: 4.6.5
 
   '@ai-sdk/provider@4.0.9':
     dependencies:
@@ -6486,12 +6495,12 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  ai@7.0.88(zod@4.5.4):
+  ai@7.0.88(zod@4.6.5):
     dependencies:
-      '@ai-sdk/gateway': 4.0.70(zod@4.5.4)
+      '@ai-sdk/gateway': 4.0.70(zod@4.6.5)
       '@ai-sdk/provider': 4.0.9
-      '@ai-sdk/provider-utils': 5.0.34(zod@4.5.4)
-      zod: 4.5.4
+      '@ai-sdk/provider-utils': 5.0.34(zod@4.6.5)
+      zod: 4.6.5
 
   ajv-formats@2.1.1(ajv@8.20.0):
     optionalDependencies:
@@ -6773,6 +6782,8 @@ snapshots:
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.3
+
+  countries-list@3.4.1: {}
 
   cross-spawn@7.0.6:
     dependencies:
@@ -7162,8 +7173,8 @@ snapshots:
       '@babel/parser': 7.29.8
       eslint: 9.39.5(jiti@2.7.0)
       hermes-parser: 0.25.1
-      zod: 4.5.4
-      zod-validation-error: 4.0.2(zod@4.5.4)
+      zod: 4.6.5
+      zod-validation-error: 4.0.2(zod@4.6.5)
     transitivePeerDependencies:
       - supports-color
 
@@ -9199,10 +9210,10 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@4.0.2(zod@4.5.4):
+  zod-validation-error@4.0.2(zod@4.6.5):
     dependencies:
-      zod: 4.5.4
+      zod: 4.6.5
 
   zod@3.25.76: {}
 
-  zod@4.5.4: {}
+  zod@4.6.5: {}
