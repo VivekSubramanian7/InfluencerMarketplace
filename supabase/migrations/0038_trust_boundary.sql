@@ -117,3 +117,42 @@ $$;
 create trigger brand_products_count_gate
   before insert on public.brand_products
   for each row execute function public.validate_brand_product_count();
+
+-- =============================================================================
+-- Section 6: Campaign edit guard
+-- =============================================================================
+
+-- Finding 10: app blocks budget/offering_type change when pending applications exist.
+-- DB has no such enforcement. A brand can call update on campaigns directly.
+create function public.validate_campaign_update()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_pending int;
+begin
+  -- service role bypasses (admin tooling)
+  if auth.uid() is null then
+    return new;
+  end if;
+
+  if new.budget_min_cents is distinct from old.budget_min_cents
+     or new.budget_max_cents is distinct from old.budget_max_cents
+     or new.offering_type is distinct from old.offering_type then
+
+    select count(*) into v_pending
+    from public.campaign_applications a
+    where a.campaign_id = old.id and a.status = 'pending';
+
+    if v_pending > 0 then
+      raise exception 'Cannot change budget or offering type while % pending application(s) exist — decline them first', v_pending;
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger campaigns_validate_update
+  before update on public.campaigns
+  for each row execute function public.validate_campaign_update();
