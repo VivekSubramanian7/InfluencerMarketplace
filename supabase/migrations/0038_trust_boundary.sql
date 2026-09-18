@@ -58,3 +58,22 @@ alter table public.offerings
 alter table public.offerings
   add constraint offerings_price_cents_check
   check (price_cents between 1 and 100000000);
+
+-- =============================================================================
+-- Section 3: Array-length constraints
+-- =============================================================================
+
+-- Finding 4: creator_profiles.niches — app caps at 8, DB has no limit
+alter table public.creator_profiles
+  add constraint creator_profiles_niches_check
+  check (coalesce(array_length(niches, 1), 0) <= 8);
+
+-- Finding 5: creator_profiles.languages — app caps at 5, DB has no limit
+alter table public.creator_profiles
+  add constraint creator_profiles_languages_check
+  check (coalesce(array_length(languages, 1), 0) <= 5);
+
+-- Finding 4 (brand side): brand_profiles.pref_niches — app caps at 8
+alter table public.brand_profiles
+  add constraint brand_profiles_pref_niches_check
+  check (coalesce(array_length(pref_niches, 1), 0) <= 8);
