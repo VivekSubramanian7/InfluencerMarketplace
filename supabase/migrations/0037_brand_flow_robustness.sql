@@ -230,6 +230,9 @@ begin
 end;
 $$;
 
+revoke all on function public.accept_offer(uuid) from public;
+grant execute on function public.accept_offer(uuid) to authenticated;
+
 -- =============================================================================
 -- Section 4 (1A): Fix invite_to_campaign() — check blocklist + creator status
 -- =============================================================================
