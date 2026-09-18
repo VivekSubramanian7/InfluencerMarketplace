@@ -14,7 +14,7 @@ export async function bulkMarkProductSent(formData: FormData) {
     redirect(returnTo + "?error=" + encodeURIComponent("Select at least one deal"));
   }
 
-  let failed = 0;
+  const failures: { dealId: string; error: string }[] = [];
   for (const dealId of dealIds) {
     const { error } = await supabase.rpc("transition_deal", {
       p_deal_id: dealId,
@@ -22,13 +22,17 @@ export async function bulkMarkProductSent(formData: FormData) {
       p_actor_role: "brand",
       p_payload: {},
     });
-    if (error) failed++;
+    if (error) {
+      failures.push({ dealId, error: error.message });
+    }
   }
 
   revalidatePath("/brand");
   revalidatePath("/deals");
-  if (failed > 0) {
-    redirect(returnTo + "?error=" + encodeURIComponent(`${failed} deal(s) could not be updated`));
+  if (failures.length > 0) {
+    const failedIds = failures.map(f => f.dealId.slice(0, 8)).join(", ");
+    const msg = `${failures.length} deal(s) failed: ${failedIds}`;
+    redirect(returnTo + "?error=" + encodeURIComponent(msg));
   }
   redirect(returnTo);
 }
