@@ -150,7 +150,11 @@ describe("resolveReport", () => {
   });
 
   it("updates report and redirects to /admin?saved=1", async () => {
-    mockSb.mockResult("reports", "update", { error: null });
+    // .update({}).eq() escapes the default thenable wrapper — use a fully-thenable
+    // mutation chain via mockImplementationOnce instead of mockResult
+    vi.mocked(mockSb.supabase.from).mockImplementationOnce(() =>
+      makeMutationChain(null)
+    );
 
     const url = await catchRedirect(() =>
       resolveReport(fd({ report_id: "r1", resolution: "Warned the user" }))
@@ -177,11 +181,14 @@ describe("resolveReport", () => {
    ================================================================ */
 describe("setCreatorSuspension", () => {
   it("suspends creator (suspend=true → status 'suspended')", async () => {
-    mockSb.mockResult("creator_profiles", "maybeSingle", {
-      data: { handle: "jane", status: "live" },
-      error: null,
-    });
-    mockSb.mockResult("creator_profiles", "update", { error: null });
+    // setCreatorSuspension calls .from("creator_profiles") twice:
+    //   1. select().eq().maybeSingle() → success
+    //   2. update({}).eq()             → success (escapes default thenable)
+    vi.mocked(mockSb.supabase.from)
+      .mockImplementationOnce(() =>
+        makeMaybeSingleChain({ handle: "jane", status: "live" })
+      )
+      .mockImplementationOnce(() => makeMutationChain(null));
 
     const url = await catchRedirect(() =>
       setCreatorSuspension(fd({ user_id: "cr1", suspend: "true" }))
@@ -190,11 +197,14 @@ describe("setCreatorSuspension", () => {
   });
 
   it("unsuspends creator to 'draft' (never re-publishes)", async () => {
-    mockSb.mockResult("creator_profiles", "maybeSingle", {
-      data: { handle: "jane", status: "suspended" },
-      error: null,
-    });
-    mockSb.mockResult("creator_profiles", "update", { error: null });
+    // setCreatorSuspension calls .from("creator_profiles") twice:
+    //   1. select().eq().maybeSingle() → success
+    //   2. update({}).eq()             → success (escapes default thenable)
+    vi.mocked(mockSb.supabase.from)
+      .mockImplementationOnce(() =>
+        makeMaybeSingleChain({ handle: "jane", status: "suspended" })
+      )
+      .mockImplementationOnce(() => makeMutationChain(null));
 
     const url = await catchRedirect(() =>
       setCreatorSuspension(fd({ user_id: "cr1", suspend: "false" }))
@@ -246,11 +256,14 @@ describe("setCreatorSuspension", () => {
   });
 
   it("revalidates /c/{handle} on success", async () => {
-    mockSb.mockResult("creator_profiles", "maybeSingle", {
-      data: { handle: "jane", status: "live" },
-      error: null,
-    });
-    mockSb.mockResult("creator_profiles", "update", { error: null });
+    // setCreatorSuspension calls .from("creator_profiles") twice:
+    //   1. select().eq().maybeSingle() → success
+    //   2. update({}).eq()             → success (escapes default thenable)
+    vi.mocked(mockSb.supabase.from)
+      .mockImplementationOnce(() =>
+        makeMaybeSingleChain({ handle: "jane", status: "live" })
+      )
+      .mockImplementationOnce(() => makeMutationChain(null));
 
     await catchRedirect(() =>
       setCreatorSuspension(fd({ user_id: "cr1", suspend: "true" }))
