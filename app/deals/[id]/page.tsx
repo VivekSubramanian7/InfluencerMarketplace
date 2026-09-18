@@ -121,15 +121,19 @@ export default async function DealPage({
 
       <div
         className={
-          statusIsAttention
+          statusIsAttention || previewApproved
             ? "mt-4 flex items-center gap-3 rounded-2xl border border-amber bg-amber/10 px-5 py-4"
             : "mt-4 flex items-center gap-3 rounded-2xl bg-secondary px-5 py-4"
         }
       >
-        {statusIsAttention && (
+        {(statusIsAttention || previewApproved) && (
           <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber" />
         )}
-        <span className="font-semibold">{STATUS_LABELS[deal.status as DealStatus] ?? deal.status}</span>
+        <span className="font-semibold">
+          {previewApproved
+            ? "Preview approved — waiting for creator to publish"
+            : STATUS_LABELS[deal.status as DealStatus] ?? deal.status}
+        </span>
       </div>
 
       {isBarter && deal.status === "product_received" && deal.preview_due_at && (
