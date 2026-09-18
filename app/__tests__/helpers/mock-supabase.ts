@@ -37,17 +37,14 @@ export function createMockSupabase() {
     authResults.set(method, result);
   }
 
-  // Track the current table context for chaining
-  let currentTable = "";
-
   const TERMINAL_METHODS = [
-    "maybeSingle", "single", "insert", "update", "delete", "upsert",
+    "maybeSingle", "single",
   ] as const;
 
   const defaultResult: MockResult = { data: null, error: null, count: 0 };
 
-  // Build chainable query builder
-  function makeChain(): Record<string, any> {
+  // Build chainable query builder for a specific table
+  function makeChain(table: string): Record<string, any> {
     const chain: Record<string, any> = {};
     // Chaining methods just return the chain
     for (const m of ["select", "eq", "neq", "gt", "gte", "lt", "lte",
@@ -58,7 +55,7 @@ export function createMockSupabase() {
     // Terminal methods return the configured result
     for (const m of TERMINAL_METHODS) {
       chain[m] = vi.fn(() => {
-        const r = results.get(key(currentTable, m));
+        const r = results.get(key(table, m));
         return Promise.resolve(r ?? defaultResult);
       });
     }
@@ -68,7 +65,7 @@ export function createMockSupabase() {
       chain[m] = vi.fn((..._args: unknown[]) => {
         // If chaining continues (e.g. .update({}).eq().select().maybeSingle()),
         // the terminal at the end resolves. But if this IS the terminal, resolve now.
-        const result = results.get(key(currentTable, m));
+        const result = results.get(key(table, m));
         const wrapper = { ...chain };
         // Override .then so it can be awaited directly
         wrapper.then = (resolve: any, reject?: any) => {
@@ -79,8 +76,6 @@ export function createMockSupabase() {
     }
     return chain;
   }
-
-  const queryChain = makeChain();
 
   const rpc = vi.fn((name: string, _params?: unknown) => {
     const result = rpcResults.get(name) ?? defaultResult;
@@ -117,15 +112,20 @@ export function createMockSupabase() {
 
   const supabase = {
     from: vi.fn((table: string) => {
-      currentTable = table;
-      return queryChain;
+      return makeChain(table);
     }),
     rpc,
     auth,
     storage,
   };
 
-  /** Reset all configured result overrides and clear all mocks */
+  /**
+   * Reset all configured result overrides and clear all mocks.
+   *
+   * WARNING: This calls vi.clearAllMocks(), which clears ALL vi.fn() mocks in the test,
+   * not just supabase's. You must re-mock module-level mocks like createServerSupabase
+   * after calling reset() in beforeEach.
+   */
   function reset() {
     results.clear();
     rpcResults.clear();

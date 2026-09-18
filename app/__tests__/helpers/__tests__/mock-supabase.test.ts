@@ -54,4 +54,12 @@ describe("createMockSupabase", () => {
       .maybeSingle();
     expect(res.data).toEqual({ id: "o1", title: "updated" });
   });
+
+  it("reset() clears configured results", async () => {
+    const { supabase, mockResult, reset } = createMockSupabase();
+    mockResult("profiles", "single", { data: { role: "admin" } });
+    reset();
+    const res = await supabase.from("profiles").select("role").single();
+    expect(res.data).toBeNull();
+  });
 });
