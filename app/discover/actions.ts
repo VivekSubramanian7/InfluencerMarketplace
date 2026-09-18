@@ -51,7 +51,7 @@ export async function sendReachouts(formData: FormData) {
         userId: creatorId,
         subject: `${brandLabel} wants to work with you`,
         text: `${message}\n\nOpen it on Clipline: ${site}/inbox`,
-      });
+      }).catch(() => {});
     } else if (error.code !== "23505") {
       errors.push(friendlyDbError(error));
     }

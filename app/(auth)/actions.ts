@@ -31,19 +31,27 @@ export async function signup(formData: FormData) {
   });
   if (error) redirect(`/auth/error?message=${encodeURIComponent(error.message)}`);
 
+  // Track signup completion
+  const { data } = await supabase.auth.getUser();
+
   // creator arrived through a brand's invite link → open their conversation
   const invite = String(formData.get("invite") ?? "");
   if (role === "creator" && UUID_RE.test(invite)) {
-    // Profile trigger is async after auth.signUp — retry claim up to 3 times
+    // Profile trigger is async after auth.signUp — poll until the row exists,
+    // then claim once. The RPC always returns void so error-based retry is
+    // ineffective; polling for the profile row is the correct signal.
+    const uid = data.user?.id ?? "";
     for (let i = 0; i < 3; i++) {
-      const { error } = await supabase.rpc("claim_creator_invite", { p_token: invite });
-      if (!error) break;
+      const { data: profile } = await supabase
+        .from("creator_profiles")
+        .select("user_id")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (profile) break;
       await new Promise((r) => setTimeout(r, 500 * (i + 1)));
     }
+    await supabase.rpc("claim_creator_invite", { p_token: invite });
   }
-
-  // Track signup completion
-  const { data } = await supabase.auth.getUser();
   if (data.user?.id) {
     trackServerEvent("signup_completed", data.user.id, {
       role,
