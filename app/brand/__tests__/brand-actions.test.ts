@@ -711,5 +711,6 @@ describe("unblockCreator", () => {
       expect(e.url).toBeDefined();
       expect(e.url).not.toContain("error=");
     }
+    expect(mockSb.supabase.from).toHaveBeenCalledWith("brand_blocklist");
   });
 });
