@@ -5,10 +5,6 @@ import { parseDiscoveryFilters, SAVED_FILTER_KEYS } from "@/lib/discovery/filter
 import { searchCreators, type SearchScope } from "@/lib/discovery/queries";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { deleteSearch, saveSearch } from "./actions";
-import { inviteToCampaign } from "@/app/campaigns/[id]/invite-actions";
-import { InviteToCampaign } from "@/components/discover/invite-to-campaign";
-import { BulkInviteWrapper } from "@/components/discover/bulk-invite-wrapper";
-import { liveCampaigns } from "@/lib/campaigns/live-campaigns";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
@@ -52,9 +48,8 @@ export default async function DiscoverPage({
   // brand context: past collaborators, blocklist, saved searches, preferences
   let scope: SearchScope = {};
   let savedSearches: { id: string; name: string; params: Record<string, string> }[] = [];
-  let brandLiveCampaigns: { id: string; title: string }[] = [];
   if (isBrand) {
-    const [dealRows, blockRows, savedRows, campaignRows] = await Promise.all([
+    const [dealRows, blockRows, savedRows] = await Promise.all([
       supabase.from("deals").select("creator_id").eq("brand_id", user.id),
       supabase.from("brand_blocklist").select("creator_id").eq("brand_id", user.id),
       supabase
@@ -62,16 +57,7 @@ export default async function DiscoverPage({
         .select("id, name, params")
         .eq("brand_id", user.id)
         .order("created_at"),
-      supabase
-        .from("campaigns")
-        .select("id, title, status")
-        .eq("brand_id", user.id)
-        .order("created_at", { ascending: false }),
     ]);
-    brandLiveCampaigns = liveCampaigns(campaignRows.data ?? []).map((c) => ({
-      id: c.id,
-      title: c.title,
-    }));
     const collaborators = [...new Set((dealRows.data ?? []).map((r) => r.creator_id as string))];
     const blocked = (blockRows.data ?? []).map((r) => r.creator_id as string);
     savedSearches = (savedRows.data ?? []).map((r) => ({
@@ -115,7 +101,6 @@ export default async function DiscoverPage({
   };
 
   const error = typeof params.error === "string" ? params.error : null;
-  const capInvites = params.cap === "invites";
   const chip =
     "h-10 rounded-full border bg-background px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const tabClass = (active: boolean) =>
@@ -328,7 +313,7 @@ export default async function DiscoverPage({
           <form id="bulk-invite" action={isBrand && filters.tab === "new" ? inviteToCampaign : undefined}>
             {isBrand && filters.tab === "new" && (
               <div className="sticky top-0 z-10 -mx-6 flex items-center justify-end bg-background/95 px-6 py-2 backdrop-blur-sm">
-                <BulkInviteWrapper campaigns={brandLiveCampaigns} formId="bulk-invite" initialBlockerOpen={capInvites} />
+                <BulkInviteWrapper campaigns={brandLiveCampaigns} formId="bulk-invite" showCapBlocker={capInvites} />
               </div>
             )}
             <div className="mt-4 overflow-x-auto rounded-[var(--radius-tile)] border border-[var(--border)]">
@@ -441,6 +426,7 @@ export default async function DiscoverPage({
                               creatorId={c.userId}
                               redirectTo="/discover"
                               iconOnly
+                              showCapBlocker={capInvites}
                             />
                           ) : (
                             <Link

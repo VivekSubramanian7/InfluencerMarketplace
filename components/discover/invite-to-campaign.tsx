@@ -5,6 +5,7 @@ import Link from "next/link";
 import { inviteToCampaign } from "@/app/campaigns/[id]/invite-actions";
 import { CAMPAIGN_INVITE_CTA } from "@/lib/copy/taxonomy";
 import { Button } from "@/components/ui/button";
+import { BookCallBlocker } from "@/components/discover/book-call-blocker";
 
 type Campaign = { id: string; title: string };
 
@@ -18,6 +19,7 @@ export function InviteToCampaign({
   iconOnly = false,
   buttonClassName,
   buttonStyle,
+  showCapBlocker = false,
 }: {
   campaigns: Campaign[];
   creatorId: string;
@@ -28,7 +30,9 @@ export function InviteToCampaign({
   iconOnly?: boolean;
   buttonClassName?: string;
   buttonStyle?: React.CSSProperties;
+  showCapBlocker?: boolean;
 }) {
+  const [blockerOpen, setBlockerOpen] = useState(showCapBlocker ?? false);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +46,8 @@ export function InviteToCampaign({
 
   if (campaigns.length === 1) {
     return (
+      <>
+      <BookCallBlocker open={blockerOpen} onClose={() => setBlockerOpen(false)} />
       <form action={inviteToCampaign} className={className}>
         <input type="hidden" name="campaign_id" value={campaigns[0].id} />
         <input type="hidden" name="creator_id" value={creatorId} />
@@ -62,11 +68,13 @@ export function InviteToCampaign({
           <Button type="submit" size={size} variant={variant}>{CAMPAIGN_INVITE_CTA}</Button>
         )}
       </form>
+      </>
     );
   }
 
   return (
     <div ref={menuRef} className={`relative ${className ?? ""}`}>
+      <BookCallBlocker open={blockerOpen} onClose={() => setBlockerOpen(false)} />
       {iconOnly ? (
         <button
           type="button"
