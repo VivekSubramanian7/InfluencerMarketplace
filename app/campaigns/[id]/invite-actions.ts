@@ -50,7 +50,7 @@ export async function inviteToCampaign(formData: FormData) {
         userId: creatorId,
         subject: `${brandLabel} invited you to a campaign`,
         text: `You have been invited to a campaign.\n\nOpen it on Clipline: ${site}/inbox?c=${convId}`,
-      });
+      }).catch(() => {});
     } else if (!firstError) {
       firstError = friendlyDbError(error);
     }

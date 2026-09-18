@@ -49,13 +49,21 @@ export async function saveBrandProfile(formData: FormData) {
   const fail = (msg: string): never =>
     redirect(`${errorPath}?error=` + encodeURIComponent(msg));
 
-  const company = parseOptionalText(String(formData.get("company") ?? ""), 120);
+  const companyName = parseText(String(formData.get("company") ?? ""), 120);
+  if (!companyName || companyName.trim() === "") {
+    fail("Company name is required");
+  }
   const description = parseOptionalText(String(formData.get("description") ?? ""), 2000);
   const notes = parseOptionalText(String(formData.get("notes") ?? ""), 4000);
   const template = parseOptionalText(String(formData.get("outreach_template") ?? ""), 2000);
-  if (!company.ok || !description.ok || !notes.ok || !template.ok) {
+  if (!description.ok || !notes.ok || !template.ok) {
     fail("One of the text fields is over its length limit");
   }
+
+  const { data: uniqueSlug } = await supabase.rpc("generate_unique_brand_slug", {
+    p_company: companyName,
+    p_exclude_brand_id: user.id,
+  });
 
   const websiteRaw = String(formData.get("website") ?? "").trim();
   const website = websiteRaw ? parseMediaUrl(websiteRaw) : null;
@@ -85,7 +93,8 @@ export async function saveBrandProfile(formData: FormData) {
   const { error } = await supabase.from("brand_profiles").upsert(
     {
       user_id: user.id,
-      company: company.ok ? company.value : null,
+      company: companyName,
+      slug: uniqueSlug ?? null,
       website,
       description: description.ok ? description.value : null,
       notes: notes.ok ? notes.value : null,
@@ -194,6 +203,10 @@ export async function addProduct(formData: FormData) {
   const targetGender = String(formData.get("target_gender") ?? "").trim() || null;
   const targetLocationResult = parseOptionalText(String(formData.get("target_location") ?? ""), 200);
 
+  if (ageMin !== null && ageMax !== null && ageMin > ageMax) {
+    redirect("/brand/settings?error=" + encodeURIComponent("Age range minimum must be less than maximum"));
+  }
+
   if (!name || !description.ok || (urlRaw && !url)) {
     redirect("/brand/settings?error=" +
       encodeURIComponent("Product needs a name (≤120 chars); URL must be http(s)"));
@@ -217,10 +230,22 @@ export async function addProduct(formData: FormData) {
 export async function removeProduct(formData: FormData) {
   const { user } = await requireRole("brand");
   const supabase = await createServerSupabase();
+  const productId = String(formData.get("id") ?? "");
+
+  const { count } = await supabase
+    .from("campaigns")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId)
+    .eq("status", "open");
+  if (count && count > 0) {
+    redirect("/brand/settings?error=" +
+      encodeURIComponent("This product is used by an active campaign — close or edit the campaign first"));
+  }
+
   await supabase
     .from("brand_products")
     .delete()
-    .eq("id", String(formData.get("id") ?? ""))
+    .eq("id", productId)
     .eq("brand_id", user.id);
   redirect("/brand/settings?saved=1");
 }
@@ -247,6 +272,14 @@ export async function blockCreator(formData: FormData) {
   const supabase = await createServerSupabase();
   const creatorId = String(formData.get("creator_id") ?? "");
   const back = String(formData.get("back") ?? "/brand");
+
+  const { count: activeDeals } = await supabase
+    .from("deals")
+    .select("id", { count: "exact", head: true })
+    .eq("creator_id", creatorId)
+    .eq("brand_id", user.id)
+    .not("status", "in", "(completed,cancelled)");
+
   const { error } = await supabase
     .from("brand_blocklist")
     .insert({ brand_id: user.id, creator_id: creatorId });
@@ -254,7 +287,10 @@ export async function blockCreator(formData: FormData) {
     redirect(`${back}?error=` + encodeURIComponent(friendlyDbError(error)));
   }
   revalidatePath("/brand");
-  redirect("/brand?saved=1");
+  if (activeDeals && activeDeals > 0) {
+    redirect("/brand/settings?blocklisted=1&warning=" + encodeURIComponent("This creator has active deals — they will continue until completed"));
+  }
+  redirect("/brand/settings?blocklisted=1");
 }
 
 export async function unblockCreator(formData: FormData) {

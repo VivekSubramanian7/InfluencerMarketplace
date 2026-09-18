@@ -74,7 +74,7 @@ export async function performDealAction(formData: FormData) {
       userId: role === "brand" ? deal.creator_id : deal.brand_id,
       subject: `${ACTION_TITLES[action] ?? "Deal updated"} · ${deal.offering_title}`,
       text: emailBody,
-    });
+    }).catch(() => {});
     trackServerEvent("deal_state_changed", role === "brand" ? deal.brand_id : deal.creator_id, {
       deal_id: dealId,
       action,

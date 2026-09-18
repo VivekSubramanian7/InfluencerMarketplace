@@ -158,7 +158,7 @@ export async function sendOffer(formData: FormData) {
       userId: conv.creator_id,
       subject: `You have an offer: $${(priceToInsert / 100).toFixed(2)}`,
       text: `Open it on Clipline: ${site}/inbox/${conversationId}`,
-    });
+    }).catch(() => {});
   }
 
   revalidatePath(`/inbox/${conversationId}`);
@@ -202,7 +202,7 @@ export async function respondOffer(formData: FormData) {
         userId: conv.brand_id,
         subject: "Your offer was accepted — the deal has started",
         text: `Open it on Clipline: ${site}/deals/${dealId}`,
-      });
+      }).catch(() => {});
     }
     redirect(`/deals/${dealId}`);
   }
