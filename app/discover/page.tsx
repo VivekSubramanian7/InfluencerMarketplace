@@ -111,6 +111,21 @@ export default async function DiscoverPage({
     return `/discover?${next.toString()}`;
   };
 
+  const removeFilterHref = (key: string) => {
+    const next = new URLSearchParams(flatParams);
+    next.delete(key);
+    next.delete("page");
+    return `/discover?${next.toString()}`;
+  };
+
+  const activeFilters: { key: string; label: string; value: string }[] = [];
+  if (filters.q) activeFilters.push({ key: "q", label: "Search", value: filters.q });
+  if (filters.niche) activeFilters.push({ key: "niche", label: "Niche", value: filters.niche });
+  if (filters.country) activeFilters.push({ key: "country", label: "Country", value: filters.country });
+  if (filters.type) activeFilters.push({ key: "type", label: "Format", value: TYPE_LABELS[filters.type] ?? filters.type });
+  if (filters.minPriceCents !== null) activeFilters.push({ key: "min_price", label: "Min price", value: `$${filters.minPriceCents / 100}` });
+  if (filters.maxPriceCents !== null) activeFilters.push({ key: "max_price", label: "Max price", value: `$${filters.maxPriceCents / 100}` });
+
   const error = typeof params.error === "string" ? params.error : null;
   const chip =
     "h-10 rounded-full border bg-background px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -227,6 +242,26 @@ export default async function DiscoverPage({
             </div>
           </div>
         </form>
+
+        {activeFilters.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {activeFilters.map((f) => (
+              <Link
+                key={f.key}
+                href={removeFilterHref(f.key)}
+                className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-sm font-medium transition-colors hover:bg-destructive/10 hover:border-destructive/30"
+              >
+                {f.label}: {f.value}
+                <span aria-hidden className="text-muted-foreground">×</span>
+              </Link>
+            ))}
+            {activeFilters.length > 1 && (
+              <Link href="/discover" className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                Clear all
+              </Link>
+            )}
+          </div>
+        )}
 
         {isBrand && savedSearches.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
