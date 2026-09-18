@@ -251,7 +251,7 @@ export default async function DiscoverPage({
                 href={removeFilterHref(f.key)}
                 className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-sm font-medium transition-colors hover:bg-destructive/10 hover:border-destructive/30"
               >
-                {f.label}: {f.value}
+                {f.value}
                 <span aria-hidden className="text-muted-foreground">×</span>
               </Link>
             ))}
