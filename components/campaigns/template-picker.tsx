@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { COUNTRIES, LANGUAGES } from "@/lib/constants";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -187,15 +189,28 @@ export function TemplatePicker({
                 placeholder="Who is the target buyer? Age, interests, location…"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="target_location">Target location</Label>
-                <Input id="target_location" name="target_location" placeholder="e.g. US, Europe" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="target_language">Language</Label>
-                <Input id="target_language" name="target_language" placeholder="e.g. English" />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Target locations</Label>
+              <MultiSelect
+                name="target_location"
+                options={COUNTRIES}
+                placeholder="Select countries…"
+                max={10}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="target_language">Language</Label>
+              <select
+                id="target_language"
+                name="target_language"
+                className="h-10 rounded-lg border bg-background px-3 text-sm"
+                defaultValue=""
+              >
+                <option value="">Any</option>
+                {LANGUAGES.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="content_form">Content form</Label>

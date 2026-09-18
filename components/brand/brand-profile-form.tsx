@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { OtherFormatField } from "@/components/brand/other-format-field";
 import { ProposedProducts } from "@/components/brand/proposed-products";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { NICHES } from "@/lib/constants";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -74,12 +76,13 @@ export function BrandProfileForm({
       <div className="flex flex-col gap-4">
         <p className="text-sm font-semibold text-muted-foreground">Creator matching</p>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pref_niches">Content niches (comma-separated, up to 8)</Label>
-          <Input
-            id="pref_niches"
+          <Label>Content niches (up to 8)</Label>
+          <MultiSelect
             name="pref_niches"
-            defaultValue={(defaults?.pref_niches ?? []).join(", ")}
-            placeholder="beauty, fitness, food"
+            options={NICHES}
+            defaultValue={defaults?.pref_niches ?? []}
+            max={8}
+            placeholder="Select niches…"
           />
         </div>
         <div className="flex flex-col gap-1.5">

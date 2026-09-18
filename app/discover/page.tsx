@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { PriceRange } from "@/components/price-range";
 import { SearchSuggest } from "@/components/discover/search-suggest";
 import { SearchTracker } from "./search-tracker";
+import { COUNTRIES } from "@/lib/constants";
 
 function fmtK(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -200,26 +201,9 @@ export default async function DiscoverPage({
               className={`${chip} w-44 appearance-none`}
             >
               <option value="">Any country</option>
-              <option value="United States">United States</option>
-              <option value="United Kingdom">United Kingdom</option>
-              <option value="Canada">Canada</option>
-              <option value="Australia">Australia</option>
-              <option value="India">India</option>
-              <option value="Germany">Germany</option>
-              <option value="France">France</option>
-              <option value="Brazil">Brazil</option>
-              <option value="Mexico">Mexico</option>
-              <option value="Japan">Japan</option>
-              <option value="South Korea">South Korea</option>
-              <option value="Indonesia">Indonesia</option>
-              <option value="Philippines">Philippines</option>
-              <option value="Nigeria">Nigeria</option>
-              <option value="South Africa">South Africa</option>
-              <option value="Netherlands">Netherlands</option>
-              <option value="Sweden">Sweden</option>
-              <option value="Spain">Spain</option>
-              <option value="Italy">Italy</option>
-              <option value="UAE">UAE</option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
             <select
               name="type"

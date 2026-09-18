@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
@@ -8,6 +9,27 @@ import { parseOptionalText, parseMediaUrl, parseTags, parseText, parseIntInRange
 import { OFFERING_TYPES, type OfferingType } from "@/lib/discovery/filters";
 import { ingestWebsite } from "@/lib/brand/ingest";
 import { friendlyDbError } from "@/lib/errors";
+import { NICHES } from "@/lib/constants";
+
+const nichesSet = new Set<string>(NICHES);
+
+const brandProfileSchema = z.object({
+  company: z.string().trim().min(1, "Company name is required").max(120, "Company name is too long (max 120 chars)"),
+  website: z.string().trim().transform((v) => v || null)
+    .refine((v) => {
+      if (v === null) return true;
+      try { const u = new URL(v); return u.protocol === "http:" || u.protocol === "https:"; }
+      catch { return false; }
+    }, "Website must be a valid http(s) URL"),
+  description: z.string().trim().max(2000, "Description is too long").transform((v) => v || null),
+  notes: z.string().trim().max(4000, "Notes are too long").transform((v) => v || null),
+  outreach_template: z.string().trim().max(2000, "Template is too long").transform((v) => v || null),
+  pref_niches: z.array(z.string())
+    .transform((arr) => [...new Set(arr.filter((v) => nichesSet.has(v)))].slice(0, 8)),
+  pref_types: z.array(z.string())
+    .transform((arr) => arr.filter((t): t is OfferingType => (OFFERING_TYPES as readonly string[]).includes(t))),
+  pref_types_other: z.string().trim().max(500).transform((v) => v || null),
+});
 
 const DOC_MIME_TYPES = new Set([
   "application/pdf",
@@ -49,36 +71,30 @@ export async function saveBrandProfile(formData: FormData) {
   const fail = (msg: string): never =>
     redirect(`${errorPath}?error=` + encodeURIComponent(msg));
 
-  const companyName = parseText(String(formData.get("company") ?? ""), 120);
-  if (!companyName || companyName.trim() === "") {
-    fail("Company name is required");
+  const parsed = brandProfileSchema.safeParse({
+    company: String(formData.get("company") ?? ""),
+    website: String(formData.get("website") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+    outreach_template: String(formData.get("outreach_template") ?? ""),
+    pref_niches: formData.getAll("pref_niches").map(String),
+    pref_types: formData.getAll("pref_types").map(String),
+    pref_types_other: String(formData.get("pref_types_other") ?? ""),
+  });
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0].message);
   }
-  const description = parseOptionalText(String(formData.get("description") ?? ""), 2000);
-  const notes = parseOptionalText(String(formData.get("notes") ?? ""), 4000);
-  const template = parseOptionalText(String(formData.get("outreach_template") ?? ""), 2000);
-  if (!description.ok || !notes.ok || !template.ok) {
-    fail("One of the text fields is over its length limit");
-  }
+  const { company: companyName, website, description, notes, outreach_template: template,
+    pref_niches: prefNiches, pref_types: prefTypes, pref_types_other: prefTypesOther } = parsed.data;
 
   const { data: uniqueSlug } = await supabase.rpc("generate_unique_brand_slug", {
     p_company: companyName,
     p_exclude_brand_id: user.id,
   });
 
-  const websiteRaw = String(formData.get("website") ?? "").trim();
-  const website = websiteRaw ? parseMediaUrl(websiteRaw) : null;
-  if (websiteRaw && !website) fail("Website must be a valid http(s) URL");
-
   const gscRaw = String(formData.get("gsc_property") ?? "").trim();
   const gscProperty = gscRaw ? parseMediaUrl(gscRaw) : null;
   if (gscRaw && !gscProperty) fail("Search Console URL must be a valid http(s) URL");
-
-  const prefNiches = parseTags(String(formData.get("pref_niches") ?? ""), 8);
-  const prefTypes = formData
-    .getAll("pref_types")
-    .map(String)
-    .filter((t): t is OfferingType => (OFFERING_TYPES as readonly string[]).includes(t));
-  const prefTypesOther = parseOptionalText(String(formData.get("pref_types_other") ?? ""), 500);
 
   const paths: { guidelines_path?: string; rules_path?: string } = {};
   for (const slot of ["guidelines", "rules"] as const) {
@@ -147,12 +163,12 @@ export async function saveBrandProfile(formData: FormData) {
     p_company: companyName,
     p_slug: uniqueSlug ?? null,
     p_website: website,
-    p_description: description.ok ? description.value : null,
-    p_notes: notes.ok ? notes.value : null,
-    p_outreach_template: template.ok ? template.value : null,
+    p_description: description,
+    p_notes: notes,
+    p_outreach_template: template,
     p_pref_niches: prefNiches,
     p_pref_types: prefTypes,
-    p_pref_types_other: prefTypesOther.ok ? prefTypesOther.value : null,
+    p_pref_types_other: prefTypesOther,
     p_gsc_property: gscProperty,
     p_guidelines_path: paths.guidelines_path ?? null,
     p_rules_path: paths.rules_path ?? null,

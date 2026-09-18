@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { NICHES, COUNTRIES, LANGUAGES } from "@/lib/constants";
 
 interface ProfileFormProps {
   profile: {
@@ -90,21 +92,38 @@ export function ProfileForm({ profile, action, statusAction, mode, suggestedHand
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="niches">Niches (comma-separated, up to 8)</Label>
-          <Input
-            id="niches"
+          <Label>Niches (up to 8)</Label>
+          <MultiSelect
             name="niches"
-            defaultValue={(p?.niches ?? []).join(", ")}
-            placeholder={mode === "wizard" ? "food, lifestyle" : undefined}
+            options={NICHES}
+            defaultValue={p?.niches ?? []}
+            max={8}
+            placeholder={mode === "wizard" ? "e.g. food, lifestyle" : "Select niches…"}
           />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="country">Country</Label>
-          <Input id="country" name="country" defaultValue={p?.country ?? ""} />
+          <select
+            id="country"
+            name="country"
+            defaultValue={p?.country ?? ""}
+            className="h-10 rounded-lg border bg-background px-3 text-sm"
+          >
+            <option value="">Select country…</option>
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="languages">Languages (comma-separated, up to 5)</Label>
-          <Input id="languages" name="languages" defaultValue={(p?.languages ?? []).join(", ")} />
+          <Label>Languages (up to 5)</Label>
+          <MultiSelect
+            name="languages"
+            options={LANGUAGES}
+            defaultValue={p?.languages ?? []}
+            max={5}
+            placeholder="Select languages…"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="shipping_address">Shipping address</Label>
