@@ -90,27 +90,17 @@ export async function saveBrandProfile(formData: FormData) {
     }
   }
 
-  const { error } = await supabase.from("brand_profiles").upsert(
-    {
-      user_id: user.id,
-      company: companyName,
-      slug: uniqueSlug ?? null,
-      website,
-      description: description.ok ? description.value : null,
-      notes: notes.ok ? notes.value : null,
-      outreach_template: template.ok ? template.value : null,
-      pref_niches: prefNiches,
-      pref_types: prefTypes,
-      pref_types_other: prefTypesOther.ok ? prefTypesOther.value : null,
-      gsc_property: gscProperty,
-      ...paths,
-    },
-    { onConflict: "user_id" }
-  );
-  if (error) fail(friendlyDbError(error));
-
   // products proposed by website ingestion, confirmed by this save
   const productsJson = String(formData.get("products_json") ?? "");
+  let products: {
+    name: string;
+    url: string | null;
+    description: string | null;
+    target_age_min: number | null;
+    target_age_max: number | null;
+    target_gender: string | null;
+    target_location: string | null;
+  }[] = [];
   if (productsJson) {
     let proposed: {
       name?: string;
@@ -126,11 +116,10 @@ export async function saveBrandProfile(formData: FormData) {
     } catch {
       proposed = [];
     }
-    const rows = (Array.isArray(proposed) ? proposed : [])
+    products = (Array.isArray(proposed) ? proposed : [])
       .filter((p) => typeof p?.name === "string" && p.name.trim())
       .slice(0, 12)
       .map((p) => ({
-        brand_id: user.id,
         name: p.name!.trim().slice(0, 120),
         url: p.url && /^https?:\/\//i.test(p.url) ? p.url.slice(0, 500) : null,
         description: p.description ? p.description.slice(0, 500) : null,
@@ -151,11 +140,25 @@ export async function saveBrandProfile(formData: FormData) {
             ? p.target_location.trim().slice(0, 200)
             : null,
       }));
-    if (rows.length > 0) await supabase.from("brand_products").insert(rows);
   }
 
-  // proposal consumed — the saved form is now the source of truth
-  await supabase.from("brand_ingestions").delete().eq("brand_id", user.id);
+  // Atomic: upsert profile + insert products + delete ingestion in one transaction
+  const { error } = await supabase.rpc("save_brand_profile", {
+    p_company: companyName,
+    p_slug: uniqueSlug ?? null,
+    p_website: website,
+    p_description: description.ok ? description.value : null,
+    p_notes: notes.ok ? notes.value : null,
+    p_outreach_template: template.ok ? template.value : null,
+    p_pref_niches: prefNiches,
+    p_pref_types: prefTypes,
+    p_pref_types_other: prefTypesOther.ok ? prefTypesOther.value : null,
+    p_gsc_property: gscProperty,
+    p_guidelines_path: paths.guidelines_path ?? null,
+    p_rules_path: paths.rules_path ?? null,
+    p_products: products.length > 0 ? JSON.stringify(products) : "[]",
+  });
+  if (error) fail(friendlyDbError(error));
 
   revalidatePath("/brand");
   redirect(from === "onboarding" ? "/campaigns?first=1" : "/brand/settings?saved=1");
