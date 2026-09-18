@@ -82,17 +82,17 @@ test.describe("Role-based access control", () => {
 test.describe("Public pages load without auth", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("creator public profile /c/maya_chen is visible", async ({ page }) => {
-    await page.goto("/c/maya_chen");
+  test("creator public profile /c/mayachen is visible", async ({ page }) => {
+    await page.goto(`/c/${CREATOR1.handle}`);
 
-    // Should NOT redirect to login — page should stay on /c/maya_chen or render content
+    // Should NOT redirect to login — page should stay on /c/{handle} or render content
     const url = page.url();
     if (url.includes("/login")) {
       // If it redirects to login, the route is protected — this test documents that behavior
       test.skip(true, "/c/{handle} redirects to login — route is protected");
     }
 
-    await expect(page.getByText("Maya Chen").first()).toBeVisible({
+    await expect(page.getByText(CREATOR1.name).first()).toBeVisible({
       timeout: 10_000,
     });
   });
