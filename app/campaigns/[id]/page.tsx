@@ -8,16 +8,16 @@ export default async function CampaignPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; saved?: string; invited?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; invited?: string; cap?: string }>;
 }) {
   const { id } = await params;
   const { user, role } = await requireUser(`/campaigns/${id}`);
   await touchCursor("campaigns");
-  const { error, saved, invited } = await searchParams;
+  const { error, saved, invited, cap } = await searchParams;
 
   return (
     <AuthenticatedShell userId={user.id} role={role}>
-      <CampaignDetail campaignId={id} error={error} saved={saved} invited={invited} />
+      <CampaignDetail campaignId={id} error={error} saved={saved} invited={invited} cap={cap} />
     </AuthenticatedShell>
   );
 }

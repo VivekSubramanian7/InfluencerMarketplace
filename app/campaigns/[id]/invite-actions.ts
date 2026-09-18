@@ -57,6 +57,9 @@ export async function inviteToCampaign(formData: FormData) {
   }
 
   if (sent === 0) {
+    if (firstError?.includes("invite limit reached")) {
+      redirect(`${errorBase}?cap=invites`);
+    }
     redirect(`${errorBase}?error=${encodeURIComponent(firstError ?? "Could not send invites")}`);
   }
 

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { EditCampaignForm } from "@/app/campaigns/[id]/edit-campaign-form";
 import { BulkProposals } from "@/app/campaigns/[id]/bulk-proposals";
 import { ApplyPriceField } from "@/components/campaigns/apply-price-field";
+import { InviteCapBlocker } from "@/components/campaigns/invite-cap-blocker";
 
 const TYPE_LABELS: Record<string, string> = {
   dedicated_video: "Dedicated video",
@@ -58,6 +59,7 @@ export async function CampaignDetail({
   error,
   saved,
   invited,
+  cap,
 }: {
   campaignId: string;
   compact?: boolean;
@@ -65,6 +67,7 @@ export async function CampaignDetail({
   error?: string;
   saved?: string;
   invited?: string;
+  cap?: string;
 }) {
   const { user, role } = await requireUser(`/campaigns/${campaignId}`);
   const supabase = await createServerSupabase();
@@ -115,6 +118,7 @@ export async function CampaignDetail({
         <Badge variant="secondary">{campaign.status === "open" && !windowClosed ? "open" : "closed"}</Badge>
       </p>
 
+      {cap === "invites" && <InviteCapBlocker />}
       {error && (
         <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
