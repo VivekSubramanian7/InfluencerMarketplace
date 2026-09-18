@@ -40,3 +40,21 @@ alter table public.briefs
   add constraint briefs_talking_points_check
   check (talking_points is null or length(talking_points) <= 4000);
 
+-- =============================================================================
+-- Section 2: NOT NULL and range constraints
+-- =============================================================================
+
+-- Finding 6: brand_profiles.company — app requires non-empty, DB allows NULL.
+-- Two-step: backfill any NULLs, then add NOT NULL.
+update public.brand_profiles set company = 'Unnamed' where company is null or trim(company) = '';
+
+alter table public.brand_profiles
+  alter column company set not null;
+
+-- Finding 27: offerings.price_cents — app caps at 100M (=$1M), DB only checks > 0
+alter table public.offerings
+  drop constraint if exists offerings_price_cents_check;
+
+alter table public.offerings
+  add constraint offerings_price_cents_check
+  check (price_cents between 1 and 100000000);
