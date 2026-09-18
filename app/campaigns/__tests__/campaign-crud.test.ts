@@ -212,12 +212,16 @@ describe("createCampaign", () => {
       budget_min: "",
       budget_max: "",
     });
+    let thrown = false;
     try {
       await createCampaign(fd);
+      throw new Error("Expected redirect but none thrown");
     } catch (e: any) {
+      thrown = true;
       expect(e.url).not.toContain("error=");
       expect(e.url).toContain("/campaigns/");
     }
+    expect(thrown).toBe(true);
   });
 
   it("rejects buyer_persona > 1000 chars", async () => {
@@ -331,11 +335,15 @@ describe("setCampaignStatus", () => {
 
   it("redirects without error for invalid status", async () => {
     const fd = baseFd({ status: "deleted" });
+    let thrown = false;
     try {
       await setCampaignStatus(fd);
+      throw new Error("Expected redirect but none thrown");
     } catch (e: any) {
+      thrown = true;
       expect(e.url).not.toContain("error=");
     }
+    expect(thrown).toBe(true);
   });
 
   it("redirects with error on DB failure", async () => {
@@ -444,7 +452,7 @@ describe("editCampaign", () => {
     } catch (e: any) {
       expect(e.url).toContain("error=");
       expect(decodeURIComponent(e.url)).toMatch(
-        /[Cc]annot.*change.*budget|offering.*pending/i
+        /[Cc]annot.*change.*budget/i
       );
     }
   });
@@ -468,7 +476,7 @@ describe("editCampaign", () => {
     } catch (e: any) {
       expect(e.url).toContain("error=");
       expect(decodeURIComponent(e.url)).toMatch(
-        /[Cc]annot.*change.*budget|offering.*pending/i
+        /[Cc]annot.*change.*budget/i
       );
     }
   });
@@ -476,21 +484,23 @@ describe("editCampaign", () => {
   it("allows edit when budget/type unchanged despite pending apps", async () => {
     // No change to budget or type → no pending-app check → goes straight to update
     // budget_min=500 → 50000 cents == current 50000, budget_max=1000 → 100000 == current 100000
-    mockSb.mockResult("campaigns", "single", {
-      data: {
+    vi.mocked(mockSb.supabase.from)
+      .mockImplementationOnce(() => createMockSupabaseChainWithSingle({
         budget_min_cents: 50000,
         budget_max_cents: 100000,
         offering_type: "ugc_video",
-      },
-      error: null,
-    });
-    mockSb.mockResult("campaigns", "update", { error: null });
+      }))
+      .mockImplementationOnce(() => makeMutationChain(null));
     const fd = baseFd(); // all values unchanged from "current"
+    let thrown = false;
     try {
       await editCampaign(fd);
+      throw new Error("Expected redirect but none thrown");
     } catch (e: any) {
+      thrown = true;
       expect(e.url).not.toContain("error=");
     }
+    expect(thrown).toBe(true);
   });
 
   it("returns friendlyDbError on update failure", async () => {
@@ -519,22 +529,23 @@ describe("editCampaign", () => {
   });
 
   it("redirects on success", async () => {
-    mockSb.mockResult("campaigns", "single", {
-      data: {
+    vi.mocked(mockSb.supabase.from)
+      .mockImplementationOnce(() => createMockSupabaseChainWithSingle({
         budget_min_cents: 50000,
         budget_max_cents: 100000,
         offering_type: "ugc_video",
-      },
-      error: null,
-    });
-    mockSb.mockResult("campaigns", "update", { error: null });
+      }))
+      .mockImplementationOnce(() => makeMutationChain(null));
     const fd = baseFd();
+    let thrown = false;
     try {
       await editCampaign(fd);
-      expect.unreachable("should redirect");
+      throw new Error("Expected redirect but none thrown");
     } catch (e: any) {
+      thrown = true;
       expect(e.url).not.toContain("error=");
     }
+    expect(thrown).toBe(true);
   });
 });
 
