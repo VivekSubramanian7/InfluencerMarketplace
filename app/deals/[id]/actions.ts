@@ -85,6 +85,7 @@ export async function performDealAction(formData: FormData) {
   }
 
   revalidatePath(`/deals/${dealId}`);
+  revalidatePath("/deals");
   redirect(`/deals/${dealId}`);
 }
 
@@ -99,5 +100,6 @@ export async function markPaid(formData: FormData) {
   }
   trackServerEvent("deal_marked_paid", user.id, { deal_id: dealId });
   revalidatePath(`/deals/${dealId}`);
+  revalidatePath("/deals");
   redirect(`/deals/${dealId}`);
 }

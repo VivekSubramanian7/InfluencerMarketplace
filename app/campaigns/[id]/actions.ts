@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { parsePriceCents, parseText } from "@/lib/storefront/validation";
@@ -109,6 +110,7 @@ export async function applyToCampaign(formData: FormData) {
     }).catch(() => {});
   }
 
+  revalidatePath(`/campaigns/${campaignId}`);
   redirect(`${base}${sep}saved=1`);
 }
 
@@ -130,6 +132,7 @@ export async function withdrawApplication(formData: FormData) {
   if (error) {
     redirect(`${base}${sep}error=` + encodeURIComponent(friendlyDbError(error)));
   }
+  revalidatePath(`/campaigns/${campaignId}`);
   redirect(`${base}${sep}saved=1`);
 }
 
@@ -171,6 +174,8 @@ export async function decideApplication(formData: FormData) {
         text: `Open it on Clipline: ${site}/deals/${dealId}`,
       }).catch(() => {});
     }
+    revalidatePath(`/campaigns/${campaignId}`);
+    revalidatePath("/deals");
     redirect(acceptRedirect(returnTo || null, dealId));
   }
 
@@ -196,6 +201,7 @@ export async function decideApplication(formData: FormData) {
       text: `Your application was not selected this time.${declineReason ? `\n\nFeedback: ${declineReason}` : ""}`,
     }).catch(() => {});
   }
+  revalidatePath(`/campaigns/${campaignId}`);
   redirect(`${base}${sep}saved=1`);
 }
 
@@ -262,6 +268,8 @@ export async function bulkDecideApplications(formData: FormData) {
     }
   }
 
+  revalidatePath(`/campaigns/${campaignId}`);
+  revalidatePath("/deals");
   if (errors.length > 0) {
     redirect(`${base}${sep}error=` +
       encodeURIComponent(`${errors.length} application(s) failed: ${errors[0]}`));

@@ -162,6 +162,7 @@ export async function sendOffer(formData: FormData) {
   }
 
   revalidatePath(`/inbox/${conversationId}`);
+  revalidatePath("/inbox");
   redirect(`/inbox/${conversationId}?saved=1`);
 }
 
@@ -204,6 +205,9 @@ export async function respondOffer(formData: FormData) {
         text: `Open it on Clipline: ${site}/deals/${dealId}`,
       }).catch(() => {});
     }
+    revalidatePath("/deals");
+    revalidatePath(`/inbox/${conversationId}`);
+    revalidatePath("/inbox");
     redirect(`/deals/${dealId}`);
   }
 
