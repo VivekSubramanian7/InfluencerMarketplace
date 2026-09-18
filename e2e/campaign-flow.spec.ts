@@ -57,7 +57,7 @@ test.describe("Campaign Flow — cross-role", () => {
         if ((await offeringSelect.count()) > 0) {
           const sel = offeringSelect.first();
           const tag = await sel.evaluate((el) =>
-            el.tagName.toLowerCase()
+            (el as HTMLElement).tagName.toLowerCase()
           );
           if (tag === "select") {
             const options = await sel.locator("option").allTextContents();
@@ -219,7 +219,7 @@ test.describe("Campaign Flow — cross-role", () => {
       .or(page.getByLabel(/type/i));
     if ((await offeringSelect.count()) > 0) {
       const sel = offeringSelect.first();
-      const tag = await sel.evaluate((el) => el.tagName.toLowerCase());
+      const tag = await sel.evaluate((el) => (el as HTMLElement).tagName.toLowerCase());
       if (tag === "select") {
         const options = await sel.locator("option").allTextContents();
         const firstNonEmpty = options.find((o) => o.trim() !== "");
@@ -332,7 +332,7 @@ test.describe("Campaign Flow — cross-role", () => {
       .or(page.getByLabel(/type/i));
     if ((await offeringSelect.count()) > 0) {
       const sel = offeringSelect.first();
-      const tag = await sel.evaluate((el) => el.tagName.toLowerCase());
+      const tag = await sel.evaluate((el) => (el as HTMLElement).tagName.toLowerCase());
       if (tag === "select") {
         const options = await sel.locator("option").allTextContents();
         const firstNonEmpty = options.find((o) => o.trim() !== "");
