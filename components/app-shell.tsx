@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AppRail, type AppRailProps } from "@/components/app-rail";
 import { MobileNav } from "@/components/mobile-nav";
+import { LiveRefresh } from "@/components/live-refresh";
 
 export function AppShell({
   children,
@@ -12,6 +13,7 @@ export function AppShell({
 } & AppRailProps) {
   return (
     <div className="flex h-dvh bg-[var(--ground)]">
+      <LiveRefresh />
       <div className="hidden md:block">
         <AppRail {...railProps} />
       </div>
