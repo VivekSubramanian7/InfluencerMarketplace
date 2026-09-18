@@ -106,7 +106,7 @@ export async function applyToCampaign(formData: FormData) {
       userId: campaign.brand_id,
       subject: `New application for "${campaign.title}"`,
       text: `Review it on Clipline: ${site}/campaigns/${campaignId}`,
-    });
+    }).catch(() => {});
   }
 
   redirect(`${base}${sep}saved=1`);
@@ -169,7 +169,7 @@ export async function decideApplication(formData: FormData) {
         userId: app.creator_id,
         subject: "Your campaign application was accepted — the deal has started",
         text: `Open it on Clipline: ${site}/deals/${dealId}`,
-      });
+      }).catch(() => {});
     }
     redirect(acceptRedirect(returnTo || null, dealId));
   }
@@ -188,6 +188,13 @@ export async function decideApplication(formData: FormData) {
   if (error || !declined) {
     redirect(`${base}${sep}error=` +
       encodeURIComponent(error ? friendlyDbError(error) : "Application not found"));
+  }
+  if (declined?.creator_id) {
+    await emailUser({
+      userId: declined.creator_id,
+      subject: "Update on your campaign application",
+      text: `Your application was not selected this time.${declineReason ? `\n\nFeedback: ${declineReason}` : ""}`,
+    }).catch(() => {});
   }
   redirect(`${base}${sep}saved=1`);
 }
@@ -231,8 +238,8 @@ export async function bulkDecideApplications(formData: FormData) {
           await emailUser({
             userId: app.creator_id,
             subject: "Your campaign application was accepted — the deal has started",
-            text: `Open it on Clipline: ${site}/campaigns/${campaignId}`,
-          });
+            text: `Open it on Clipline: ${site}/deals/${dealId}`,
+          }).catch(() => {});
         }
       }
     }
@@ -245,6 +252,13 @@ export async function bulkDecideApplications(formData: FormData) {
         .select("creator_id")
         .maybeSingle();
       if (error) errors.push(error.message);
+      else if (declined?.creator_id) {
+        await emailUser({
+          userId: declined.creator_id,
+          subject: "Update on your campaign application",
+          text: `Your application was not selected this time.${declineReason ? `\n\nFeedback: ${declineReason}` : ""}`,
+        }).catch(() => {});
+      }
     }
   }
 
