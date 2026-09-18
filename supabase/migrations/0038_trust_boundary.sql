@@ -77,3 +77,16 @@ alter table public.creator_profiles
 alter table public.brand_profiles
   add constraint brand_profiles_pref_niches_check
   check (coalesce(array_length(pref_niches, 1), 0) <= 8);
+
+-- =============================================================================
+-- Section 4: Cross-column constraints
+-- =============================================================================
+
+-- Finding 20: brand_products age range — app checks min <= max, DB does not
+alter table public.brand_products
+  add constraint brand_products_age_range_check
+  check (
+    target_age_min is null
+    or target_age_max is null
+    or target_age_min <= target_age_max
+  );
