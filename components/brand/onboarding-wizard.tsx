@@ -45,6 +45,15 @@ export function OnboardingWizard({
   const TOTAL_PHASES = STEPS.length + 1;
   const pct = Math.round((step / TOTAL_PHASES) * 100);
 
+  // Safely parse productsJson to prevent crashes on malformed data
+  const parsedProducts = (() => {
+    try {
+      return productsJson ? JSON.parse(productsJson) : null;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <div>
       <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
@@ -75,7 +84,7 @@ export function OnboardingWizard({
 
       <form action={saveBrandProfile} className="mt-6">
         <input type="hidden" name="from" value="onboarding" />
-        {productsJson && step === 2 && <ProposedProducts initial={JSON.parse(productsJson)} />}
+        {parsedProducts && step === 2 && <ProposedProducts initial={parsedProducts} />}
 
         <div className={step === 1 ? "flex flex-col gap-4" : "hidden"}>
           <h2 className="text-lg font-bold">Tell us about your brand</h2>

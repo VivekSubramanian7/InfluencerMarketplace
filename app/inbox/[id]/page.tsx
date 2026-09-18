@@ -89,7 +89,7 @@ export default async function ConversationPage({
       .order("created_at"),
     supabase
       .from("offers")
-      .select("id, offering_id, price_cents, goals, status, deal_id, created_at")
+      .select("id, offering_id, price_cents, goals, product_description, talking_points, status, deal_id, created_at")
       .eq("conversation_id", conv.id)
       .order("created_at"),
   ]);
@@ -237,6 +237,12 @@ export default async function ConversationPage({
                     </span>
                   </div>
                   {o.goals && <p className="mt-2 whitespace-pre-wrap text-sm">{o.goals}</p>}
+                  {o.product_description && (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{o.product_description}</p>
+                  )}
+                  {o.talking_points && (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{o.talking_points}</p>
+                  )}
                   {o.status === "pending" && !iAmBrand && (
                     <div className="mt-3 flex gap-2">
                       <form action={respondOffer}>
