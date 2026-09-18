@@ -55,7 +55,7 @@ export async function respondInvite(formData: FormData) {
       userId: updated.brand_id,
       subject: `${me?.display_name || "A creator"} accepted your invite`,
       text: `Open it on Clipline: ${site}/inbox/${id}`,
-    });
+    }).catch(() => {});
   }
 
   revalidatePath("/inbox");
@@ -288,14 +288,14 @@ export async function draftReply(formData: FormData) {
   }
 
   const body = draft!.slice(0, 5000);
-  const { error } = await supabase
+  const { error: dbErr } = await supabase
     .from("agent_drafts")
     .upsert(
       { conversation_id: conversationId, brand_id: user.id, body },
       { onConflict: "conversation_id" }
     );
-  if (error) {
-    redirect(`/inbox/${conversationId}?error=` + encodeURIComponent(friendlyDbError(error)));
+  if (dbErr) {
+    redirect(`/inbox/${conversationId}?error=` + encodeURIComponent("Drafting failed — try again"));
   }
 
   revalidatePath(`/inbox/${conversationId}`);
@@ -336,15 +336,19 @@ export async function bulkArchiveConversations(formData: FormData) {
   await requireUser();
   const ids = formData.getAll("conversation_id").map(String).filter(Boolean);
   const supabase = await createServerSupabase();
+  const errors: string[] = [];
   for (const id of ids) {
     const { error } = await supabase.rpc("set_conversation_archived", {
       p_conversation_id: id,
       p_archived: true,
     });
     if (error) {
-      redirect("/inbox?error=" + encodeURIComponent(friendlyDbError(error)));
+      errors.push(friendlyDbError(error));
     }
   }
   revalidatePath("/inbox");
+  if (errors.length) {
+    redirect("/inbox?error=" + encodeURIComponent(errors.join("; ")));
+  }
   redirect("/inbox");
 }

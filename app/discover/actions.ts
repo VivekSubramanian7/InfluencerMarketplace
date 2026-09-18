@@ -38,7 +38,7 @@ export async function sendReachouts(formData: FormData) {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   // per-row inserts so one duplicate/blocked pair doesn't sink the batch
   let sent = 0;
-  let firstError: string | null = null;
+  const errors: string[] = [];
   for (const creatorId of creatorIds) {
     const { error } = await supabase.from("conversations").insert({
       brand_id: user.id,
@@ -52,14 +52,14 @@ export async function sendReachouts(formData: FormData) {
         subject: `${brandLabel} wants to work with you`,
         text: `${message}\n\nOpen it on Clipline: ${site}/inbox`,
       });
-    } else if (error.code !== "23505" && !firstError) {
-      firstError = friendlyDbError(error);
+    } else if (error.code !== "23505") {
+      errors.push(friendlyDbError(error));
     }
   }
 
   if (sent === 0) {
-    redirect("/discover?error=" +
-      encodeURIComponent(firstError ?? "Already invited — check your inbox for those conversations"));
+    redirect("/discover?error=" + encodeURIComponent(
+      errors.length ? errors.join("; ") : "Already invited — check your inbox"));
   }
   trackServerEvent("reachouts_sent", user.id, {
     sent_count: sent,
