@@ -265,3 +265,110 @@ $$;
 
 revoke all on function public.accept_offer(uuid) from public;
 grant execute on function public.accept_offer(uuid) to authenticated;
+
+-- =============================================================================
+-- Section 9: Batch and rate limits
+-- =============================================================================
+
+-- Finding 1: Campaign invite batch — app caps at 5 per request.
+-- The RPC is called once per creator, so batch cap doesn't apply at the RPC level.
+-- Instead, cap total invites per campaign at 200 (generous ceiling).
+create or replace function public.invite_to_campaign(
+  p_campaign_id uuid,
+  p_creator_id uuid
+) returns uuid
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  v_brand uuid;
+  v_conv_id uuid;
+  v_invite_count int;
+begin
+  select brand_id into v_brand from public.campaigns where id = p_campaign_id;
+  if v_brand is null then raise exception 'campaign not found'; end if;
+  if v_brand <> v_uid then raise exception 'not campaign owner'; end if;
+
+  -- reject blocked creators
+  if exists (select 1 from public.brand_blocklist b
+             where b.brand_id = v_uid and b.creator_id = p_creator_id) then
+    raise exception 'This creator is on your blocklist';
+  end if;
+  -- reject inactive creators
+  if not exists (select 1 from public.creator_profiles cp
+                 where cp.user_id = p_creator_id and cp.status = 'live') then
+    raise exception 'This creator is not accepting invitations';
+  end if;
+
+  -- Per-campaign invite cap
+  select count(*) into v_invite_count
+  from public.campaign_invites ci
+  where ci.campaign_id = p_campaign_id;
+  if v_invite_count >= 200 then
+    raise exception 'Campaign invite limit reached (max 200 per campaign)';
+  end if;
+
+  select id into v_conv_id from public.conversations
+    where brand_id = v_uid and creator_id = p_creator_id;
+  if v_conv_id is null then
+    insert into public.conversations (brand_id, creator_id, status, invite_message)
+    values (v_uid, p_creator_id, 'invited', 'You have been invited to a campaign')
+    returning id into v_conv_id;
+  end if;
+
+  insert into public.campaign_invites (campaign_id, creator_id, conversation_id)
+  values (p_campaign_id, p_creator_id, v_conv_id)
+  on conflict (campaign_id, creator_id) do update set conversation_id = excluded.conversation_id;
+
+  return v_conv_id;
+end;
+$$;
+grant execute on function public.invite_to_campaign(uuid, uuid) to authenticated;
+
+-- Finding 2: Reachout batch — app caps at 20 per request.
+-- The unique(brand_id, creator_id) on conversations prevents duplicate pairs.
+-- Add a per-brand daily conversation creation limit via the existing insert trigger.
+create or replace function public.validate_conversation_insert()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_internal boolean :=
+    coalesce(current_setting('clipline.internal', true), '') = '1';
+  v_creator_role public.user_role;
+  v_recent int;
+begin
+  if new.brand_id = new.creator_id then
+    raise exception 'You cannot invite yourself';
+  end if;
+  select role into v_creator_role from public.profiles where id = new.creator_id;
+  if v_creator_role is distinct from 'creator' then
+    raise exception 'Invitations can only go to creator accounts';
+  end if;
+
+  if not v_internal then
+    if not exists (select 1 from public.creator_profiles cp
+                   where cp.user_id = new.creator_id and cp.status = 'live') then
+      raise exception 'This creator is not accepting invitations';
+    end if;
+    if exists (select 1 from public.brand_blocklist b
+               where b.brand_id = new.brand_id and b.creator_id = new.creator_id) then
+      raise exception 'You have blocked this creator';
+    end if;
+
+    -- Per-brand daily reachout cap (Finding 2)
+    select count(*) into v_recent
+    from public.conversations c
+    where c.brand_id = new.brand_id
+      and c.created_at > now() - interval '24 hours';
+    if v_recent >= 100 then
+      raise exception 'Daily outreach limit reached (max 100 per day). Try again tomorrow.';
+    end if;
+
+    new.status := 'invited';
+    new.responded_at := null;
+  end if;
+
+  new.created_at := now();
+  return new;
+end;
+$$;
