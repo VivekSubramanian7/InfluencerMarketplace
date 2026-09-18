@@ -4,11 +4,12 @@ import { requireUser } from "@/lib/auth/require";
 import { parseDiscoveryFilters, SAVED_FILTER_KEYS } from "@/lib/discovery/filters";
 import { searchCreators, type SearchScope } from "@/lib/discovery/queries";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { deleteSearch, saveSearch } from "./actions";
+import { deleteSearch } from "./actions";
+import { inviteToCampaign } from "@/app/campaigns/[id]/invite-actions";
+import { BulkInviteWrapper } from "@/components/discover/bulk-invite-wrapper";
 import { AuthenticatedShell } from "@/components/authenticated-shell";
 import { creatorGradient } from "@/lib/identity/gradient";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PriceRange } from "@/components/price-range";
 import { SearchSuggest } from "@/components/discover/search-suggest";
@@ -48,8 +49,10 @@ export default async function DiscoverPage({
   // brand context: past collaborators, blocklist, saved searches, preferences
   let scope: SearchScope = {};
   let savedSearches: { id: string; name: string; params: Record<string, string> }[] = [];
+  let brandLiveCampaigns: { id: string; title: string }[] = [];
+  let capInvites = false;
   if (isBrand) {
-    const [dealRows, blockRows, savedRows] = await Promise.all([
+    const [dealRows, blockRows, savedRows, campaignRows] = await Promise.all([
       supabase.from("deals").select("creator_id").eq("brand_id", user.id),
       supabase.from("brand_blocklist").select("creator_id").eq("brand_id", user.id),
       supabase
@@ -57,7 +60,15 @@ export default async function DiscoverPage({
         .select("id, name, params")
         .eq("brand_id", user.id)
         .order("created_at"),
+      supabase
+        .from("campaigns")
+        .select("id, title")
+        .eq("brand_id", user.id)
+        .eq("status", "open")
+        .order("created_at", { ascending: false }),
     ]);
+    brandLiveCampaigns = (campaignRows.data ?? []).map((r) => ({ id: r.id as string, title: r.title as string }));
+    capInvites = typeof params.cap === "string" && params.cap === "invites";
     const collaborators = [...new Set((dealRows.data ?? []).map((r) => r.creator_id as string))];
     const blocked = (blockRows.data ?? []).map((r) => r.creator_id as string);
     savedSearches = (savedRows.data ?? []).map((r) => ({
@@ -167,20 +178,34 @@ export default async function DiscoverPage({
             />
           </div>
           <div className="mt-3 flex flex-wrap items-end gap-2">
-            <input
-              name="niche"
-              defaultValue={filters.niche ?? ""}
-              placeholder="Niche · e.g. gaming"
-              aria-label="Niche"
-              className={`${chip} w-40`}
-            />
-            <input
+            <select
               name="country"
               defaultValue={filters.country ?? ""}
-              placeholder="Country"
               aria-label="Country"
-              className={`${chip} w-36`}
-            />
+              className={`${chip} w-44 appearance-none`}
+            >
+              <option value="">Any country</option>
+              <option value="United States">United States</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+              <option value="India">India</option>
+              <option value="Germany">Germany</option>
+              <option value="France">France</option>
+              <option value="Brazil">Brazil</option>
+              <option value="Mexico">Mexico</option>
+              <option value="Japan">Japan</option>
+              <option value="South Korea">South Korea</option>
+              <option value="Indonesia">Indonesia</option>
+              <option value="Philippines">Philippines</option>
+              <option value="Nigeria">Nigeria</option>
+              <option value="South Africa">South Africa</option>
+              <option value="Netherlands">Netherlands</option>
+              <option value="Sweden">Sweden</option>
+              <option value="Spain">Spain</option>
+              <option value="Italy">Italy</option>
+              <option value="UAE">UAE</option>
+            </select>
             <select
               name="type"
               defaultValue={filters.type ?? ""}
@@ -203,23 +228,7 @@ export default async function DiscoverPage({
           </div>
         </form>
 
-        {/* ── Quick filters / saved searches (shown when no search active) ── */}
-        {!filters.q && !filters.niche && !filters.country && !filters.type &&
-          filters.minPriceCents === null && filters.maxPriceCents === null && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {["gaming", "food", "beauty", "tech", "fitness", "lifestyle", "fashion", "finance"].map((n) => (
-              <Link
-                key={n}
-                href={`/discover?niche=${n}`}
-                className="rounded-full border bg-card px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                {n}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {isBrand && (
+        {isBrand && savedSearches.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {savedSearches.map((s) => (
               <span key={s.id} className="flex items-center gap-1 rounded-full border bg-card pl-3 pr-1 py-1 text-sm shadow-sm">
@@ -238,23 +247,6 @@ export default async function DiscoverPage({
                 </form>
               </span>
             ))}
-            <form action={saveSearch} className="flex items-center gap-2">
-              {SAVED_FILTER_KEYS.map((key) => {
-                const v = flatParams.get(key);
-                return v ? <input key={key} type="hidden" name={key} value={v} /> : null;
-              })}
-              <Input
-                name="name"
-                required
-                maxLength={40}
-                placeholder="Save this search as…"
-                aria-label="Saved search name"
-                className="h-8 w-44 rounded-full text-sm"
-              />
-              <Button type="submit" variant="outline" size="sm" className="rounded-full">
-                Save
-              </Button>
-            </form>
           </div>
         )}
 
@@ -265,12 +257,6 @@ export default async function DiscoverPage({
             creator{total === 1 ? "" : "s"}
             {isBrand && filters.tab === "worked" ? " you've worked with" : " found"}
           </p>
-          {isBrand && filters.tab === "new" && creators.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Select creators to invite using your{" "}
-              <Link href="/brand/settings" className="font-medium underline underline-offset-2">outreach template</Link>
-            </p>
-          )}
         </div>
 
         {isBrand && filters.type && (
@@ -334,7 +320,6 @@ export default async function DiscoverPage({
                     <th className="px-2 py-2.5 text-right">Rating</th>
                     <th className="px-2 py-2.5 text-right">From</th>
                     <th className="px-2 py-2.5 text-right">Offerings</th>
-                    <th className="w-10 py-2.5 pr-4"><span className="sr-only">Action</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -418,25 +403,6 @@ export default async function DiscoverPage({
                         </td>
                         <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground">
                           {c.offeringCount || "—"}
-                        </td>
-                        <td className="py-2 pr-4 align-middle">
-                          {isBrand && filters.tab === "new" ? (
-                            <InviteToCampaign
-                              campaigns={brandLiveCampaigns}
-                              creatorId={c.userId}
-                              redirectTo="/discover"
-                              iconOnly
-                              showCapBlocker={capInvites}
-                            />
-                          ) : (
-                            <Link
-                              href={`/c/${c.handle}`}
-                              className="grid size-7 place-items-center rounded text-muted-foreground transition-colors group-hover:bg-secondary group-hover:text-foreground"
-                              aria-label={`View ${c.displayName ?? c.handle}`}
-                            >
-                              →
-                            </Link>
-                          )}
                         </td>
                       </tr>
                     );

@@ -11,6 +11,8 @@ RUN pnpm config set minimum-release-age 0 --location project \
 
 COPY . .
 
+RUN pnpm build
+
 EXPOSE 3000
 
-CMD ["pnpm", "dev"]
+CMD ["pnpm", "start"]

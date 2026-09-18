@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 
-const MIN = 0;
-const MAX = 1000;
-const STEP = 10;
+const chip =
+  "h-10 rounded-full border bg-background px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function PriceRange({
   defaultMin,
@@ -13,55 +12,32 @@ export function PriceRange({
   defaultMin?: number | null;
   defaultMax?: number | null;
 }) {
-  const [lo, setLo] = useState(defaultMin ?? MIN);
-  const [hi, setHi] = useState(defaultMax ?? MAX);
+  const [lo, setLo] = useState(defaultMin ?? "");
+  const [hi, setHi] = useState(defaultMax ?? "");
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-sm tabular-nums">
-        <span className="font-semibold">${lo}</span>
-        <span className="text-muted-foreground">to</span>
-        <span className="font-semibold">{hi >= MAX ? `$${MAX}+` : `$${hi}`}</span>
-      </div>
-      <div className="relative h-6">
-        <input
-          type="range"
-          min={MIN}
-          max={MAX}
-          step={STEP}
-          value={lo}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            setLo(Math.min(v, hi - STEP));
-          }}
-          aria-label="Minimum price"
-          className="price-slider absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
-        />
-        <input
-          type="range"
-          min={MIN}
-          max={MAX}
-          step={STEP}
-          value={hi}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            setHi(Math.max(v, lo + STEP));
-          }}
-          aria-label="Maximum price"
-          className="price-slider absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
-        />
-        <div className="pointer-events-none absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-border">
-          <div
-            className="absolute h-full rounded-full bg-primary"
-            style={{
-              left: `${((lo - MIN) / (MAX - MIN)) * 100}%`,
-              right: `${100 - ((hi - MIN) / (MAX - MIN)) * 100}%`,
-            }}
-          />
-        </div>
-      </div>
-      <input type="hidden" name="min_price" value={lo > MIN ? lo : ""} />
-      <input type="hidden" name="max_price" value={hi < MAX ? hi : ""} />
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        min={0}
+        placeholder="Min $"
+        aria-label="Minimum price"
+        value={lo}
+        onChange={(e) => setLo(e.target.value === "" ? "" : Number(e.target.value))}
+        className={`${chip} w-28`}
+      />
+      <span className="text-sm text-muted-foreground">–</span>
+      <input
+        type="number"
+        min={0}
+        placeholder="Max $"
+        aria-label="Maximum price"
+        value={hi}
+        onChange={(e) => setHi(e.target.value === "" ? "" : Number(e.target.value))}
+        className={`${chip} w-28`}
+      />
+      <input type="hidden" name="min_price" value={lo} />
+      <input type="hidden" name="max_price" value={hi} />
     </div>
   );
 }
