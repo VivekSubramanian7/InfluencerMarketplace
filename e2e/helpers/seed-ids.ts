@@ -39,35 +39,35 @@ export const CREATOR1 = {
   id: "c0000000-0000-0000-0000-000000000001",
   email: "creator1@demo.com",
   name: "Maya Chen",
-  handle: "maya_chen",
+  handle: "mayachen",
 };
 
 export const CREATOR2 = {
   id: "c0000000-0000-0000-0000-000000000002",
   email: "creator2@demo.com",
   name: "Jake Morrison",
-  handle: "jake_morrison",
+  handle: "jakemorrison",
 };
 
 export const CREATOR3 = {
   id: "c0000000-0000-0000-0000-000000000003",
   email: "creator3@demo.com",
   name: "Priya Sharma",
-  handle: "priya_sharma",
+  handle: "priyasharma",
 };
 
 export const CREATOR4 = {
   id: "c0000000-0000-0000-0000-000000000004",
   email: "creator4@demo.com",
   name: "Liam O'Brien",
-  handle: "liam_obrien",
+  handle: "liamobrien",
 };
 
 export const CREATOR5 = {
   id: "c0000000-0000-0000-0000-000000000005",
   email: "creator5@demo.com",
   name: "Sofia Rodriguez",
-  handle: "sofia_rodriguez",
+  handle: "sofiarod",
 };
 
 export const PASSWORD = "password123";
